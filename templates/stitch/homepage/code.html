@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Living Wage Portal - Ethical Architect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#00487f",
+                        "primary": "#004275",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#d2e4ff",
+                        "on-tertiary-container": "#82decd",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#00201b",
+                        "surface-bright": "#f9f9fa",
+                        "inverse-primary": "#a1c9ff",
+                        "secondary-fixed-dim": "#88d982",
+                        "secondary-container": "#a0f399",
+                        "on-surface-variant": "#414750",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#005a9c",
+                        "inverse-surface": "#2f3132",
+                        "surface": "#f9f9fa",
+                        "tertiary-container": "#006357",
+                        "on-secondary-fixed": "#002204",
+                        "surface-container": "#edeeef",
+                        "on-background": "#1a1c1d",
+                        "on-tertiary-fixed-variant": "#005047",
+                        "primary-fixed-dim": "#a1c9ff",
+                        "surface-tint": "#1261a3",
+                        "tertiary-fixed": "#97f3e2",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e2e2e3",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#7ad7c6",
+                        "surface-container-highest": "#e2e2e3",
+                        "secondary": "#1b6d24",
+                        "surface-container-high": "#e8e8e9",
+                        "tertiary": "#004940",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f3f3f4",
+                        "on-error-container": "#93000a",
+                        "outline": "#727781",
+                        "background": "#f9f9fa",
+                        "secondary-fixed": "#a3f69c",
+                        "surface-dim": "#d9dadb",
+                        "on-surface": "#1a1c1d",
+                        "on-primary-fixed": "#001c37",
+                        "on-primary-container": "#afd1ff",
+                        "on-secondary-container": "#217128",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c1c7d2",
+                        "inverse-on-surface": "#f0f1f1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .editorial-gradient {
+            background: linear-gradient(135deg, #004275 0%, #005a9c 100%);
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<nav class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-sm dark:shadow-none docked full-width top-0 sticky z-50">
+<div class="flex justify-between items-center px-8 h-16 w-full max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-blue-900 dark:text-blue-100">Living Wage Portal</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-blue-900 dark:text-blue-400 border-b-2 border-blue-900 dark:border-blue-400 pb-1 font-manrope tracking-tight font-semibold" href="#">Home</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-blue-800 dark:hover:text-blue-200 font-manrope tracking-tight font-semibold hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors" href="#">Data Management</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-blue-800 dark:hover:text-blue-200 font-manrope tracking-tight font-semibold hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors" href="#">Dashboard</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container" data-alt="Professional corporate headshot of a business leader with a friendly expression in a bright modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbizru6WpMXLO8YNXELsUAH1-2h1v3gcepOQeXQtlLKl04IzsG0OV4RXAkrjEqO_tcpZbeA5HCneu9LvOtDQuN_N1pouLY1myUi6sQoOdUqoTnkNDm6cmsgYCu5BPfqxWWaxGIQfWvqXuTOxFkqcDow-tD4OcUIwE9YmEViljv9zzwhRwdGBEbRyFg0IV-aRIEoHp5xUbNF1J9UhgWTHaQyQglFIbpWTn2yuReJ3LnIneiLyfNSAriNXPezPCjEan1YP5CQr4ufQk"/>
+</div>
+</div>
+</nav>
+<main>
+<section class="relative min-h-[921px] flex items-center overflow-hidden bg-surface-container-low">
+<div class="max-w-screen-2xl mx-auto px-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+<div class="lg:col-span-7 z-10 py-20 lg:pr-12">
+<span class="inline-block px-4 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-sm font-semibold tracking-wide mb-8">
+                        THE ETHICAL ARCHITECT INITIATIVE
+                    </span>
+<h1 class="text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-primary leading-[0.9] mb-8">
+                        Dignity is the <br/><span class="text-tertiary">New Standard.</span>
+</h1>
+<p class="text-xl text-on-surface-variant max-w-xl mb-10 leading-relaxed">
+                        Moving beyond basic compliance. We provide the structural data and ethical frameworks to ensure every worker earns a wage that supports a life of security and growth.
+                    </p>
+<div class="flex flex-wrap gap-4">
+<button class="editorial-gradient text-on-primary px-8 py-4 rounded-md font-semibold text-lg shadow-lg shadow-primary/20 hover:scale-95 duration-150 active:opacity-80 transition-all">
+                            Start Survey Journey
+                        </button>
+<button class="px-8 py-4 rounded-md font-semibold text-lg text-primary hover:bg-surface-container-highest transition-all flex items-center gap-2">
+                            Review Methodology <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="lg:col-span-5 relative h-full min-h-[500px]">
+<div class="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl rotate-3 translate-x-4 translate-y-4 bg-surface-container-highest">
+<img class="w-full h-full object-cover opacity-80" data-alt="modern minimalist architectural interior with clean lines large windows and soft natural lighting creating a sense of professional integrity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlVHEMWMBSDZtUzZOgDSr8isBBGRLVAHKDi8UxHlUhqVM04i5HTOZaXB4tkX38PvFKQBq6fxz2e0SiA0Dqnn1FcZqoFkd8m2NZnN725MFMzknCTw0718jWWIN0uHGytcoObhsfQmGvpPrOMihru9PpUMnu5utY6DmEC8fBz2qvurT0BRP5tQWN4xYETRKYqA_6pGq744Q6lPG0wCwjmLAH0Y3GEfq03GYljHLmx8a7IU_K4hOIcXq4gECqG51PjMkrzyyuPA_b3WY"/>
+</div>
+<div class="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl -rotate-2 bg-white">
+<img class="w-full h-full object-cover" data-alt="team of diverse professionals collaborating around a large wooden table in a high-end bright workspace with analytical charts on the walls" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-9C2Q714JDseAwROM1xitfFYx-KI_7Pw7O4o44xZjpqlrpWJ9WCvdPHr8GU2wCUISQKgPrwKdyxbz_OT_88oaf6_FSJHeYA7N6-5r1v4uMqo-XyVJ76slk8WCrSgnJVLRR5ygvnRzECgWXaErJl5ylEHzCrWoV1WbBxJieJCqa5rygqVpzG0j1ichGavtL9wH2dVy6vf4DrcRCV4lQRhkFIP6VWe621bjGCTOoY_m_zVlYCKDl47GLNZCffR3JaGzQXT0pkX-aQo"/>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 bg-surface">
+<div class="max-w-screen-2xl mx-auto px-8">
+<div class="flex flex-col lg:flex-row gap-16">
+<div class="lg:w-1/3">
+<h2 class="text-4xl font-bold tracking-tight text-primary mb-6">Building a sustainable future through data integrity.</h2>
+<p class="text-on-surface-variant leading-relaxed">Our mission is to architect an economy where fair compensation is the foundation, not the exception. We leverage granular surveys to bridge the gap between corporate profit and social responsibility.</p>
+</div>
+<div class="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="p-8 rounded-xl bg-surface-container-low border-none">
+<div class="w-12 h-12 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center mb-6">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Granular Analysis</h3>
+<p class="text-on-surface-variant text-sm">We don't just look at averages. Our surveys dive deep into regional cost-of-living variables and household needs.</p>
+</div>
+<div class="p-8 rounded-xl bg-surface-container-low border-none">
+<div class="w-12 h-12 rounded-lg bg-tertiary-container text-on-tertiary-container flex items-center justify-center mb-6">
+<span class="material-symbols-outlined" data-icon="shield_with_heart">shield_with_heart</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Ethical Benchmarks</h3>
+<p class="text-on-surface-variant text-sm">Our benchmarks are built on human dignity standards, ensuring that "living wage" means more than just survival.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 bg-surface-container-low">
+<div class="max-w-screen-2xl mx-auto px-8">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="bg-surface-container-lowest p-10 rounded-xl shadow-sm border-none relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl" data-icon="groups">groups</span>
+</div>
+<div class="relative z-10">
+<div class="text-5xl font-extrabold text-primary mb-2">1.2M+</div>
+<div class="text-sm font-semibold tracking-widest text-on-surface-variant uppercase">Workers Impacted</div>
+<p class="mt-4 text-on-surface-variant text-sm">Data-driven policy changes across 400+ multinational organizations.</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-10 rounded-xl shadow-sm border-none relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl" data-icon="public">public</span>
+</div>
+<div class="relative z-10">
+<div class="text-5xl font-extrabold text-tertiary mb-2">64</div>
+<div class="text-sm font-semibold tracking-widest text-on-surface-variant uppercase">Countries Analyzed</div>
+<p class="mt-4 text-on-surface-variant text-sm">Active real-time wage monitoring across diverse global economic zones.</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-10 rounded-xl shadow-sm border-none relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl" data-icon="trending_up">trending_up</span>
+</div>
+<div class="relative z-10">
+<div class="text-5xl font-extrabold text-secondary mb-2">18%</div>
+<div class="text-sm font-semibold tracking-widest text-on-surface-variant uppercase">Avg. Wage Increase</div>
+<p class="mt-4 text-on-surface-variant text-sm">Average salary improvement for bottom-decile workers in participating firms.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 px-8">
+<div class="max-w-screen-2xl mx-auto rounded-3xl overflow-hidden relative min-h-[500px] flex items-center">
+<div class="absolute inset-0">
+<img class="w-full h-full object-cover" data-alt="dramatic wide angle shot of a modern glass skyscraper reflecting a clear blue sky and urban environment representing corporate architecture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPsRAb-ogaMvCOoEnwipToIfvtVNIlx7RIZG0eRibtOzB-HFyRU31OR5KN7UQMTQmprGqC8dhaArzjb1h_6Klq27m4joy6VVj-0dJyR48vuqKDQ8GHedLfgpP5Ij148zLB5yD-rpFESwGFEXxQYVyBva4SKuL_o0CAjT9FoPoMA-O6Cu3KJMsxA0EaIpmC6PC8JuynO1ke-t98SfYyLr36wpb5LjT2S037hQAQja6RjesUFlmXTkG2VHKENbc_rLKRmICSDYXIAq4"/>
+<div class="absolute inset-0 bg-primary/90 mix-blend-multiply"></div>
+<div class="absolute inset-0 editorial-gradient opacity-80"></div>
+</div>
+<div class="relative z-10 px-12 md:px-24 py-20 w-full md:w-2/3">
+<h2 class="text-4xl md:text-5xl font-bold text-on-primary mb-6 leading-tight">Ready to architect a more ethical workplace?</h2>
+<p class="text-xl text-primary-fixed mb-10 leading-relaxed">Join 500+ organizations already utilizing our Living Wage framework to drive meaningful social impact. Get access to the latest global data reports.</p>
+<div class="flex flex-col sm:flex-row gap-6">
+<button class="bg-surface text-primary px-10 py-5 rounded-md font-bold text-lg hover:bg-surface-container-lowest hover:scale-95 transition-all">
+                            Partner with Us
+                        </button>
+<button class="border border-on-primary/30 text-on-primary px-10 py-5 rounded-md font-bold text-lg backdrop-blur-sm hover:bg-white/10 transition-all">
+                            Download Case Study
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-slate-50 dark:bg-slate-950 full-width border-t border-slate-200 dark:border-slate-800">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 py-12 w-full max-w-screen-2xl mx-auto">
+<div class="mb-6 md:mb-0">
+<p class="text-sm font-inter text-slate-500 dark:text-slate-400">© 2024 Ethical Architect Living Wage Initiative. All rights reserved.</p>
+</div>
+<div class="flex gap-8">
+<a class="text-sm font-inter text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-all hover:underline" href="#">Privacy Policy</a>
+<a class="text-sm font-inter text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-all hover:underline" href="#">Methodology</a>
+<a class="text-sm font-inter text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-all hover:underline" href="#">Support</a>
+</div>
+</div>
+</footer>
+</body></html>

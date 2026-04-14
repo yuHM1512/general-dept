@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <!-- app.css intentionally not loaded; all styles are self-contained below -->
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d27;
+        --surface2: #22263a;
+        --border: #2e3350;
+        --accent: #6366f1;
+        --accent2: #818cf8;
+        --accent-glow: rgba(99,102,241,0.25);
+        --success: #22c55e;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+        --text: #e2e8f0;
+        --muted: #7d8aab;
+        --radius: 12px;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        padding: 24px 16px 64px;
+      }
+
+      .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+      /* ── Header ── */
+      .header {
+        text-align: center;
+        padding: 40px 20px 28px;
+        background: linear-gradient(135deg, #1e2140 0%, #131626 100%);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        position: relative;
+        overflow: hidden;
+      }
+      .header::before {
+        content: '';
+        position: absolute;
+        top: -60px; left: 50%; transform: translateX(-50%);
+        width: 260px; height: 260px;
+        background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+        pointer-events: none;
+      }
+      .header h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; position: relative; }
+      .header h1 span { color: var(--accent2); }
+      .header .sub { color: var(--muted); font-size: 0.85rem; margin-top: 6px; position: relative; }
+      .badge {
+        display: inline-block; margin-top: 12px;
+        background: var(--accent-glow); border: 1px solid var(--accent);
+        color: var(--accent2); padding: 4px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+        position: relative;
+      }
+
+      /* ── Card ── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+      }
+      .card h2 { font-size: 1rem; font-weight: 600; color: var(--accent2); margin-bottom: 18px; letter-spacing: 0.3px; }
+
+      /* ── Upload ── */
+      .upload-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      .file-label {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--surface2); border: 1.5px dashed var(--border);
+        border-radius: 8px; padding: 9px 16px; cursor: pointer; font-size: 0.88rem;
+        color: var(--muted); transition: border-color .2s, color .2s;
+      }
+      .file-label:hover { border-color: var(--accent); color: var(--text); }
+      #fileInput { display: none; }
+
+      button {
+        background: var(--accent); color: #fff;
+        border: none; border-radius: 8px; padding: 9px 20px;
+        font-size: 0.88rem; font-weight: 600; cursor: pointer;
+        transition: background .2s, transform .1s, box-shadow .2s;
+      }
+      button:hover { background: var(--accent2); box-shadow: 0 0 14px var(--accent-glow); }
+      button:active { transform: scale(0.97); }
+      button.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+      button.secondary:hover { background: var(--border); box-shadow: none; }
+
+      .status-msg { font-size: 0.82rem; color: var(--muted); padding: 6px 0; }
+      .status-msg.ok { color: var(--success); }
+      .status-msg.error { color: var(--danger); }
+
+      /* Progress bar */
+      .progress-wrap { height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; margin-top: 8px; display: none; }
+      .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 999px; transition: width 0.4s; width: 0%; }
+
+      /* ── Filter row ── */
+      .filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      select, input[type="number"] {
+        background: var(--surface2); border: 1px solid var(--border);
+        color: var(--text); border-radius: 8px; padding: 8px 12px;
+        font-size: 0.88rem; font-family: inherit; outline: none;
+        transition: border-color .2s;
+      }
+      select:focus, input[type="number"]:focus { border-color: var(--accent); }
+      select { min-width: 130px; cursor: pointer; }
+      input[type="number"] { width: 90px; }
+
+      .filter-row label { font-size: 0.82rem; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+
+      /* ── Stats table ── */
+      .table-wrap { overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+      thead th {
+        background: var(--surface2); color: var(--muted);
+        padding: 10px 14px; text-align: left; font-weight: 600;
+        border-bottom: 1px solid var(--border);
+      }
+      tbody tr { transition: background .15s; }
+      tbody tr:hover { background: var(--surface2); }
+      tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+      td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+      .rate-cell { display: flex; align-items: center; gap: 8px; }
+      .rate-bar { flex: 1; height: 5px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
+      .rate-fill { height: 100%; border-radius: 999px; }
+
+      /* ── Charts grid ── */
+      .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+      @media (max-width: 720px) { .charts-grid { grid-template-columns: 1fr; } }
+      .chart-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+      .chart-box h3 { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 12px; letter-spacing: 0.3px; }
+
+      /* ── KPI row ── */
+      .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+      .kpi {
+        background: var(--surface2); border: 1px solid var(--border);
+        border-radius: 10px; padding: 16px 20px;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      .kpi-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+      .kpi-value { font-size: 1.55rem; font-weight: 700; }
+      .kpi-value.accent { color: var(--accent2); }
+      .kpi-value.danger { color: var(--danger); }
+      .kpi-value.success { color: var(--success); }
+
+      /* ── Group filter chips ── */
+      .group-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+      .chip {
+        padding: 5px 14px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+        border: 1.5px solid var(--border); background: transparent; color: var(--muted);
+        cursor: pointer; transition: all .2s;
+      }
+      .chip.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent2); }
+      .chip:hover:not(.active) { border-color: var(--muted); color: var(--text); }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+
+      <!-- Header -->
+      <header class="header">
+        <h1>{{ app_name | replace("RCP", "<span>RCP</span>") }}</h1>
+        <div class="sub">Phân tích lương công nhân viên</div>
+        <div class="badge">Mục tiêu: {{ "{:,.0f}".format(target_salary_vnd).replace(",", ".") }} VND</div>
+      </header>
+
+      <!-- Upload -->
+      <section class="card">
+        <h2>📥 Nạp dữ liệu Excel</h2>
+        <div class="upload-row">
+          <label class="file-label" for="fileInput">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span id="fileLabel">Chọn file .xlsx</span>
+          </label>
+          <input type="file" id="fileInput" accept=".xlsx" />
+          <button id="uploadBtn" type="button">Upload &amp; Ingest</button>
+        </div>
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="status-msg" id="uploadStatus"></div>
+      </section>
+
+      <!-- Stats section -->
+      <section class="card">
+        <h2>📊 Thống kê theo tháng</h2>
+        <div class="filter-row" style="margin-bottom:18px;">
+          <label>
+            Kỳ dữ liệu
+            <select id="monthSelect"><option value="">-- Chọn tháng --</option></select>
+          </label>
+          <label>
+            Năm
+            <input id="yearInput" type="number" value="2026" min="2000" max="2100" />
+          </label>
+          <label>
+            Tháng
+            <input id="monthInput" type="number" value="1" min="1" max="12" />
+          </label>
+          <button id="loadBtn" type="button">Xem</button>
+          <div class="status-msg" id="loadStatus"></div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-row" id="kpiRow" style="display:none; margin-bottom:18px;">
+          <div class="kpi">
+            <div class="kpi-label">Tổng NV</div>
+            <div class="kpi-value accent" id="kpiTotal">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Không đạt</div>
+            <div class="kpi-value danger" id="kpiNotMeet">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Đạt mục tiêu</div>
+            <div class="kpi-value success" id="kpiMeet">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Tỉ lệ không đạt</div>
+            <div class="kpi-value danger" id="kpiRate">—</div>
+          </div>
+        </div>
+
+        <!-- Group filter chips -->
+        <div class="group-chips" id="groupChips" style="display:none;"></div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+          <table id="statsTable">
+            <thead>
+              <tr>
+                <th>Nhóm</th>
+                <th>Tổng số lượng</th>
+                <th>Không đạt</th>
+                <th>Đạt</th>
+                <th>Tỉ lệ không đạt</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="chart-box">
+          <h3>TỈ LỆ KHÔNG ĐẠT THEO NHÓM (THÁNG)</h3>
+          <canvas id="chartBar" height="180"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>XU THẾ THEO THÁNG (NĂM <span id="tsYear">—</span>)</h3>
+          <canvas id="chartLine" height="180"></canvas>
+        </div>
+      </div>
+
+    </main>
+
+    <script>
+      // ── Utilities ──────────────────────────────────────────────────
+
+      const fmtInt = (n) => new Intl.NumberFormat('vi-VN').format(n);
+      const fmtPct = (x) => (x * 100).toFixed(1) + '%';
+
+      const COLORS = [
+        { bg: 'rgba(99,102,241,0.6)',  border: '#6366f1'  },
+        { bg: 'rgba(245,158,11,0.6)', border: '#f59e0b'  },
+        { bg: 'rgba(34,197,94,0.6)',  border: '#22c55e'  },
+        { bg: 'rgba(239,68,68,0.6)',  border: '#ef4444'  },
+        { bg: 'rgba(129,140,248,0.6)',border: '#818cf8'  },
+      ];
+
+      const chartDefaults = {
+        plugins: { legend: { labels: { color: '#7d8aab', font: { family: 'Inter' } } } },
+        scales: {
+          x: { ticks: { color: '#7d8aab' }, grid: { color: 'rgba(46,51,80,0.5)' } },
+          y: { ticks: { color: '#7d8aab' }, grid: { color: 'rgba(46,51,80,0.5)' }, beginAtZero: true },
+        },
+      };
+
+      // ── State ──────────────────────────────────────────────────────
+
+      let allStats = [];       // full month stats from API
+      let activeGroups = new Set();  // which group chips are active
+      let chartBar, chartLine;
+
+      // ── Available months dropdown ──────────────────────────────────
+
+      async function loadAvailableMonths() {
+        try {
+          const res = await fetch('/api/available-months');
+          if (!res.ok) return;
+          const months = await res.json();
+          const sel = document.getElementById('monthSelect');
+          sel.innerHTML = '<option value="">-- Chọn nhanh --</option>';
+          for (const { year, month } of months) {
+            const opt = document.createElement('option');
+            opt.value = `${year}-${month}`;
+            opt.textContent = `T${month}/${year}`;
+            sel.appendChild(opt);
+          }
+        } catch {}
+      }
+
+      document.getElementById('monthSelect').addEventListener('change', (e) => {
+        if (!e.target.value) return;
+        const [y, m] = e.target.value.split('-').map(Number);
+        document.getElementById('yearInput').value = y;
+        document.getElementById('monthInput').value = m;
+        loadStats();
+      });
+
+      // ── Stats loading ──────────────────────────────────────────────
+
+      async function loadStats() {
+        const year  = +document.getElementById('yearInput').value;
+        const month = +document.getElementById('monthInput').value;
+        const statusEl = document.getElementById('loadStatus');
+        statusEl.className = 'status-msg';
+        statusEl.textContent = 'Đang tải...';
+
+        try {
+          const res = await fetch(`/api/stats?year=${year}&month=${month}`);
+          if (!res.ok) {
+            const msg = res.status === 409
+              ? 'Đang nạp dữ liệu. Vui lòng chờ hoàn tất.'
+              : `Lỗi ${res.status}: ${await res.text()}`;
+            statusEl.className = 'status-msg error';
+            statusEl.textContent = msg;
+            return;
+          }
+          const data = await res.json();
+          allStats = data.stats;
+          // default: all groups active
+          activeGroups = new Set(allStats.map(s => s.group));
+
+          renderGroupChips();
+          renderTable();
+          renderBarChart();
+          updateKPIs();
+          statusEl.className = 'status-msg ok';
+          statusEl.textContent = `✓ T${month}/${year}`;
+
+          // Also load timeseries for the year
+          loadTimeseries(year);
+        } catch (err) {
+          statusEl.className = 'status-msg error';
+          statusEl.textContent = `Lỗi mạng: ${err?.message || err}`;
+        }
+      }
+
+      // ── KPIs ──────────────────────────────────────────────────────
+
+      function updateKPIs() {
+        const visible = allStats.filter(s => activeGroups.has(s.group));
+        const total    = visible.reduce((a, s) => a + s.total_count, 0);
+        const notMeet  = visible.reduce((a, s) => a + s.not_meet_count, 0);
+        const meet     = total - notMeet;
+        const rate     = total ? notMeet / total : 0;
+
+        document.getElementById('kpiRow').style.display = '';
+        document.getElementById('kpiTotal').textContent   = fmtInt(total);
+        document.getElementById('kpiNotMeet').textContent = fmtInt(notMeet);
+        document.getElementById('kpiMeet').textContent    = fmtInt(meet);
+        document.getElementById('kpiRate').textContent    = fmtPct(rate);
+      }
+
+      // ── Group filter chips ─────────────────────────────────────────
+
+      function renderGroupChips() {
+        const wrap = document.getElementById('groupChips');
+        wrap.style.display = '';
+        wrap.innerHTML = '';
+
+        // "Tất cả" chip
+        const all = document.createElement('button');
+        all.className = 'chip';
+        all.textContent = 'Tất cả';
+        all.addEventListener('click', () => {
+          activeGroups = new Set(allStats.map(s => s.group));
+          renderGroupChips();
+          renderTable();
+          renderBarChart();
+          updateKPIs();
+        });
+        wrap.appendChild(all);
+
+        for (const s of allStats) {
+          const chip = document.createElement('button');
+          chip.className = 'chip' + (activeGroups.has(s.group) ? ' active' : '');
+          chip.textContent = s.group;
+          chip.dataset.group = s.group;
+          chip.addEventListener('click', () => {
+            if (activeGroups.has(s.group)) {
+              activeGroups.delete(s.group);
+            } else {
+              activeGroups.add(s.group);
+            }
+            renderGroupChips();
+            renderTable();
+            renderBarChart();
+            updateKPIs();
+          });
+          wrap.appendChild(chip);
+        }
+      }
+
+      // ── Table ──────────────────────────────────────────────────────
+
+      function renderTable() {
+        const tbody = document.querySelector('#statsTable tbody');
+        tbody.innerHTML = '';
+        const visible = allStats.filter(s => activeGroups.has(s.group));
+        for (const row of visible) {
+          const pct   = row.not_meet_rate * 100;
+          const color = pct > 50 ? '#ef4444' : pct > 20 ? '#f59e0b' : '#22c55e';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.group}</td>
+            <td class="num">${fmtInt(row.total_count)}</td>
+            <td class="num" style="color:#ef4444">${fmtInt(row.not_meet_count)}</td>
+            <td class="num" style="color:#22c55e">${fmtInt(row.total_count - row.not_meet_count)}</td>
+            <td>
+              <div class="rate-cell">
+                <span style="min-width:48px;text-align:right;font-weight:600;color:${color}">${fmtPct(row.not_meet_rate)}</span>
+                <div class="rate-bar">
+                  <div class="rate-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
+                </div>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+      }
+
+      // ── Bar chart (monthly by group) ───────────────────────────────
+
+      function renderBarChart() {
+        const visible = allStats.filter(s => activeGroups.has(s.group));
+        const labels  = visible.map(s => s.group);
+        const values  = visible.map(s => +(s.not_meet_rate * 100).toFixed(1));
+
+        const ctx = document.getElementById('chartBar');
+        if (chartBar) chartBar.destroy();
+        chartBar = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Tỉ lệ không đạt (%)',
+              data: values,
+              backgroundColor: visible.map((_, i) => COLORS[i % COLORS.length].bg),
+              borderColor:     visible.map((_, i) => COLORS[i % COLORS.length].border),
+              borderWidth: 2,
+              borderRadius: 6,
+            }],
+          },
+          options: {
+            ...chartDefaults,
+            plugins: {
+              ...chartDefaults.plugins,
+              tooltip: {
+                callbacks: { label: (ctx) => ` ${ctx.parsed.y.toFixed(1)}%` },
+              },
+            },
+            scales: {
+              ...chartDefaults.scales,
+              y: { ...chartDefaults.scales.y, max: 100, ticks: { color: '#7d8aab', callback: v => v + '%' } },
+            },
+          },
+        });
+      }
+
+      // ── Line chart (timeseries by group for year) ──────────────────
+
+      async function loadTimeseries(year) {
+        document.getElementById('tsYear').textContent = year;
+        try {
+          const res = await fetch(`/api/timeseries?year=${year}`);
+          if (!res.ok) return;
+          const data = await res.json();
+
+          // Group by group_name → month series
+          const groups = {};
+          for (const pt of data.points) {
+            if (!activeGroups.has(pt.group) && activeGroups.size < allStats.length) {
+              // only filter if not all-active
+            }
+            if (!groups[pt.group]) groups[pt.group] = {};
+            groups[pt.group][pt.month] = +(pt.not_meet_rate * 100).toFixed(1);
+          }
+
+          const allMonths = [...new Set(data.points.map(p => p.month))].sort((a,b)=>a-b);
+          const labels = allMonths.map(m => `T${m}`);
+
+          const datasets = Object.keys(groups).map((grp, i) => ({
+            label: grp,
+            data: allMonths.map(m => groups[grp][m] ?? null),
+            borderColor: COLORS[i % COLORS.length].border,
+            backgroundColor: COLORS[i % COLORS.length].bg,
+            tension: 0.35,
+            pointRadius: 4,
+            spanGaps: true,
+          }));
+
+          const ctx = document.getElementById('chartLine');
+          if (chartLine) chartLine.destroy();
+          chartLine = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+              ...chartDefaults,
+              plugins: {
+                ...chartDefaults.plugins,
+                tooltip: {
+                  callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)}%` },
+                },
+              },
+              scales: {
+                ...chartDefaults.scales,
+                y: { ...chartDefaults.scales.y, max: 100, ticks: { color: '#7d8aab', callback: v => v + '%' } },
+              },
+            },
+          });
+        } catch {}
+      }
+
+      // ── Upload & polling ───────────────────────────────────────────
+
+      document.getElementById('fileInput').addEventListener('change', (e) => {
+        const f = e.target.files[0];
+        document.getElementById('fileLabel').textContent = f ? f.name : 'Chọn file .xlsx';
+      });
+
+      document.getElementById('uploadBtn').addEventListener('click', async () => {
+        const file = document.getElementById('fileInput').files[0];
+        const statusEl = document.getElementById('uploadStatus');
+        if (!file) {
+          statusEl.className = 'status-msg error';
+          statusEl.textContent = 'Vui lòng chọn file .xlsx trước.';
+          return;
+        }
+        statusEl.className = 'status-msg';
+        statusEl.textContent = 'Uploading...';
+        const form = new FormData();
+        form.append('file', file);
+        try {
+          const res = await fetch('/api/ingest/excel', { method: 'POST', body: form });
+          const text = await res.text();
+          if (!res.ok) {
+            statusEl.className = 'status-msg error';
+            statusEl.textContent = `Lỗi: ${text}`;
+            return;
+          }
+          const data = JSON.parse(text);
+          pollJob(data.job_id);
+        } catch (err) {
+          statusEl.className = 'status-msg error';
+          statusEl.textContent = `Lỗi mạng: ${err?.message || err}`;
+        }
+      });
+
+      async function pollJob(jobId) {
+        const statusEl = document.getElementById('uploadStatus');
+        const progWrap = document.getElementById('progressWrap');
+        const progBar  = document.getElementById('progressBar');
+        progWrap.style.display = 'block';
+
+        for (let i = 0; i < 600; i++) {
+          await new Promise(r => setTimeout(r, 1000));
+          try {
+            const res  = await fetch(`/api/ingest/jobs/${jobId}`);
+            const data = await res.json();
+            if (!res.ok) {
+              statusEl.className = 'status-msg error';
+              statusEl.textContent = `Job error: ${JSON.stringify(data)}`;
+              progWrap.style.display = 'none';
+              return;
+            }
+            const processed = data.processed_rows || 0;
+            const total     = data.total_rows     || 0;
+            const pct = total > 0 ? Math.min(100, (processed / total) * 100) : 0;
+            progBar.style.width = pct + '%';
+
+            if (data.status === 'running' || data.status === 'pending') {
+              const totalText = total > 0 ? `/${fmtInt(total)}` : '';
+              statusEl.className = 'status-msg';
+              statusEl.textContent = `Đang xử lý... ${fmtInt(processed)}${totalText} dòng — thêm: ${fmtInt(data.inserted)} — lỗi: ${fmtInt(data.invalid)}`;
+              continue;
+            }
+            progWrap.style.display = 'none';
+            if (data.status === 'completed') {
+              statusEl.className = 'status-msg ok';
+              statusEl.textContent = `✓ Hoàn tất — thêm: ${fmtInt(data.inserted)} | bỏ qua: ${fmtInt(data.skipped)} | lỗi: ${fmtInt(data.invalid)}`;
+              loadAvailableMonths();
+            } else {
+              statusEl.className = 'status-msg error';
+              statusEl.textContent = `✗ Thất bại: ${data.error || 'lỗi không xác định'}`;
+            }
+            return;
+          } catch {}
+        }
+        progWrap.style.display = 'none';
+        statusEl.className = 'status-msg error';
+        statusEl.textContent = 'Timeout chờ job.';
+      }
+
+      document.getElementById('loadBtn').addEventListener('click', loadStats);
+
+      // ── Init ───────────────────────────────────────────────────────
+      loadAvailableMonths();
+    </script>
+  </body>
+</html>

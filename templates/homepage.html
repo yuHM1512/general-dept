@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Manufacturing Management Portal - {{ department_name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      transform: translateY(-8px);
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.05);
+    }
+
+    .brand-gradient {
+      background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .module-icon {
+      transition: all 0.4s ease;
+    }
+
+    .glass-card:hover .module-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .bg-blob {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      z-index: -1;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-start p-6 pt-24 md:p-10 relative overflow-y-auto figma-ui">
+  <div class="bg-blob bg-blue-100 top-[-100px] left-[-100px] animate-pulse"></div>
+  <div class="bg-blob bg-indigo-100 bottom-[-100px] right-[-100px] animate-pulse" style="animation-delay: 2s"></div>
+
+  <div class="absolute top-8 right-8 z-50 flex items-center gap-4">
+    {% if user %}
+    <div class="flex flex-col items-end">
+      <span class="text-sm font-black text-slate-800">{{ user.name }}</span>
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ user.department }}</span>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-end">
+      <span class="text-sm font-black text-slate-800">Guest</span>
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ department_name }}</span>
+    </div>
+    {% endif %}
+    <div class="h-12 w-12 rounded-2xl bg-white shadow-lg border border-slate-100 flex items-center justify-center text-accent">
+      <span class="material-symbols-outlined !text-3xl">account_circle</span>
+    </div>
+  </div>
+
+  <div class="max-w-5xl w-full space-y-12 relative z-10">
+    <header class="text-center space-y-4">
+      <div class="flex justify-center mb-6">
+        <img src="/static/Logo.png" alt="Logo" class="h-20 w-auto object-contain" />
+      </div>
+      <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border border-blue-100/50 shadow-sm">
+        M29 Digital Team
+      </div>
+      <h1 class="text-6xl font-[900] text-slate-800 tracking-tight leading-tight">
+        Cổng công cụ số<br />
+        <span class="brand-gradient">{{ department_name }}</span>
+      </h1>
+      <p class="text-slate-500 text-lg max-w-2xl mx-auto font-medium">
+        Trang tổng hợp module và dashboard phục vụ vận hành nội bộ.
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <a href="/rcp" class="glass-card p-10 rounded-[3rem] group">
+        <div class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-emerald-200 module-icon">
+          <span class="material-symbols-outlined !text-4xl">paid</span>
+        </div>
+        <h3 class="text-2xl font-bold text-slate-800 mb-3 group-hover:text-emerald-700 transition-colors">Dự án thu nhập đủ sống</h3>
+        <p class="text-slate-500 text-sm leading-relaxed mb-6">
+          Nạp dữ liệu lương (Excel), phân nhóm tự động và đối chiếu mức thu nhập so với mục tiêu Living Wage.
+        </p>
+        <div class="flex items-center gap-2 text-emerald-700 font-bold text-sm">
+          Truy cập dự án
+          <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+        </div>
+      </a>
+
+      <div class="glass-card p-10 rounded-[3rem] opacity-50 grayscale cursor-not-allowed flex flex-col items-center justify-center min-h-[300px] text-center">
+        <div class="w-16 h-16 bg-slate-200 text-slate-400 rounded-2xl flex items-center justify-center mb-6">
+          <span class="material-symbols-outlined !text-4xl">hourglass_empty</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-600 mb-2">Module mới</h3>
+        <div class="inline-flex px-3 py-1 bg-slate-100 text-slate-400 rounded-lg text-[10px] uppercase font-bold tracking-wider">
+          Sắp ra mắt
+        </div>
+      </div>
+
+      <div class="glass-card p-10 rounded-[3rem] opacity-50 grayscale cursor-not-allowed flex flex-col items-center justify-center min-h-[300px] text-center">
+        <div class="w-16 h-16 bg-slate-200 text-slate-400 rounded-2xl flex items-center justify-center mb-6">
+          <span class="material-symbols-outlined !text-4xl">hourglass_empty</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-600 mb-2">Module mới</h3>
+        <div class="inline-flex px-3 py-1 bg-slate-100 text-slate-400 rounded-lg text-[10px] uppercase font-bold tracking-wider">
+          Sắp ra mắt
+        </div>
+      </div>
+    </div>
+
+    <footer class="pt-8 text-center">
+      <p class="text-slate-400 text-xs font-medium uppercase tracking-[0.2em]">
+        M29 Digital Team • Advanced Manufacturing Solutions
+      </p>
+    </footer>
+  </div>
+</body>
+
+</html>
+

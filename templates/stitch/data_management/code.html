@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Data Management | Living Wage Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#00487f",
+                    "primary": "#004275",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#d2e4ff",
+                    "on-tertiary-container": "#82decd",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#00201b",
+                    "surface-bright": "#f9f9fa",
+                    "inverse-primary": "#a1c9ff",
+                    "secondary-fixed-dim": "#88d982",
+                    "secondary-container": "#a0f399",
+                    "on-surface-variant": "#414750",
+                    "error-container": "#ffdad6",
+                    "primary-container": "#005a9c",
+                    "inverse-surface": "#2f3132",
+                    "surface": "#f9f9fa",
+                    "tertiary-container": "#006357",
+                    "on-secondary-fixed": "#002204",
+                    "surface-container": "#edeeef",
+                    "on-background": "#1a1c1d",
+                    "on-tertiary-fixed-variant": "#005047",
+                    "primary-fixed-dim": "#a1c9ff",
+                    "surface-tint": "#1261a3",
+                    "tertiary-fixed": "#97f3e2",
+                    "on-error": "#ffffff",
+                    "surface-variant": "#e2e2e3",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed-dim": "#7ad7c6",
+                    "surface-container-highest": "#e2e2e3",
+                    "secondary": "#1b6d24",
+                    "surface-container-high": "#e8e8e9",
+                    "tertiary": "#004940",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#f3f3f4",
+                    "on-error-container": "#93000a",
+                    "outline": "#727781",
+                    "background": "#f9f9fa",
+                    "secondary-fixed": "#a3f69c",
+                    "surface-dim": "#d9dadb",
+                    "on-surface": "#1a1c1d",
+                    "on-primary-fixed": "#001c37",
+                    "on-primary-container": "#afd1ff",
+                    "on-secondary-container": "#217128",
+                    "on-secondary-fixed-variant": "#005312",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#c1c7d2",
+                    "inverse-on-surface": "#f0f1f1"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-header {
+            background: rgba(249, 249, 250, 0.8);
+            backdrop-filter: blur(24px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<header class="bg-slate-50/80 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-sm">
+<div class="flex justify-between items-center px-8 h-16 w-full max-w-screen-2xl mx-auto">
+<div class="text-xl font-bold tracking-tighter text-blue-900">Living Wage Portal</div>
+<nav class="hidden md:flex items-center gap-8 font-manrope tracking-tight font-semibold">
+<a class="text-slate-500 font-medium hover:text-blue-800 transition-colors" href="#">Home</a>
+<a class="text-blue-900 border-b-2 border-blue-900 pb-1" href="#">Data Management</a>
+<a class="text-slate-500 font-medium hover:text-blue-800 transition-colors" href="#">Dashboard</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-200/50 transition-colors text-blue-900">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-200/50 transition-colors text-blue-900">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-slate-200 overflow-hidden ring-2 ring-white">
+<img alt="User profile" data-alt="Close-up headshot of a professional man in a workspace with soft natural window lighting and blurred office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAidsDGIqPp9SVkRuertErdnz-tUsED7ln-Rp-C4SvS8n321Kedrn42amWujMu9Z2DNBs9Lv-QFCkvJpUTQPCk6xBDL1n6ql_0ZJykGtfHMwuQlOyRreG-Q_4GbLn9O2bX0AXKNSIUD6JNxL2yPB5m35gIXQb1HpXDsrTJkpzy6VWXJ6r558cEI2adzD4VnS-E8fPICTd4CbutGX8WQDkCBbTthvmMlpGeiJKJ05m66FY7z9BI6elZTlqCIfQMRV57Qx3_R4qRnss4"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-screen-2xl mx-auto px-8 py-12">
+<!-- Editorial Header -->
+<div class="mb-12">
+<h1 class="font-headline font-extrabold text-5xl tracking-tighter text-primary mb-4">Data Orchestration</h1>
+<p class="text-on-surface-variant max-w-2xl text-lg leading-relaxed">
+                Seamlessly ingest and validate corporate compensation data. Our architected workflow ensures every record adheres to global ethical standards before reaching the analysis stage.
+            </p>
+</div>
+<!-- Bento Grid Section: Upload & Analytics Summary -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
+<!-- Upload Area (Large Bento Cell) -->
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-xl p-10 flex flex-col items-center justify-center border-2 border-dashed border-outline-variant/30 hover:border-primary/40 transition-all group min-h-[360px]">
+<div class="w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="upload_file">upload_file</span>
+</div>
+<h3 class="font-headline font-bold text-2xl text-on-surface mb-2">Upload Excel Dataset</h3>
+<p class="text-on-surface-variant mb-8 text-center max-w-sm">Drag and drop your spreadsheet here or <span class="text-primary font-semibold cursor-pointer underline underline-offset-4">browse files</span></p>
+<div class="flex gap-4 items-center">
+<span class="text-xs font-label uppercase tracking-widest text-outline">Supported: .XLSX, .CSV</span>
+<span class="h-1 w-1 rounded-full bg-outline-variant"></span>
+<span class="text-xs font-label uppercase tracking-widest text-outline">Max Size: 50MB</span>
+</div>
+</div>
+<!-- Contextual Insight (Small Bento Cell) -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<div class="flex-1 bg-primary text-on-primary rounded-xl p-8 relative overflow-hidden bg-gradient-to-br from-primary to-primary-container">
+<div class="relative z-10">
+<span class="text-primary-fixed-dim text-sm font-label uppercase tracking-widest mb-4 block">Current Status</span>
+<div class="font-headline font-extrabold text-4xl mb-2">94.2%</div>
+<p class="text-primary-fixed opacity-80 text-sm">Average data validation health across active surveys.</p>
+</div>
+<div class="absolute -bottom-4 -right-4 opacity-10">
+<span class="material-symbols-outlined text-9xl" data-icon="verified">verified</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low rounded-xl p-8">
+<span class="text-on-surface-variant text-sm font-label uppercase tracking-widest mb-4 block">Integration Map</span>
+<div class="flex items-center justify-between mb-2">
+<span class="font-semibold">SAP Concur</span>
+<span class="text-secondary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span>
+                            Active
+                        </span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-semibold">Workday</span>
+<span class="text-outline font-medium">Disconnected</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Table Section -->
+<div class="bg-surface-container-lowest rounded-xl p-1 shadow-sm">
+<!-- Table Header / Filters -->
+<div class="p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="relative w-full md:w-96">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full bg-surface-container-high border-none rounded-lg pl-12 pr-4 py-3 focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-lowest transition-all placeholder:text-outline-variant" placeholder="Search by company or region..." type="text"/>
+</div>
+<div class="flex gap-3 w-full md:w-auto">
+<button class="flex items-center gap-2 px-5 py-3 rounded-lg text-on-surface font-semibold hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="filter_list">filter_list</span>
+                        Filters
+                    </button>
+<button class="flex-1 md:flex-none bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-3 rounded-lg font-bold shadow-md hover:opacity-90 active:scale-95 transition-all">
+                        Export Report
+                    </button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low/50 border-none">
+<tr>
+<th class="px-8 py-4 text-xs font-label uppercase tracking-widest text-on-surface-variant">Company Name</th>
+<th class="px-8 py-4 text-xs font-label uppercase tracking-widest text-on-surface-variant">Region</th>
+<th class="px-8 py-4 text-xs font-label uppercase tracking-widest text-on-surface-variant">Current Wage</th>
+<th class="px-8 py-4 text-xs font-label uppercase tracking-widest text-on-surface-variant">Employees</th>
+<th class="px-8 py-4 text-xs font-label uppercase tracking-widest text-on-surface-variant">Status</th>
+<th class="px-8 py-4 text-xs font-label uppercase tracking-widest text-on-surface-variant">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5">
+<div class="font-headline font-bold text-on-surface">Evergreen Logistics</div>
+<div class="text-xs text-on-surface-variant">Ref: #EV-2024-01</div>
+</td>
+<td class="px-8 py-5 text-on-surface-variant font-medium">Scandinavia</td>
+<td class="px-8 py-5">
+<div class="text-primary font-bold">€24.50/hr</div>
+<div class="text-[10px] text-secondary font-bold uppercase tracking-tight">+12% vs LW</div>
+</td>
+<td class="px-8 py-5 font-medium">1,240</td>
+<td class="px-8 py-5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                    Verified
+                                </span>
+</td>
+<td class="px-8 py-5">
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5">
+<div class="font-headline font-bold text-on-surface">Atlas Manufacturing</div>
+<div class="text-xs text-on-surface-variant">Ref: #AT-2024-09</div>
+</td>
+<td class="px-8 py-5 text-on-surface-variant font-medium">Southeast Asia</td>
+<td class="px-8 py-5">
+<div class="text-primary font-bold">$4.10/hr</div>
+<div class="text-[10px] text-error font-bold uppercase tracking-tight">-18% vs LW</div>
+</td>
+<td class="px-8 py-5 font-medium">4,800</td>
+<td class="px-8 py-5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-container text-on-error-container text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                                    Review Required
+                                </span>
+</td>
+<td class="px-8 py-5">
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5">
+<div class="font-headline font-bold text-on-surface">Nova Retail Group</div>
+<div class="text-xs text-on-surface-variant">Ref: #NV-2023-44</div>
+</td>
+<td class="px-8 py-5 text-on-surface-variant font-medium">North America</td>
+<td class="px-8 py-5">
+<div class="text-primary font-bold">$19.80/hr</div>
+<div class="text-[10px] text-tertiary-container font-bold uppercase tracking-tight">At Living Wage</div>
+</td>
+<td class="px-8 py-5 font-medium">12,150</td>
+<td class="px-8 py-5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                                    Processing
+                                </span>
+</td>
+<td class="px-8 py-5">
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5">
+<div class="font-headline font-bold text-on-surface">Summit Tech Solutions</div>
+<div class="text-xs text-on-surface-variant">Ref: #ST-2024-12</div>
+</td>
+<td class="px-8 py-5 text-on-surface-variant font-medium">Western Europe</td>
+<td class="px-8 py-5">
+<div class="text-primary font-bold">€21.00/hr</div>
+<div class="text-[10px] text-secondary font-bold uppercase tracking-tight">+4% vs LW</div>
+</td>
+<td class="px-8 py-5 font-medium">850</td>
+<td class="px-8 py-5">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                    Verified
+                                </span>
+</td>
+<td class="px-8 py-5">
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-8 py-6 border-t border-surface-container-high flex items-center justify-between">
+<span class="text-sm text-on-surface-variant font-medium">Showing 1 to 4 of 284 results</span>
+<div class="flex gap-2">
+<button class="px-4 py-2 rounded border border-outline-variant/30 text-on-surface font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50" disabled="">Previous</button>
+<button class="px-4 py-2 rounded bg-primary text-on-primary font-bold shadow hover:opacity-90 transition-all">Next</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-50 full-width border-t border-slate-200">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 py-12 w-full max-w-screen-2xl mx-auto">
+<div class="text-sm font-inter text-slate-500 mb-4 md:mb-0">
+                © 2024 Ethical Architect Living Wage Initiative. All rights reserved.
+            </div>
+<div class="flex gap-8">
+<a class="text-slate-500 hover:text-blue-600 hover:underline transition-all text-sm font-inter" href="#">Privacy Policy</a>
+<a class="text-slate-500 hover:text-blue-600 hover:underline transition-all text-sm font-inter" href="#">Methodology</a>
+<a class="text-slate-500 hover:text-blue-600 hover:underline transition-all text-sm font-inter" href="#">Support</a>
+</div>
+</div>
+</footer>
+</body></html>

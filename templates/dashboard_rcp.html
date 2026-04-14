@@ -1,0 +1,916 @@
+{% extends "base.html" %}
+{% block title %}Báo cáo | {{ app_name }}{% endblock %}
+
+{% block head_extra %}
+{# rcp #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<section class="space-y-10">
+  <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <div>
+        <h2 class="text-2xl font-bold text-on-surface">Báo cáo theo nhóm</h2>
+        <p class="mt-2 text-sm text-on-surface-variant">
+          Đối chiếu “Lương trong giờ + Chế độ (thực tế)” theo tháng và theo 3 nhóm.
+        </p>
+      </div>
+      <div class="w-full lg:max-w-4xl">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5 items-end">
+        <div class="lg:col-span-2">
+          <label class="text-sm font-semibold text-on-surface">Năm</label>
+          <input id="yearInput" class="mt-2 w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40" type="number" value="2026" min="2000" max="2100" />
+        </div>
+        <div class="lg:col-span-2">
+          <label class="text-sm font-semibold text-on-surface">Tháng</label>
+          <select id="monthSelect" class="mt-2 w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40">
+            <option value="all">Tất cả</option>
+          </select>
+        </div>
+        <div class="lg:col-span-2">
+          <label class="text-sm font-semibold text-on-surface">Nhóm</label>
+          <select id="groupSelect" class="mt-2 w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40">
+            <option value="">Tất cả</option>
+            <option value="Cắt/Tổ Cắt">Cắt/Tổ Cắt</option>
+            <option value="Vệ sinh công nghiệp">VSCN</option>
+            <option value="Khác">Khác</option>
+          </select>
+        </div>
+        <div class="relative lg:col-span-2">
+          <label class="text-sm font-semibold text-on-surface">Cơ sở</label>
+          <div class="mt-2 relative">
+            <input id="coSoInput" class="w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/40" placeholder="Tất cả" autocomplete="off" />
+            <button id="coSoToggle" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-lg">expand_more</span>
+            </button>
+          </div>
+          <div id="coSoList" class="hidden absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl bg-surface-container-lowest shadow-sm ring-1 ring-outline-variant/30"></div>
+        </div>
+        <div class="relative lg:col-span-2">
+          <label class="text-sm font-semibold text-on-surface">Đơn vị</label>
+          <div class="mt-2 relative">
+            <input id="donViInput" class="w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/40" placeholder="Tất cả" autocomplete="off" />
+            <button id="donViToggle" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-lg">expand_more</span>
+            </button>
+          </div>
+          <div id="donViList" class="hidden absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl bg-surface-container-lowest shadow-sm ring-1 ring-outline-variant/30"></div>
+        </div>
+        <div class="relative lg:col-span-2">
+          <label class="text-sm font-semibold text-on-surface">Bộ phận</label>
+          <div class="mt-2 relative">
+            <input id="deptInput" class="w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/40" placeholder="Tất cả" autocomplete="off" />
+            <button id="deptToggle" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-lg">expand_more</span>
+            </button>
+          </div>
+          <div id="deptList" class="hidden absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl bg-surface-container-lowest shadow-sm ring-1 ring-outline-variant/30"></div>
+        </div>
+        </div>
+
+        <div class="mt-5 flex items-center justify-between gap-4">
+          <div class="text-sm text-on-surface-variant min-h-[20px]">
+            <span id="loadStatus"></span>
+          </div>
+          <button id="refreshBtn" type="button" class="px-6 py-3 rounded-xl font-bold text-on-primary editorial-gradient hover:opacity-95 transition-all">
+            Làm mới
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+    <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-on-primary-fixed-variant">
+      <div>
+        <span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Lương bình quân</span>
+        <div class="mt-4 text-5xl font-extrabold text-on-primary-fixed-variant tracking-tighter tabular-nums" id="kpiAvgWage">—</div>
+      </div>
+      <div class="mt-6 text-[#FF8C00] font-semibold" id="kpiTargetNote">Mục tiêu — VND</div>
+      <span id="targetBox" class="hidden" data-target="{{ target_salary_vnd }}">{{ target_salary_vnd }}</span>
+    </div>
+
+    <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-on-primary-fixed-variant">
+      <div>
+        <span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Tỉ lệ đạt vs mục tiêu</span>
+        <div class="mt-4 text-5xl font-extrabold tracking-tighter tabular-nums" id="kpiRatio">—</div>
+      </div>
+      <div class="mt-6 text-sm text-on-surface-variant" id="kpiRatioNote">So với mục tiêu 5.600.000 VND</div>
+    </div>
+
+    <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-on-primary-fixed-variant">
+      <div>
+        <span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Số lượng nhân viên</span>
+        <div class="mt-4 text-5xl font-extrabold text-on-primary-fixed-variant tracking-tighter tabular-nums" id="totalCount">—</div>
+      </div>
+      <div class="mt-6 text-on-surface-variant text-sm">
+        <span id="scopeHint">—</span> • <span id="kpiDonViCount">—</span> đơn vị tham gia
+      </div>
+    </div>
+
+    <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-on-primary-fixed-variant">
+      <div>
+        <span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Nhóm chọn mẫu</span>
+        <div class="mt-4 text-5xl font-extrabold text-on-primary-fixed-variant tracking-tighter tabular-nums" id="kpiGroupSample">—</div>
+      </div>
+      <div class="mt-6 flex items-center gap-2 font-medium" id="kpiGroupSampleNote">
+        <span class="material-symbols-outlined">warning</span>
+        <span>—</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+    <div class="lg:col-span-7 bg-surface-container-lowest p-8 rounded-xl shadow-sm h-full flex flex-col">
+      <div class="flex items-start justify-between mb-4 gap-4">
+        <div class="space-y-2">
+          <div class="inline-flex items-center px-6 py-3 rounded-xl text-on-primary font-extrabold editorial-gradient shadow-sm">
+            Bình quân Lương ngoài giờ và chế độ - Theo nhóm
+          </div>
+          <div class="flex flex-wrap items-center gap-6 text-xs font-bold tracking-widest text-on-surface-variant uppercase">
+            <span class="inline-flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+              Lương BQ trong giờ
+            </span>
+            <span class="inline-flex items-center gap-2">
+              <span class="w-10 h-0.5 bg-[#FF8C00] rounded"></span>
+              Target
+            </span>
+            <span id="mixedDeltaChip" class="ml-auto px-3 py-1 rounded-full text-xs font-bold tabular-nums bg-surface-container-high text-on-surface-variant">
+              Δ so với Target: -
+            </span>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-primary text-3xl">bar_chart</span>
+      </div>
+      <div class="flex-1 min-h-[320px]">
+        <canvas id="mixedChart"></canvas>
+      </div>
+    </div>
+
+    <div class="lg:col-span-5 bg-surface-container-lowest p-8 rounded-xl shadow-sm h-full flex flex-col">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div class="inline-flex items-center px-6 py-3 rounded-xl text-on-primary font-extrabold editorial-gradient shadow-sm">
+          Insight theo nhóm
+        </div>
+        <span class="material-symbols-outlined text-tertiary text-3xl">table_chart</span>
+      </div>
+      <div class="bg-surface overflow-x-auto flex-1 rounded-xl">
+        <table class="w-full text-sm table-fixed">
+          <thead class="text-on-surface-variant">
+            <tr>
+              <th class="text-left px-5 py-3 font-semibold">Nhóm</th>
+              <th class="text-right px-5 py-3 font-semibold">Min</th>
+              <th class="text-right px-5 py-3 font-semibold">Max</th>
+              <th class="text-right px-5 py-3 font-semibold">Trung vị</th>
+              <th class="text-right px-5 py-3 font-semibold">Trung bình</th>
+            </tr>
+          </thead>
+          <tbody id="insightBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+    <div class="flex items-start justify-between mb-4 gap-4">
+      <div class="space-y-2">
+        <div class="inline-flex items-center px-6 py-3 rounded-xl text-on-primary font-extrabold editorial-gradient shadow-sm">
+          Bình quân Lương ngoài giờ và chế độ - Theo tháng
+        </div>
+        <div class="flex flex-wrap items-center gap-6 text-xs font-bold tracking-widest text-on-surface-variant uppercase">
+          <span class="inline-flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+            Lương BQ trong giờ
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <span class="w-10 h-0.5 bg-[#FF8C00] rounded"></span>
+            Target
+          </span>
+          <span id="monthDeltaChip" class="ml-auto px-3 py-1 rounded-full text-xs font-bold tabular-nums bg-surface-container-high text-on-surface-variant">
+            Δ so với Target: -
+          </span>
+        </div>
+      </div>
+      <span class="material-symbols-outlined text-primary text-3xl">show_chart</span>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+      <div class="lg:col-span-7 h-[360px]">
+        <canvas id="monthTrendChart"></canvas>
+      </div>
+      <div class="lg:col-span-5 h-[360px] bg-surface-container-low rounded-xl p-6 overflow-auto">
+        <div class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase mb-4">
+          Bảng theo tháng
+        </div>
+        <table class="w-full text-sm">
+          <thead class="text-xs uppercase tracking-widest text-on-surface-variant">
+            <tr>
+              <th class="text-left pb-3">Cơ sở</th>
+              <th class="text-left pb-3">Tháng</th>
+              <th class="text-right pb-3">Lương BQ trong giờ</th>
+              <th class="text-right pb-3">Chi tiết</th>
+            </tr>
+          </thead>
+          <tbody id="monthTrendBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</section>
+{% endblock %}
+
+{% block body_extra %}
+<script>
+  const fmtInt = (n) => new Intl.NumberFormat("vi-VN").format(n);
+  const fmtVnd = (n) => fmtInt(n).replaceAll(",", ".");
+  const fmtK = (vnd) => fmtVnd(Math.round(Number(vnd || 0) / 1000));
+  const shortGroupLabel = (label) => (label === "Vệ sinh công nghiệp" ? "VSCN" : label);
+
+  const targetEl = document.getElementById("targetBox");
+  const TARGET = Number(targetEl?.dataset?.target || targetEl?.textContent || 0);
+  const TARGET_COLOR = "#FF8C00";
+
+  let mixedChart;
+  let monthTrendChart;
+
+  let optionsCoSo = [];
+  let optionsDonVi = [];
+  let optionsDept = [];
+
+  const normalizeText = (s) => (s || "").toString().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+
+  function updateDeltaChip(elId, barValuesVnd) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const values = (barValuesVnd || []).map((v) => Number(v || 0)).filter((v) => isFinite(v) && v > 0);
+    if (!values.length || !TARGET) {
+      el.textContent = "Δ so với Target: -";
+      el.className = "ml-auto px-3 py-1 rounded-full text-xs font-bold tabular-nums bg-surface-container-high text-on-surface-variant";
+      return;
+    }
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const diffVnd = mean - TARGET;
+    const diffK = Math.round(diffVnd / 1000);
+    const pct = (diffVnd / TARGET) * 100;
+    const sign = diffK >= 0 ? "+" : "-";
+    const pctAbs = Math.abs(pct).toFixed(1);
+    el.textContent = `Δ so với Target: ${sign}${fmtInt(Math.abs(diffK))}k (${sign}${pctAbs}%)`;
+    el.className =
+      "ml-auto px-3 py-1 rounded-full text-xs font-bold tabular-nums " +
+      (diffVnd >= 0 ? "bg-secondary-container text-on-secondary-container" : "bg-error-container text-on-error-container");
+  }
+
+  function weightedAvgVnd(byGroup) {
+    const rows = Array.isArray(byGroup) ? byGroup : [];
+    let sum = 0;
+    let n = 0;
+    for (const r of rows) {
+      const c = Number(r.count || 0);
+      const a = Number(r.avg_vnd || 0);
+      if (!isFinite(c) || !isFinite(a) || c <= 0) continue;
+      sum += a * c;
+      n += c;
+    }
+    return n ? Math.round(sum / n) : 0;
+  }
+
+  function normalizeGroupKey(label) {
+    const raw = (label || "").toString().trim();
+    if (raw === "Vệ sinh công nghiệp") return "Vệ sinh công nghiệp";
+    if (raw === "Cắt/Tổ Cắt") return "Cắt/Tổ Cắt";
+    if (raw === "Khác") return "Khác";
+    return raw;
+  }
+
+  function fillGroupAvgs(byGroup) {
+    const base = { "Cắt/Tổ Cắt": 0, "Vệ sinh công nghiệp": 0, "Khác": 0 };
+    for (const r of Array.isArray(byGroup) ? byGroup : []) {
+      const k = normalizeGroupKey(r.group);
+      if (k in base) base[k] = Number(r.avg_vnd || 0);
+    }
+    return base;
+  }
+
+  function updateKpiCards({ year, month, view, kpiData, scopeLabel }) {
+    const avgVnd = weightedAvgVnd(kpiData?.by_group);
+    const avgEl = document.getElementById("kpiAvgWage");
+    if (avgEl) avgEl.textContent = avgVnd ? fmtVnd(avgVnd) : "0";
+
+    const targetNote = document.getElementById("kpiTargetNote");
+    if (targetNote) targetNote.textContent = `Mục tiêu ${fmtVnd(TARGET)} VND`;
+
+    const ratio = TARGET ? (avgVnd / TARGET) * 100 : 0;
+    const ratioEl = document.getElementById("kpiRatio");
+    const ratioNoteEl = document.getElementById("kpiRatioNote");
+    const ok = ratio >= 100;
+    if (ratioEl) {
+      ratioEl.textContent = `${ratio.toFixed(1)}%`;
+      ratioEl.className = `mt-4 text-5xl font-extrabold tracking-tighter tabular-nums ${ok ? "text-secondary" : "text-error"}`;
+    }
+    if (ratioNoteEl) ratioNoteEl.textContent = ok ? "Đạt / vượt mục tiêu" : "Chưa đạt mục tiêu";
+
+    const sampleEl = document.getElementById("kpiGroupSample");
+    const sampleNoteEl = document.getElementById("kpiGroupSampleNote");
+    const groupAvgs = fillGroupAvgs(kpiData?.by_group);
+    const meetCount = Object.values(groupAvgs).filter((v) => Number(v || 0) >= TARGET).length;
+    const belowCount = 3 - meetCount;
+    if (sampleEl) sampleEl.textContent = `${meetCount}/3`;
+    if (sampleNoteEl) {
+      if (belowCount > 0) {
+        sampleNoteEl.className = "mt-6 flex items-center gap-2 text-error font-medium";
+        sampleNoteEl.innerHTML = `<span class="material-symbols-outlined">warning</span><span>${belowCount} nhóm dưới mục tiêu</span>`;
+      } else {
+        sampleNoteEl.className = "mt-6 flex items-center gap-2 text-secondary font-medium";
+        sampleNoteEl.innerHTML = `<span class="material-symbols-outlined">check_circle</span><span>Đạt mục tiêu</span>`;
+      }
+    }
+  }
+
+  function renderComboList(listEl, items, onPick) {
+    const btn = (label, value) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "w-full text-left px-4 py-2.5 hover:bg-surface-container-low transition-colors text-sm";
+      b.textContent = label;
+      b.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        onPick(value);
+      });
+      return b;
+    };
+    listEl.innerHTML = "";
+    listEl.appendChild(btn("Tất cả", ""));
+    if (!items.length) {
+      const empty = document.createElement("div");
+      empty.className = "px-4 py-3 text-sm text-on-surface-variant";
+      empty.textContent = "Không có dữ liệu";
+      listEl.appendChild(empty);
+      return;
+    }
+    for (const x of items.slice(0, 250)) listEl.appendChild(btn(x, x));
+  }
+
+  function setupCombo(inputId, toggleId, listId, getOptions, onChange) {
+    const input = document.getElementById(inputId);
+    const toggle = document.getElementById(toggleId);
+    const list = document.getElementById(listId);
+
+    const open = (forceAll) => {
+      const opts = getOptions();
+      const raw = (input.value || "").trim();
+      // If input already equals a valid option, default to showing full list so user can switch.
+      const shouldShowAll = !!forceAll || (raw !== "" && opts.includes(raw));
+      const q = shouldShowAll ? "" : normalizeText(raw);
+      const items = opts.filter((x) => normalizeText(x).includes(q));
+      renderComboList(list, items, (val) => {
+        input.value = val;
+        list.classList.add("hidden");
+        onChange();
+      });
+      list.classList.remove("hidden");
+    };
+
+    const close = () => list.classList.add("hidden");
+
+    input.addEventListener("focus", () => open(false));
+    input.addEventListener("input", () => open(false));
+    toggle.addEventListener("click", () => (list.classList.contains("hidden") ? open(true) : close()));
+    input.addEventListener("blur", () => setTimeout(close, 150));
+  }
+
+  function selectedValue(inputId, options) {
+    const val = (document.getElementById(inputId).value || "").trim();
+    if (!val) return null;
+    return options.includes(val) ? val : null;
+  }
+
+  const valueLabelPlugin = {
+    id: "valueLabelPlugin",
+    afterDatasetsDraw(chart) {
+      try {
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.font = "700 10px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      const topGuard = (chart.chartArea?.top ?? 0) + 12;
+      const targetK = TARGET / 1000;
+
+      const barDatasetIndex = 0;
+      const lineDatasetIndex = 1;
+
+      const barMeta = chart.getDatasetMeta(barDatasetIndex);
+      if (barMeta && !barMeta.hidden) {
+        barMeta.data.forEach((el, i) => {
+          const v = Number(chart.data.datasets[barDatasetIndex].data[i] || 0);
+          if (!isFinite(v) || v <= 0) return;
+          // Label color: không đạt -> đỏ, đạt/vượt -> xanh.
+          ctx.fillStyle = v < targetK ? "#b91c1c" : "#0040a1";
+          const props = el.getProps(["x", "y", "base"], true);
+          const centerY = (Number(props.y) + Number(props.base)) / 2;
+          const y = Math.max(topGuard, Math.min(centerY, (chart.chartArea?.bottom ?? centerY) - 12));
+          ctx.fillText(fmtInt(Math.round(v)), Number(props.x), y);
+        });
+      }
+
+      // Label target once (flat line)
+      const lineMeta = chart.getDatasetMeta(lineDatasetIndex);
+      if (lineMeta && !lineMeta.hidden && lineMeta.data && lineMeta.data.length) {
+        const lastIdx = lineMeta.data.length - 1;
+        const v = Number(chart.data.datasets[lineDatasetIndex].data[lastIdx] || 0);
+        const pos = lineMeta.data[lastIdx].tooltipPosition();
+        ctx.fillStyle = TARGET_COLOR;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "bottom";
+        const y = Math.max(pos.y - 2, topGuard);
+        ctx.fillText(`Target ${fmtInt(Math.round(v))}k`, pos.x + 8, y);
+      }
+
+      ctx.restore();
+      } catch (e) {
+        // Never block chart rendering because of label issues.
+        return;
+      }
+    },
+  };
+
+  function renderBarLine(canvasId, existingChart, labels, barValuesVnd) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return existingChart;
+    const ctx = canvas.getContext("2d");
+    if (existingChart) existingChart.destroy();
+    const barsK = barValuesVnd.map((v) => Number(v || 0) / 1000);
+    const targetK = TARGET / 1000;
+    return new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            type: "bar",
+            label: "Lương BQ trong giờ (nghìn VND)",
+            data: barsK,
+            backgroundColor: "rgba(0, 90, 156, 0.25)",
+            borderColor: "rgba(0, 90, 156, 0.55)",
+            borderWidth: 1,
+            borderRadius: 10,
+            borderSkipped: false,
+            maxBarThickness: 18,
+            categoryPercentage: 0.78,
+            barPercentage: 0.55,
+          },
+          {
+            type: "line",
+            label: "Target",
+            data: labels.map(() => targetK),
+            borderColor: TARGET_COLOR,
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            displayColors: false,
+            callbacks: {
+              label: (c) => {
+                const label = c.dataset.label || "";
+                const v = Number(c.parsed.y || 0);
+                if (label === "Target") return `Target: ${fmtInt(Math.round(v))} (nghìn VND)`;
+                const diff = v - targetK;
+                const pct = targetK ? (diff / targetK) * 100 : 0;
+                const sign = diff >= 0 ? "+" : "-";
+                const diffAbs = fmtInt(Math.round(Math.abs(diff)));
+                const pctAbs = Math.abs(pct).toFixed(1);
+                return [
+                  `Lương BQ trong giờ: ${fmtInt(Math.round(v))} (nghìn VND)`,
+                  `Chênh lệch: ${sign}${diffAbs}k (${sign}${pctAbs}%)`,
+                ];
+              },
+              labelTextColor: (c) => {
+                const label = c.dataset.label || "";
+                if (label === "Target") return TARGET_COLOR;
+                const v = Number(c.parsed.y || 0);
+                return v >= targetK ? "#16a34a" : "#b91c1c";
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: "#6b7280", font: { family: "Manrope, Inter, sans-serif", size: 11, weight: "700" }, maxRotation: 0, autoSkipPadding: 12 },
+          },
+          y: {
+            beginAtZero: true,
+            grace: "16%",
+            grid: { display: false },
+            ticks: {
+              display: false,
+            },
+          },
+        },
+        animation: { duration: 450 },
+        layout: { padding: { top: 24 } },
+      },
+      plugins: [valueLabelPlugin],
+    });
+  }
+
+  function renderMixed(labels, barValuesVnd) {
+    mixedChart = renderBarLine("mixedChart", mixedChart, labels, barValuesVnd);
+    updateDeltaChip("mixedDeltaChip", barValuesVnd);
+  }
+
+  function renderMonthTrend(labels, barValuesVnd) {
+    monthTrendChart = renderBarLine("monthTrendChart", monthTrendChart, labels, barValuesVnd);
+    updateDeltaChip("monthDeltaChip", barValuesVnd);
+  }
+
+  const ymLabel = (year, month) => `${year}-${String(month).padStart(2, "0")}`;
+
+  function renderMonthTrendTable(year, points, coSoLabel) {
+    const tbody = document.getElementById("monthTrendBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const groupName = document.getElementById("groupSelect").value || null;
+    const coSo = selectedValue("coSoInput", optionsCoSo);
+    const donVi = selectedValue("donViInput", optionsDonVi);
+    const dept = selectedValue("deptInput", optionsDept);
+
+    for (const p of points || []) {
+      const month = Number(p.month || 0);
+      if (!month) continue;
+      const avgVnd = Number(p.avg_vnd || 0);
+      const isMeet = avgVnd >= TARGET;
+      const pillClass = isMeet ? "bg-secondary-container text-on-secondary-container" : "bg-error-container text-on-error-container";
+
+      const tr = document.createElement("tr");
+      tr.className = "border-t border-outline-variant/40";
+      tr.innerHTML = `
+        <td class="py-3 pr-3 font-semibold">${coSoLabel}</td>
+        <td class="py-3 pr-3 text-on-surface-variant tabular-nums">${ymLabel(year, month)}</td>
+        <td class="py-3 pr-3 text-right">
+          <span class="px-3 py-1 rounded-full text-xs font-bold tabular-nums ${pillClass}">${fmtK(avgVnd)}</span>
+        </td>
+        <td class="py-3 text-right">
+          <button type="button" class="px-3 py-1.5 rounded-md bg-surface-container-high text-on-surface-variant hover:bg-surface-container transition-colors text-xs font-bold" data-month="${month}">
+            Chi tiết
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+
+      const detailsTr = document.createElement("tr");
+      detailsTr.className = "hidden";
+      detailsTr.dataset.month = String(month);
+      detailsTr.innerHTML = `
+        <td colspan="4" class="pb-4">
+          <div class="mt-2 rounded-xl bg-surface-container-high p-4 text-sm text-on-surface-variant">
+            <div class="month-detail max-h-56 overflow-auto" data-loaded="0">Đang tải...</div>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(detailsTr);
+
+      const btn = tr.querySelector("button[data-month]");
+      btn.addEventListener("click", async () => {
+        const open = detailsTr.classList.contains("hidden");
+        // close all others
+        tbody.querySelectorAll("tr[data-month]").forEach((row) => row.classList.add("hidden"));
+        if (!open) return;
+        detailsTr.classList.remove("hidden");
+
+        const box = detailsTr.querySelector(".month-detail");
+        if (box.dataset.loaded === "1") return;
+        box.textContent = "Đang tải...";
+        try {
+          const params = new URLSearchParams({ year: String(year), month: String(month) });
+          if (groupName) params.set("group_name", groupName);
+          if (coSo) params.set("co_so", coSo);
+          if (donVi) params.set("don_vi", donVi);
+          if (dept) params.set("department", dept);
+          const res = await fetch(`/api/trend/monthly-details?${params.toString()}`);
+          const payload = await res.json();
+          if (!res.ok) {
+            box.textContent = "Không tải được dữ liệu chi tiết.";
+            return;
+          }
+          const items = payload.items || [];
+          if (!items.length) {
+            box.textContent = "Không có dữ liệu chi tiết.";
+            box.dataset.loaded = "1";
+            return;
+          }
+          const wrapper = document.createElement("div");
+          wrapper.className = "space-y-3";
+          for (const dv of items) {
+            const dvRow = document.createElement("div");
+            dvRow.className = "rounded-lg bg-surface-container-low p-3";
+
+            const dvName = (dv.don_vi || "(Trống)").toString();
+            const dvAvg = Number(dv.avg_vnd || 0);
+            const dvMeet = dvAvg >= TARGET;
+            const dvPillClass = dvMeet ? "bg-secondary-container text-on-secondary-container" : "bg-error-container text-on-error-container";
+
+            dvRow.innerHTML = `
+              <div class="flex items-center justify-between gap-3">
+                <div class="font-semibold text-on-surface">${dvName}</div>
+                <span class="px-3 py-1 rounded-full text-xs font-bold tabular-nums ${dvPillClass}">${fmtK(dvAvg)}</span>
+              </div>
+            `;
+
+            const depts = dv.departments || [];
+            if (depts.length) {
+              const deptList = document.createElement("div");
+              deptList.className = "mt-2 grid grid-cols-1 gap-2";
+              for (const d of depts) {
+                const depName = (d.department || "(Trống)").toString();
+                const depAvg = Number(d.avg_vnd || 0);
+                const depMeet = depAvg >= TARGET;
+                const depPillClass = depMeet ? "bg-secondary-container text-on-secondary-container" : "bg-error-container text-on-error-container";
+                const row = document.createElement("div");
+                row.className = "flex items-center justify-between gap-3 text-sm";
+                row.innerHTML = `
+                  <div class="text-on-surface-variant">${depName}</div>
+                  <span class="px-3 py-1 rounded-full text-xs font-bold tabular-nums ${depPillClass}">${fmtK(depAvg)}</span>
+                `;
+                deptList.appendChild(row);
+              }
+              dvRow.appendChild(deptList);
+            }
+
+            wrapper.appendChild(dvRow);
+          }
+          box.innerHTML = "";
+          box.appendChild(wrapper);
+          box.dataset.loaded = "1";
+        } catch (e) {
+          box.textContent = "Không tải được dữ liệu chi tiết.";
+        }
+      });
+    }
+  }
+
+  async function loadMonthTrend(year, groupName, coSo, donVi, dept, reuseData) {
+    try {
+      let payload = reuseData;
+      if (!payload || !Array.isArray(payload.by_month) || payload.by_month.length === 0) {
+        const params = new URLSearchParams({ year: String(year), view: "year_avg" });
+        if (groupName) params.set("group_name", groupName);
+        if (coSo) params.set("co_so", coSo);
+        if (donVi) params.set("don_vi", donVi);
+        if (dept) params.set("department", dept);
+        const res = await fetch(`/api/insights?${params.toString()}`);
+        if (!res.ok) return;
+        payload = await res.json();
+      }
+      const byMonth = payload.by_month || [];
+      const labels = byMonth.map((x) => ymLabel(year, Number(x.month || 0)));
+      const values = byMonth.map((x) => x.avg_vnd);
+      renderMonthTrend(labels.length ? labels : ["-"], labels.length ? values : [0]);
+      renderMonthTrendTable(year, byMonth, coSo || "Tất cả");
+    } catch (e) {
+      return;
+    }
+  }
+
+  async function loadStats() {
+    const year = parseInt(document.getElementById("yearInput").value, 10);
+    const monthRaw = document.getElementById("monthSelect").value;
+    const month = monthRaw === "all" ? null : parseInt(monthRaw, 10);
+    const status = document.getElementById("loadStatus");
+    const groupName = document.getElementById("groupSelect").value || null;
+    const coSo = selectedValue("coSoInput", optionsCoSo);
+    const donVi = selectedValue("donViInput", optionsDonVi);
+    const dept = selectedValue("deptInput", optionsDept);
+    status.textContent = "Đang cập nhật...";
+
+    const view = month === null ? "year_avg" : "month";
+    const params = new URLSearchParams({ year: String(year), view });
+    if (month !== null) params.set("month", String(month));
+    if (groupName) params.set("group_name", groupName);
+    if (coSo) params.set("co_so", coSo);
+    if (donVi) params.set("don_vi", donVi);
+    if (dept) params.set("department", dept);
+
+    const res = await fetch(`/api/insights?${params.toString()}`);
+    const text = await res.text();
+    if (!res.ok) {
+      status.textContent = res.status === 409 ? "Đang ingest. Vui lòng chờ." : `Error: ${text}`;
+      return;
+    }
+    const data = JSON.parse(text);
+    status.textContent = "";
+
+    document.getElementById("scopeHint").textContent =
+      month === null ? `năm ${year} (bình quân tháng)` : `tháng ${month}/${year}`;
+
+    const tbody = document.getElementById("insightBody");
+    tbody.innerHTML = "";
+    const labels = [];
+    const barVals = [];
+
+    const byGroup = data.by_group || [];
+    if (!byGroup.length) {
+      tbody.innerHTML = `<tr><td class="px-5 py-6 text-on-surface-variant" colspan="5">Không có dữ liệu.</td></tr>`;
+      document.getElementById("totalCount").textContent = "0";
+      const dvEl = document.getElementById("kpiDonViCount");
+      if (dvEl) dvEl.textContent = "0";
+      updateKpiCards({ year, month, view, kpiData: { by_group: [] }, scopeLabel: document.getElementById("scopeHint").textContent });
+      renderMixed(["—"], [0]);
+      return;
+    }
+    for (const row of byGroup) {
+      labels.push(shortGroupLabel(row.group));
+      barVals.push(row.avg_vnd);
+      const avgVnd = Number(row.avg_vnd || 0);
+      const isMeet = avgVnd >= TARGET;
+      const diffPct = TARGET > 0 ? ((avgVnd - TARGET) / TARGET) * 100 : 0;
+      const note = `${diffPct >= 0 ? "+" : "-"}${Math.abs(diffPct).toFixed(1)}%`;
+      const tr = document.createElement("tr");
+      tr.className = "hover:bg-surface-container-low transition-colors";
+      tr.innerHTML = `
+        <td class="px-5 py-4 font-semibold">${shortGroupLabel(row.group)}</td>
+        <td class="px-5 py-4 text-right text-on-surface-variant tabular-nums">${fmtK(row.min_vnd)}</td>
+        <td class="px-5 py-4 text-right text-on-surface-variant tabular-nums">${fmtK(row.max_vnd)}</td>
+        <td class="px-5 py-4 text-right text-on-surface-variant tabular-nums">${fmtK(row.median_vnd)}</td>
+        <td class="px-5 py-4">
+          <div class="flex items-center justify-end gap-2">
+            <span class="px-3 py-1 rounded-full text-xs font-bold tabular-nums ${isMeet ? "bg-secondary-container text-on-secondary-container" : "bg-error-container text-on-error-container"}">
+              ${fmtK(row.avg_vnd)}
+            </span>
+            <span class="text-xs font-bold tabular-nums ${isMeet ? "text-secondary" : "text-error"}">
+              ${note}
+            </span>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+    // Headcount display:
+    // - Month selected: headcount for that month
+    // - Month=all: average headcount across available months
+    await updateHeadcount(year, month, groupName);
+    await updateParticipation(year, month, groupName);
+
+    // Chart behavior:
+    // - Nhóm = Tất cả: cột theo nhóm (Avg)
+    // - Nhóm cụ thể:
+    //   - Tháng cụ thể: 1 cột (Avg)
+    //   - Tháng = Tất cả: cột theo tháng trong năm (Avg)
+    if (!groupName) {
+      renderMixed(labels, barVals);
+    } else if (month !== null) {
+      const only = byGroup.length ? byGroup[0].avg_vnd : 0;
+      renderMixed([shortGroupLabel(groupName)], [only]);
+    } else {
+      const byMonth = data.by_month || [];
+      const mLabels = byMonth.map((x) => String(x.month));
+      const mVals = byMonth.map((x) => x.avg_vnd);
+      renderMixed(mLabels.length ? mLabels : [shortGroupLabel(groupName)], mLabels.length ? mVals : [0]);
+    }
+
+    // KPI calculations (ignore "Nhóm" selection; keep other filters + time scope).
+    let kpiPayload = data;
+    if (groupName) {
+      const kpiParams = new URLSearchParams({ year: String(year), view });
+      if (month !== null) kpiParams.set("month", String(month));
+      if (coSo) kpiParams.set("co_so", coSo);
+      if (donVi) kpiParams.set("don_vi", donVi);
+      if (dept) kpiParams.set("department", dept);
+      const kpiRes = await fetch(`/api/insights?${kpiParams.toString()}`);
+      if (kpiRes.ok) kpiPayload = await kpiRes.json();
+    }
+    updateKpiCards({ year, month, view, kpiData: kpiPayload, scopeLabel: document.getElementById("scopeHint").textContent });
+
+    // Always show the month trend chart (year view), regardless of the Month dropdown.
+    // This helps users see up/down trend when filtering by Cơ sở / Đơn vị / Bộ phận.
+    await loadMonthTrend(year, groupName, coSo, donVi, dept, month === null ? data : null);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("refreshBtn").addEventListener("click", () => window.location.reload());
+    // Auto-load on first visit so users don't need to click "Load".
+    setupCombo("coSoInput", "coSoToggle", "coSoList", () => optionsCoSo, scheduleReload);
+    setupCombo("donViInput", "donViToggle", "donViList", () => optionsDonVi, scheduleReload);
+    setupCombo("deptInput", "deptToggle", "deptList", () => optionsDept, scheduleReload);
+
+    refreshFilterOptions(true).then(loadStats);
+  });
+
+  document.getElementById("yearInput").addEventListener("change", async () => {
+    await refreshFilterOptions(true);
+    loadStats();
+  });
+
+  let reloadTimer;
+  function scheduleReload() {
+    clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(async () => {
+      await refreshFilterOptions(false);
+      loadStats();
+    }, 250);
+  }
+
+  document.getElementById("groupSelect").addEventListener("change", scheduleReload);
+  document.getElementById("monthSelect").addEventListener("change", scheduleReload);
+
+  async function refreshFilterOptions(resetMonth) {
+    const year = parseInt(document.getElementById("yearInput").value, 10);
+    const groupName = document.getElementById("groupSelect").value || null;
+    const coSo = selectedValue("coSoInput", optionsCoSo);
+    const donVi = selectedValue("donViInput", optionsDonVi);
+    const dept = selectedValue("deptInput", optionsDept);
+
+    const params = new URLSearchParams({ year: String(year) });
+    if (groupName) params.set("group_name", groupName);
+    if (coSo) params.set("co_so", coSo);
+    if (donVi) params.set("don_vi", donVi);
+    if (dept) params.set("department", dept);
+    const res = await fetch(`/api/filters?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok) return;
+
+    optionsCoSo = data.co_so || [];
+    optionsDonVi = data.don_vi || [];
+    optionsDept = data.departments || [];
+
+    // Clear invalid selections
+    if (document.getElementById("coSoInput").value && !optionsCoSo.includes(document.getElementById("coSoInput").value)) document.getElementById("coSoInput").value = "";
+    if (document.getElementById("donViInput").value && !optionsDonVi.includes(document.getElementById("donViInput").value)) document.getElementById("donViInput").value = "";
+    if (document.getElementById("deptInput").value && !optionsDept.includes(document.getElementById("deptInput").value)) document.getElementById("deptInput").value = "";
+
+    const select = document.getElementById("monthSelect");
+    const current = resetMonth ? "all" : select.value;
+    const months = (data.months || []).map((m) => String(m));
+    select.innerHTML = '<option value="all">Tất cả</option>';
+    for (const m of months) {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      select.appendChild(opt);
+    }
+    const allowed = new Set(["all", ...months]);
+    select.value = allowed.has(current) ? current : "all";
+  }
+
+  async function updateHeadcount(year, month, groupName) {
+    try {
+      const params = new URLSearchParams({ year: String(year) });
+      if (groupName) params.set("group_name", groupName);
+      const coSo = selectedValue("coSoInput", optionsCoSo);
+      const donVi = selectedValue("donViInput", optionsDonVi);
+      const dept = selectedValue("deptInput", optionsDept);
+      if (coSo) params.set("co_so", coSo);
+      if (donVi) params.set("don_vi", donVi);
+      if (dept) params.set("department", dept);
+      const res = await fetch(`/api/headcount?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) return;
+      if (month === null) {
+        document.getElementById("totalCount").textContent = fmtInt(data.avg_headcount || 0);
+        return Number(data.avg_headcount || 0);
+      }
+      const point = (data.points || []).find((p) => Number(p.month) === Number(month));
+      const v = Number(point ? point.headcount : 0);
+      document.getElementById("totalCount").textContent = fmtInt(v);
+      return v;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  async function updateParticipation(year, month, groupName) {
+    try {
+      const params = new URLSearchParams({ year: String(year) });
+      if (month !== null) params.set("month", String(month));
+      if (groupName) params.set("group_name", groupName);
+      const coSo = selectedValue("coSoInput", optionsCoSo);
+      const donVi = selectedValue("donViInput", optionsDonVi);
+      const dept = selectedValue("deptInput", optionsDept);
+      if (coSo) params.set("co_so", coSo);
+      if (donVi) params.set("don_vi", donVi);
+      if (dept) params.set("department", dept);
+      const res = await fetch(`/api/participation?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) return 0;
+      const v = Number(data.don_vi_count || 0);
+      const el = document.getElementById("kpiDonViCount");
+      if (el) el.textContent = fmtInt(v);
+      return v;
+    } catch (e) {
+      return 0;
+    }
+  }
+</script>
+{% endblock %}

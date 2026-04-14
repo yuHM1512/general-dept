@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Living Wage Portal - Dashboard</title>
+<!-- Google Fonts: Manrope & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#00487f",
+                    "primary": "#004275",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#d2e4ff",
+                    "on-tertiary-container": "#82decd",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#00201b",
+                    "surface-bright": "#f9f9fa",
+                    "inverse-primary": "#a1c9ff",
+                    "secondary-fixed-dim": "#88d982",
+                    "secondary-container": "#a0f399",
+                    "on-surface-variant": "#414750",
+                    "error-container": "#ffdad6",
+                    "primary-container": "#005a9c",
+                    "inverse-surface": "#2f3132",
+                    "surface": "#f9f9fa",
+                    "tertiary-container": "#006357",
+                    "on-secondary-fixed": "#002204",
+                    "surface-container": "#edeeef",
+                    "on-background": "#1a1c1d",
+                    "on-tertiary-fixed-variant": "#005047",
+                    "primary-fixed-dim": "#a1c9ff",
+                    "surface-tint": "#1261a3",
+                    "tertiary-fixed": "#97f3e2",
+                    "on-error": "#ffffff",
+                    "surface-variant": "#e2e2e3",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed-dim": "#7ad7c6",
+                    "surface-container-highest": "#e2e2e3",
+                    "secondary": "#1b6d24",
+                    "surface-container-high": "#e8e8e9",
+                    "tertiary": "#004940",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#f3f3f4",
+                    "on-error-container": "#93000a",
+                    "outline": "#727781",
+                    "background": "#f9f9fa",
+                    "secondary-fixed": "#a3f69c",
+                    "surface-dim": "#d9dadb",
+                    "on-surface": "#1a1c1d",
+                    "on-primary-fixed": "#001c37",
+                    "on-primary-container": "#afd1ff",
+                    "on-secondary-container": "#217128",
+                    "on-secondary-fixed-variant": "#005312",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#c1c7d2",
+                    "inverse-on-surface": "#f0f1f1"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .brand-font { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-header { backdrop-filter: blur(24px); }
+        .mixed-chart-bar { background: linear-gradient(to top, #004275, #005a9c); }
+        .target-line { border-top: 2px dashed #004940; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top Navigation Bar -->
+<header class="docked full-width top-0 sticky z-50 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center px-8 h-16 w-full max-w-screen-2xl mx-auto">
+<div class="text-xl font-bold tracking-tighter text-blue-900 dark:text-blue-100">
+                Living Wage Portal
+            </div>
+<nav class="hidden md:flex items-center gap-8 font-manrope tracking-tight font-semibold">
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-blue-800 dark:hover:text-blue-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors" href="#">Home</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-blue-800 dark:hover:text-blue-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors" href="#">Data Management</a>
+<a class="text-blue-900 dark:text-blue-400 border-b-2 border-blue-900 dark:border-blue-400 pb-1" href="#">Dashboard</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container">
+<img alt="User profile" data-alt="professional headshot of a data analyst in a bright office setting with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzxsU4rXJZvkW-x-tGiLGsJrLi53L6A8nqp_6sc0V0gpYPcV-gRe0S14eDeb1YDkTo7O2rWxKasu9QX6JMwbwiGzAdeI__HfK6q_NSXwjcH4Qy_Wl0Sgu1qgQSW90rFlBDSjVCt8deF424GYjPqwT7urSoBwd6Q7qahyAsAg6EB5E4IxyN0k0pFzO5TcK4-tE0PQFZmn9vZhOpyIsSk4FJl-GkcK5DqU-OI63wd60P06eMLulph6emO1IuXvyB-zOsgNwZ1qfgAyo"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-screen-2xl mx-auto px-8 py-12 space-y-12">
+<!-- Hero Section / Header -->
+<section class="space-y-2">
+<h1 class="text-4xl font-extrabold tracking-tight text-primary">Global Compliance Overview</h1>
+<p class="text-on-surface-variant max-w-2xl">Visualizing the gap between actual compensation and ethical living standards across operational regions.</p>
+</section>
+<!-- KPI Cards Grid (Editorial Layout) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- KPI Card 1 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-primary">
+<div>
+<span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Percentage of Living Wage Met</span>
+<div class="mt-4 text-5xl font-extrabold text-primary tracking-tighter">84.2%</div>
+</div>
+<div class="mt-6 flex items-center gap-2 text-secondary font-medium">
+<span class="material-symbols-outlined">trending_up</span>
+<span>+2.4% from last quarter</span>
+</div>
+</div>
+<!-- KPI Card 2 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-tertiary">
+<div>
+<span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Total Surveys Collected</span>
+<div class="mt-4 text-5xl font-extrabold text-tertiary tracking-tighter">12,482</div>
+</div>
+<div class="mt-6 text-on-surface-variant text-sm">
+                    Verified across 14 manufacturing hubs
+                </div>
+</div>
+<!-- KPI Card 3 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-on-primary-fixed-variant">
+<div>
+<span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Regional Compliance</span>
+<div class="mt-4 text-5xl font-extrabold text-on-primary-fixed-variant tracking-tighter">9/14</div>
+</div>
+<div class="mt-6 flex items-center gap-2 text-error font-medium">
+<span class="material-symbols-outlined">warning</span>
+<span>5 regions below target</span>
+</div>
+</div>
+</section>
+<!-- Main Mixed Chart Section (Large Bento-style) -->
+<section class="bg-surface-container-low rounded-xl p-10">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
+<div class="space-y-1">
+<h2 class="text-2xl font-bold text-primary">Wage Analysis vs. Ethical Target</h2>
+<p class="text-on-surface-variant">Comparative progress of actual average wages against region-specific living wage benchmarks.</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="text-xs font-semibold text-on-surface">Actual Wage</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 border-t-2 border-dashed border-tertiary"></div>
+<span class="text-xs font-semibold text-on-surface">Target Living Wage</span>
+</div>
+</div>
+</div>
+<!-- Chart Visualization Placeholder -->
+<div class="relative h-[400px] w-full flex items-end gap-6 px-4">
+<!-- Data Columns -->
+<div class="flex-1 h-full flex flex-col justify-end relative group">
+<div class="absolute top-0 w-full target-line translate-y-20"></div>
+<div class="mixed-chart-bar w-full h-[60%] rounded-t-lg transition-all group-hover:opacity-80"></div>
+<div class="mt-4 text-center text-sm font-medium text-on-surface-variant">Region A</div>
+</div>
+<div class="flex-1 h-full flex flex-col justify-end relative group">
+<div class="absolute top-0 w-full target-line translate-y-16"></div>
+<div class="mixed-chart-bar w-full h-[75%] rounded-t-lg transition-all group-hover:opacity-80"></div>
+<div class="mt-4 text-center text-sm font-medium text-on-surface-variant">Region B</div>
+</div>
+<div class="flex-1 h-full flex flex-col justify-end relative group">
+<div class="absolute top-0 w-full target-line translate-y-12"></div>
+<div class="mixed-chart-bar w-full h-[82%] rounded-t-lg transition-all group-hover:opacity-80"></div>
+<div class="mt-4 text-center text-sm font-medium text-on-surface-variant">Region C</div>
+</div>
+<div class="flex-1 h-full flex flex-col justify-end relative group">
+<div class="absolute top-0 w-full target-line translate-y-24"></div>
+<div class="mixed-chart-bar w-full h-[55%] rounded-t-lg transition-all group-hover:opacity-80"></div>
+<div class="mt-4 text-center text-sm font-medium text-on-surface-variant">Region D</div>
+</div>
+<div class="flex-1 h-full flex flex-col justify-end relative group">
+<div class="absolute top-0 w-full target-line translate-y-8"></div>
+<div class="mixed-chart-bar w-full h-[90%] rounded-t-lg transition-all group-hover:opacity-80"></div>
+<div class="mt-4 text-center text-sm font-medium text-on-surface-variant">Region E</div>
+</div>
+<div class="flex-1 h-full flex flex-col justify-end relative group">
+<div class="absolute top-0 w-full target-line translate-y-20"></div>
+<div class="mixed-chart-bar w-full h-[65%] rounded-t-lg transition-all group-hover:opacity-80"></div>
+<div class="mt-4 text-center text-sm font-medium text-on-surface-variant">Region F</div>
+</div>
+</div>
+</section>
+<!-- Secondary Widgets Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Regional Breakdown Table-less Card -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm space-y-6">
+<h3 class="text-xl font-bold text-on-surface">Regional Compliance Breakdown</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface rounded-lg">
+<div class="flex items-center gap-4">
+<span class="w-10 h-10 rounded bg-primary-fixed flex items-center justify-center text-primary font-bold">SE</span>
+<div>
+<p class="font-bold">Southeast Asia</p>
+<p class="text-xs text-on-surface-variant">Verified by 3rd Party Audit</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-secondary">92% Met</p>
+<p class="text-xs text-on-surface-variant">$420 / $456</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface rounded-lg">
+<div class="flex items-center gap-4">
+<span class="w-10 h-10 rounded bg-tertiary-fixed flex items-center justify-center text-tertiary font-bold">LA</span>
+<div>
+<p class="font-bold">Latin America</p>
+<p class="text-xs text-on-surface-variant">Self-Reported Survey</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-error">68% Met</p>
+<p class="text-xs text-on-surface-variant">$310 / $455</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface rounded-lg">
+<div class="flex items-center gap-4">
+<span class="w-10 h-10 rounded bg-secondary-fixed flex items-center justify-center text-secondary font-bold">EU</span>
+<div>
+<p class="font-bold">Eastern Europe</p>
+<p class="text-xs text-on-surface-variant">Government Standard Match</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-secondary">100% Met</p>
+<p class="text-xs text-on-surface-variant">$890 / $890</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Contextual Insight Card -->
+<div class="relative rounded-xl overflow-hidden min-h-[400px] flex flex-col justify-end p-8 text-white group">
+<img alt="Corporate social responsibility" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="modern glass office building reflecting blue sky and soft clouds illustrating corporate social responsibility and stability" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXsEOAiPqle8Pl7f604W78giuH3mcEMukF7hJGFuOIS6-xS9QjjA1FJGganrLSGm3R3VrJY9y1lozy2ydzYBDGKLIMGtLXY29FflG4-Kq2pf1fj3E1GlIMDaLtJ6Tl71GCOyHCo3ybcQ83Uz_sC7sS82Jg_bQXhT_koYfbaGJEejlO-nq9demybqeAzsfECfxa24gM2HboAzVOibm-WdEpYFVB3-pOgD3gfXjpZnKg3LjJQOpG3ejTEy4n0VnXDryW-IUrbWOQjA4"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent"></div>
+<div class="relative z-10 space-y-4">
+<span class="bg-tertiary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Impact Story</span>
+<h3 class="text-2xl font-bold tracking-tight leading-tight">Closing the gap in Southeast Asia led to a 15% decrease in factory floor turnover.</h3>
+<p class="text-blue-100 text-sm leading-relaxed max-w-md">Our latest longitudinal study confirms that ethical compensation directly correlates with operational stability and worker well-being.</p>
+<button class="flex items-center gap-2 font-bold text-white hover:translate-x-1 transition-transform">
+                        Read Full Case Study
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="full-width border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 mt-12">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 py-12 w-full max-w-screen-2xl mx-auto">
+<div class="text-sm font-inter text-slate-500 dark:text-slate-400">
+                © 2024 Ethical Architect Living Wage Initiative. All rights reserved.
+            </div>
+<div class="flex gap-8 mt-6 md:mt-0">
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:underline transition-all text-sm font-inter" href="#">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:underline transition-all text-sm font-inter" href="#">Methodology</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:underline transition-all text-sm font-inter" href="#">Support</a>
+</div>
+</div>
+</footer>
+</body></html>
