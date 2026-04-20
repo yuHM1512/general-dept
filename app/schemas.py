@@ -142,3 +142,72 @@ class TimeseriesResponse(BaseModel):
     year: int
     target_salary_vnd: int
     points: list[TimeseriesPoint]
+
+
+class EmployeeBelowTargetItem(BaseModel):
+    manv: str
+    full_name: str
+    don_vi: str
+    department: str
+    month: int | None = None
+    metric_vnd: int
+
+
+class EmployeeBelowTargetResponse(BaseModel):
+    year: int
+    month: int | None
+    view: str  # "month" | "year_avg" | "year_sum"
+    target_salary_vnd: int
+    total: int
+    limit: int
+    offset: int
+    rows: list[EmployeeBelowTargetItem]
+
+
+class BelowTargetCountResponse(BaseModel):
+    year: int
+    month: int | None
+    view: str  # "month" | "year_avg"
+    target_salary_vnd: int
+    below_count: int
+
+
+class BelowTargetDonutItem(BaseModel):
+    label: str
+    count: int
+
+
+class BelowTargetTableRow(BaseModel):
+    don_vi: str
+    department: str
+    count: int
+    sparkline: list[int]
+
+
+class BelowTargetBreakdownResponse(BaseModel):
+    year: int
+    month: int | None
+    view: str  # "month" | "year_avg"
+    target_salary_vnd: int
+    mode: str  # "don_vi" | "department"
+    months: list[int]
+    total: int
+    donut: list[BelowTargetDonutItem]
+    table: list[BelowTargetTableRow]
+
+
+class HeadcountUniqueResponse(BaseModel):
+    year: int
+    headcount: int
+
+
+class HangingLineItem(BaseModel):
+    id: int
+    don_vi: str
+    department: str
+    ngay_ap_dung: str
+    created_at: str
+
+
+class HangingLineListResponse(BaseModel):
+    items: list[HangingLineItem]

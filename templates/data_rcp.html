@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Load Excel (RCP) | {{ app_name }}{% endblock %}
+{% block title %}Input Data (RCP) | {{ app_name }}{% endblock %}
 
 {% block content %}
 <section class="space-y-10">
@@ -8,7 +8,7 @@
       <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm space-y-6">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-bold text-on-surface">Load Excel</h2>
+    <h2 class="text-2xl font-bold text-on-surface">Input Data</h2>
             <p class="mt-2 text-sm text-on-surface-variant">
               Upload file <span class="font-semibold">.xlsx</span> để ingest vào PostgreSQL (chống trùng theo <span class="font-semibold">MANV+THANG+NAM</span>).
             </p>
@@ -32,6 +32,14 @@
           </button>
           <div id="uploadStatus" class="text-sm text-on-surface-variant"></div>
         </form>
+
+        <button
+          id="openHangingModalBtn"
+          type="button"
+          class="w-full py-3 rounded-md font-bold text-primary bg-surface-container-low hover:bg-surface-container-high transition-all"
+        >
+          Khai báo chuyền treo
+        </button>
 
         <div class="bg-surface-container-low p-5 rounded-xl">
           <div class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Gợi ý</div>
@@ -118,6 +126,85 @@
     </div>
   </div>
 </section>
+
+{# Modal: Khai báo chuyền treo #}
+<div id="hangingModal" class="hidden fixed inset-0 z-50">
+  <div id="hangingBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="relative mx-auto my-10 w-[min(920px,92vw)]">
+    <div class="bg-surface-container-lowest rounded-2xl shadow-xl overflow-hidden ring-1 ring-outline-variant/30">
+      <div class="p-6 border-b border-outline-variant/20 flex items-start justify-between gap-4">
+        <div>
+          <div class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Input Data</div>
+          <h3 class="mt-1 text-xl font-extrabold text-on-surface">Khai báo chuyền treo</h3>
+          <p class="mt-2 text-sm text-on-surface-variant">
+            Chọn <span class="font-semibold">Đơn vị</span> và <span class="font-semibold">Bộ phận</span> để đánh dấu là “chuyền treo”.
+          </p>
+          <div class="mt-2 text-xs text-on-surface-variant">
+            Năm tham chiếu để gợi ý danh sách: <span id="hangingYearHint" class="font-semibold">—</span>
+          </div>
+        </div>
+        <button id="closeHangingModalBtn" type="button" class="text-on-surface-variant hover:text-on-surface transition">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+          <div class="md:col-span-3">
+            <label class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Đơn vị</label>
+            <select id="hangingDonViSelect" class="mt-2 w-full rounded-xl bg-surface-container-high border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40">
+              <option value="">-- Chọn đơn vị --</option>
+            </select>
+          </div>
+          <div class="md:col-span-5">
+            <label class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Bộ phận</label>
+            <select id="hangingDeptSelect" class="mt-2 w-full rounded-xl bg-surface-container-high border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40" disabled>
+              <option value="">-- Chọn bộ phận --</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Ngày áp dụng</label>
+            <input id="hangingDateInput" type="date" class="mt-2 w-full rounded-xl bg-surface-container-high border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40" />
+          </div>
+          <div class="md:col-span-2">
+            <button id="hangingAddBtn" type="button" class="w-full py-3 rounded-xl font-bold text-on-primary editorial-gradient hover:opacity-95 transition-all disabled:opacity-40" disabled>
+              Thêm
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-4">
+          <div id="hangingStatus" class="text-sm text-on-surface-variant min-h-[20px]"></div>
+          <button id="hangingReloadBtn" type="button" class="px-4 py-2 rounded-xl font-bold text-primary bg-surface-container-low hover:bg-surface-container-high transition-all">
+            Reload
+          </button>
+        </div>
+
+        <div class="bg-surface-container-low rounded-xl overflow-hidden">
+          <div class="px-5 py-3 border-b border-outline-variant/20 flex items-center justify-between">
+            <div class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Danh sách chuyền treo</div>
+            <div class="text-xs text-on-surface-variant">Chống trùng theo Đơn vị + Bộ phận</div>
+          </div>
+          <div class="max-h-72 overflow-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-surface-container-high text-xs font-semibold tracking-widest text-on-surface-variant uppercase">
+                <tr>
+                  <th class="px-5 py-3 text-left">Đơn vị</th>
+                  <th class="px-5 py-3 text-left">Bộ phận</th>
+                  <th class="px-5 py-3 text-left">Ngày áp dụng</th>
+                  <th class="px-5 py-3 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="hangingTableBody" class="divide-y divide-outline-variant/10">
+                <tr><td class="px-5 py-6 text-on-surface-variant" colspan="4">Chưa có dữ liệu.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block body_extra %}
@@ -265,6 +352,174 @@
     }
     status.textContent = `Timeout waiting for job ${jobId}`;
   }
+
+  // --- Hanging line modal ---
+  const hanging = {
+    year: null,
+    don_vi: "",
+  };
+
+  function openHangingModal() {
+    document.getElementById("hangingModal").classList.remove("hidden");
+    document.body.classList.add("overflow-hidden");
+    initHangingModal().catch(() => {});
+  }
+  function closeHangingModal() {
+    document.getElementById("hangingModal").classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
+  }
+
+  async function initHangingModal() {
+    const status = document.getElementById("hangingStatus");
+    status.textContent = "Loading options...";
+    await ensureHangingYear();
+    document.getElementById("hangingYearHint").textContent = hanging.year ? String(hanging.year) : "—";
+    const dateInput = document.getElementById("hangingDateInput");
+    if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+    await loadHangingOptions();
+    await loadHangingList();
+    status.textContent = "OK";
+  }
+
+  async function ensureHangingYear() {
+    if (hanging.year) return;
+    const res = await fetch("/api/available-months");
+    const data = await res.json();
+    const years = (data || []).map((x) => Number(x.year)).filter((x) => Number.isFinite(x));
+    hanging.year = years.length ? Math.max(...years) : new Date().getFullYear();
+  }
+
+  async function loadHangingOptions() {
+    const dvSelect = document.getElementById("hangingDonViSelect");
+    const deptSelect = document.getElementById("hangingDeptSelect");
+    const addBtn = document.getElementById("hangingAddBtn");
+    deptSelect.innerHTML = '<option value="">-- Chọn bộ phận --</option>';
+    deptSelect.disabled = true;
+    addBtn.disabled = true;
+
+    const params = new URLSearchParams({ year: String(hanging.year) });
+    const res = await fetch(`/api/filters?${params.toString()}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const donVis = (data.don_vi || []).filter((x) => String(x || "").trim());
+
+    dvSelect.innerHTML = '<option value="">-- Chọn đơn vị --</option>';
+    for (const dv of donVis) {
+      const opt = document.createElement("option");
+      opt.value = dv;
+      opt.textContent = dv;
+      dvSelect.appendChild(opt);
+    }
+  }
+
+  async function loadDepartmentsForDonVi(dv) {
+    const deptSelect = document.getElementById("hangingDeptSelect");
+    const addBtn = document.getElementById("hangingAddBtn");
+    deptSelect.innerHTML = '<option value="">-- Chọn bộ phận --</option>';
+    deptSelect.disabled = true;
+    addBtn.disabled = true;
+    if (!dv) return;
+
+    const params = new URLSearchParams({ year: String(hanging.year), don_vi: dv });
+    const res = await fetch(`/api/filters?${params.toString()}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const depts = (data.departments || []).map((x) => String(x || "").trim()).filter((x) => x);
+
+    for (const dep of depts) {
+      const opt = document.createElement("option");
+      opt.value = dep;
+      opt.textContent = dep;
+      deptSelect.appendChild(opt);
+    }
+    deptSelect.disabled = false;
+    addBtn.disabled = false;
+  }
+
+  async function loadHangingList() {
+    const body = document.getElementById("hangingTableBody");
+    body.innerHTML = '<tr><td class="px-5 py-6 text-on-surface-variant" colspan="4">Loading...</td></tr>';
+    const res = await fetch("/api/hanging-lines");
+    const data = await res.json();
+    if (!res.ok) {
+      body.innerHTML = `<tr><td class="px-5 py-6 text-on-surface-variant" colspan="4">Error: ${JSON.stringify(data)}</td></tr>`;
+      return;
+    }
+    const items = data.items || [];
+    if (!items.length) {
+      body.innerHTML = '<tr><td class="px-5 py-6 text-on-surface-variant" colspan="4">Chưa có dữ liệu.</td></tr>';
+      return;
+    }
+    body.innerHTML = "";
+    for (const item of items) {
+      const tr = document.createElement("tr");
+      tr.className = "hover:bg-surface-container-high transition-colors";
+      tr.innerHTML = `
+        <td class="px-5 py-4 font-semibold">${item.don_vi}</td>
+        <td class="px-5 py-4 text-on-surface-variant">${item.department}</td>
+        <td class="px-5 py-4 text-on-surface-variant tabular-nums">${(item.ngay_ap_dung || "").toString()}</td>
+        <td class="px-5 py-4 text-right">
+          <button data-id="${item.id}" class="hangingDelBtn px-3 py-1 rounded-lg font-bold text-error bg-error-container/60 hover:bg-error-container transition">
+            Xoá
+          </button>
+        </td>
+      `;
+      body.appendChild(tr);
+    }
+    for (const btn of document.querySelectorAll(".hangingDelBtn")) {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-id");
+        if (!id) return;
+        const status = document.getElementById("hangingStatus");
+        status.textContent = "Đang xoá...";
+        const res = await fetch(`/api/hanging-lines/${id}`, { method: "DELETE" });
+        const text = await res.text();
+        if (!res.ok) {
+          status.textContent = `Error: ${text}`;
+          return;
+        }
+        status.textContent = "Đã xoá.";
+        await loadHangingList();
+      });
+    }
+  }
+
+  document.getElementById("openHangingModalBtn").addEventListener("click", openHangingModal);
+  document.getElementById("closeHangingModalBtn").addEventListener("click", closeHangingModal);
+  document.getElementById("hangingBackdrop").addEventListener("click", closeHangingModal);
+  document.getElementById("hangingReloadBtn").addEventListener("click", () => initHangingModal());
+  document.getElementById("hangingDonViSelect").addEventListener("change", (e) => {
+    const dv = e.target.value || "";
+    hanging.don_vi = dv;
+    loadDepartmentsForDonVi(dv);
+  });
+  document.getElementById("hangingDeptSelect").addEventListener("change", (e) => {
+    const addBtn = document.getElementById("hangingAddBtn");
+    addBtn.disabled = !((document.getElementById("hangingDonViSelect").value || "").trim() && (e.target.value || "").trim());
+  });
+  document.getElementById("hangingAddBtn").addEventListener("click", async () => {
+    const dv = (document.getElementById("hangingDonViSelect").value || "").trim();
+    const dep = (document.getElementById("hangingDeptSelect").value || "").trim();
+    const applied = (document.getElementById("hangingDateInput").value || "").trim();
+    const status = document.getElementById("hangingStatus");
+    if (!dv || !dep) {
+      status.textContent = "Vui lòng chọn Đơn vị và Bộ phận.";
+      return;
+    }
+    status.textContent = "Đang thêm...";
+    const form = new FormData();
+    form.append("don_vi", dv);
+    form.append("department", dep);
+    if (applied) form.append("ngay_ap_dung", applied);
+    const res = await fetch("/api/hanging-lines", { method: "POST", body: form });
+    const text = await res.text();
+    if (!res.ok) {
+      status.textContent = `Error: ${text}`;
+      return;
+    }
+    status.textContent = "Đã thêm.";
+    await loadHangingList();
+  });
 
   fetchMonths();
 </script>

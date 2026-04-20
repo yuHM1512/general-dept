@@ -28,14 +28,15 @@
             <option value="all">Tất cả</option>
           </select>
         </div>
-        <div class="lg:col-span-2">
+        <div class="relative lg:col-span-2">
           <label class="text-sm font-semibold text-on-surface">Nhóm</label>
-          <select id="groupSelect" class="mt-2 w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40">
-            <option value="">Tất cả</option>
-            <option value="Cắt/Tổ Cắt">Cắt/Tổ Cắt</option>
-            <option value="Vệ sinh công nghiệp">VSCN</option>
-            <option value="Khác">Khác</option>
-          </select>
+          <div class="mt-2 relative">
+            <input id="groupInput" class="w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 pr-10 focus:ring-2 focus:ring-primary/40" placeholder="Tất cả" autocomplete="off" />
+            <button id="groupToggle" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-lg">expand_more</span>
+            </button>
+          </div>
+          <div id="groupList" class="hidden absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl bg-surface-container-lowest shadow-sm ring-1 ring-outline-variant/30"></div>
         </div>
         <div class="relative lg:col-span-2">
           <label class="text-sm font-semibold text-on-surface">Cơ sở</label>
@@ -73,15 +74,28 @@
           <div class="text-sm text-on-surface-variant min-h-[20px]">
             <span id="loadStatus"></span>
           </div>
-          <button id="refreshBtn" type="button" class="px-6 py-3 rounded-xl font-bold text-on-primary editorial-gradient hover:opacity-95 transition-all">
-            Làm mới
-          </button>
+          <div class="flex items-center gap-3">
+            <button id="exportExcelBtn" type="button" class="px-5 py-3 rounded-xl font-bold bg-surface-container-low text-secondary hover:bg-surface-container-high transition-all inline-flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-secondary-container text-on-secondary-container">
+                <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor" aria-hidden="true">
+                  <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.5V8h4.5L14 3.5ZM8.2 11h1.7l1.1 1.8 1.1-1.8h1.7l-1.9 3 2 3H13l-1.2-2-1.2 2H8.1l2-3-1.9-3Z"/>
+                </svg>
+              </span>
+              Xuất Excel
+            </button>
+            <button id="hangingOnlyBtn" type="button" class="px-5 py-3 rounded-xl font-bold bg-surface-container-low text-primary hover:bg-surface-container-high transition-all">
+              Xem chuyền treo
+            </button>
+            <button id="refreshBtn" type="button" class="px-6 py-3 rounded-xl font-bold text-on-primary editorial-gradient hover:opacity-95 transition-all">
+              Làm mới
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+  <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
     <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-on-primary-fixed-variant">
       <div>
         <span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Lương bình quân</span>
@@ -101,24 +115,16 @@
 
     <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-on-primary-fixed-variant">
       <div>
-        <span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Số lượng nhân viên</span>
-        <div class="mt-4 text-5xl font-extrabold text-on-primary-fixed-variant tracking-tighter tabular-nums" id="totalCount">—</div>
+        <span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Nhân sự dưới mục tiêu</span>
+        <div class="mt-4 text-5xl font-extrabold text-[#b91c1c] tracking-tighter tabular-nums" id="totalCount">—</div>
       </div>
       <div class="mt-6 text-on-surface-variant text-sm">
-        <span id="scopeHint">—</span> • <span id="kpiDonViCount">—</span> đơn vị tham gia
+        <span id="belowPctHint">—</span>
+        <span id="scopeHint" class="hidden">—</span>
+        <span id="kpiDonViCount" class="hidden">—</span>
       </div>
     </div>
 
-    <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm flex flex-col justify-between border-l-4 border-on-primary-fixed-variant">
-      <div>
-        <span class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Nhóm chọn mẫu</span>
-        <div class="mt-4 text-5xl font-extrabold text-on-primary-fixed-variant tracking-tighter tabular-nums" id="kpiGroupSample">—</div>
-      </div>
-      <div class="mt-6 flex items-center gap-2 font-medium" id="kpiGroupSampleNote">
-        <span class="material-symbols-outlined">warning</span>
-        <span>—</span>
-      </div>
-    </div>
   </section>
 
   <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
@@ -163,7 +169,6 @@
               <th class="text-left px-5 py-3 font-semibold">Nhóm</th>
               <th class="text-right px-5 py-3 font-semibold">Min</th>
               <th class="text-right px-5 py-3 font-semibold">Max</th>
-              <th class="text-right px-5 py-3 font-semibold">Trung vị</th>
               <th class="text-right px-5 py-3 font-semibold">Trung bình</th>
             </tr>
           </thead>
@@ -187,9 +192,6 @@
           <span class="inline-flex items-center gap-2">
             <span class="w-10 h-0.5 bg-[#FF8C00] rounded"></span>
             Target
-          </span>
-          <span id="monthDeltaChip" class="ml-auto px-3 py-1 rounded-full text-xs font-bold tabular-nums bg-surface-container-high text-on-surface-variant">
-            Δ so với Target: -
           </span>
         </div>
       </div>
@@ -218,15 +220,167 @@
     </div>
   </section>
 
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+    <div class="lg:col-span-6 bg-surface-container-lowest p-8 rounded-xl shadow-sm h-full flex flex-col">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div class="space-y-2">
+          <div class="inline-flex items-center px-6 py-3 rounded-xl text-on-primary font-extrabold editorial-gradient shadow-sm">
+            Số lượng nhân sự không đạt - theo bộ phận
+          </div>
+          <div class="text-sm text-on-surface-variant" id="belowDonutSubtitle">—</div>
+        </div>
+        <span class="material-symbols-outlined text-primary text-3xl">donut_large</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center flex-1">
+        <div class="md:col-span-12 h-[320px] relative">
+          <canvas id="belowDonutChart"></canvas>
+        </div>
+      </div>
+      <div id="belowDonutLegendSimple" class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm"></div>
+    </div>
+
+    <div class="lg:col-span-6 bg-surface-container-lowest p-8 rounded-xl shadow-sm h-full flex flex-col">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div class="inline-flex items-center px-6 py-3 rounded-xl text-on-primary font-extrabold editorial-gradient shadow-sm">
+          Bảng không đạt (Đơn vị / Bộ phận)
+        </div>
+        <span class="material-symbols-outlined text-tertiary text-3xl">table_rows</span>
+      </div>
+      <div class="bg-surface overflow-auto flex-1 rounded-xl ring-1 ring-outline-variant/20">
+        <table class="w-full text-sm">
+          <thead class="text-xs uppercase tracking-widest text-on-surface-variant bg-surface-container-low">
+            <tr>
+              <th class="text-left px-4 py-3">Đơn vị</th>
+              <th class="text-right px-4 py-3">Không đạt</th>
+              <th class="text-right px-4 py-3">Tỉ trọng</th>
+              <th class="text-right px-4 py-3">Xu hướng</th>
+              <th class="text-right px-4 py-3">Chi tiết</th>
+            </tr>
+          </thead>
+          <tbody id="belowBreakdownBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Employee details modal -->
+  <div id="employeeModal" class="hidden fixed inset-0 z-50">
+    <div id="employeeModalBackdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-6">
+      <div id="employeeModalPanel" class="w-full max-w-5xl bg-surface-container-lowest rounded-2xl shadow-xl overflow-hidden">
+        <div class="flex items-start justify-between gap-4 p-6 border-b border-outline-variant/30">
+          <div>
+            <div class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Danh sách nhân sự</div>
+            <div id="employeeModalTitle" class="mt-2 text-xl font-extrabold text-on-surface">Dưới mục tiêu</div>
+            <div id="employeeModalSubtitle" class="mt-1 text-sm text-on-surface-variant">—</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div id="employeeTotalBadge" class="hidden px-5 py-3 rounded-xl text-on-primary font-extrabold editorial-gradient shadow-sm text-sm whitespace-nowrap">
+              Tổng nhân sự dưới mục tiêu: —
+            </div>
+            <button id="employeeModalClose" type="button" class="p-2 rounded-xl hover:bg-surface-container-low transition-colors">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+            <div class="flex items-center gap-3">
+              <input id="employeeSearch" class="w-full sm:w-[360px] rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40" placeholder="Tìm theo tên / mã NV / đơn vị / bộ phận..." />
+              <div id="employeeCount" class="text-sm text-on-surface-variant">—</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <button
+                id="employeeFullView"
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-extrabold text-sm text-on-primary editorial-gradient shadow-sm hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              >
+                <span class="material-symbols-outlined text-base">open_in_new</span>
+                Xem đầy đủ
+              </button>
+              <button id="employeePrev" type="button" class="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high font-semibold text-sm transition-colors">Trước</button>
+              <button id="employeeNext" type="button" class="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high font-semibold text-sm transition-colors">Sau</button>
+            </div>
+          </div>
+          <div class="mt-5 bg-surface rounded-xl overflow-auto max-h-[420px] ring-1 ring-outline-variant/20">
+            <table class="w-full text-sm">
+              <thead class="text-xs uppercase tracking-widest text-on-surface-variant bg-surface-container-low">
+                <tr>
+                  <th class="text-left px-4 py-3">Họ tên</th>
+                  <th class="text-left px-4 py-3">Mã NV</th>
+                  <th class="text-left px-4 py-3">Đơn vị</th>
+                  <th class="text-left px-4 py-3">Bộ phận</th>
+                  <th class="text-left px-4 py-3">Tháng</th>
+                  <th class="text-right px-4 py-3">Mức lương</th>
+                </tr>
+              </thead>
+              <tbody id="employeeBody"></tbody>
+            </table>
+          </div>
+          <div class="mt-4 text-xs text-on-surface-variant">
+            Gợi ý: bấm vào từng cột trên biểu đồ để mở danh sách nhân sự dưới mục tiêu theo nhóm/tháng.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Excel modal -->
+  <div id="exportModal" class="hidden fixed inset-0 z-50">
+    <div id="exportModalBackdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-6">
+      <div class="w-full max-w-xl bg-surface-container-lowest rounded-2xl shadow-xl overflow-hidden">
+        <div class="flex items-start justify-between gap-4 p-6 border-b border-outline-variant/30">
+          <div>
+            <div class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Xuất dữ liệu</div>
+            <div class="mt-2 text-xl font-extrabold text-on-surface">Xuất Excel nhân sự dưới mục tiêu</div>
+            <div class="mt-1 text-sm text-on-surface-variant">Họ tên • Mã NV • Đơn vị • Bộ phận • Tháng • Mức lương</div>
+          </div>
+          <button id="exportModalClose" type="button" class="p-2 rounded-xl hover:bg-surface-container-low transition-colors">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="p-6 space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-semibold text-on-surface">Đơn vị</label>
+              <select id="exportDonViSelect" class="mt-2 w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40">
+                <option value="">Tất cả</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-on-surface">Tháng</label>
+              <select id="exportMonthSelect" class="mt-2 w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40">
+                <option value="all">Tất cả</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <div id="exportStatus" class="text-sm text-on-surface-variant min-h-[20px]"></div>
+            <button id="exportDownloadBtn" type="button" class="px-6 py-3 rounded-xl font-bold text-on-primary editorial-gradient hover:opacity-95 transition-all">
+              Tải xuống
+            </button>
+          </div>
+          <div class="text-xs text-on-surface-variant">
+            Gợi ý: bộ lọc Nhóm/Cơ sở/Bộ phận/Xem chuyền treo sẽ được áp dụng theo dashboard hiện tại.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </section>
 {% endblock %}
 
 {% block body_extra %}
 <script>
-  const fmtInt = (n) => new Intl.NumberFormat("vi-VN").format(n);
-  const fmtVnd = (n) => fmtInt(n).replaceAll(",", ".");
+  // Display format: thousands with "," and decimal with "."
+  const fmtInt = (n) => new Intl.NumberFormat("en-US").format(Math.round(Number(n || 0)));
+  const fmtVnd = (n) => fmtInt(n);
   const fmtK = (vnd) => fmtVnd(Math.round(Number(vnd || 0) / 1000));
   const shortGroupLabel = (label) => (label === "Vệ sinh công nghiệp" ? "VSCN" : label);
+  const fullGroupLabel = (label) => (label === "VSCN" ? "Vệ sinh công nghiệp" : label);
 
   const targetEl = document.getElementById("targetBox");
   const TARGET = Number(targetEl?.dataset?.target || targetEl?.textContent || 0);
@@ -234,12 +388,50 @@
 
   let mixedChart;
   let monthTrendChart;
+  let belowDonutChart;
+  let belowBreakdownState = { mode: "don_vi", labels: [] };
+
+  let employeeModalState = { year: null, month: null, view: "month", group_name: null, offset: 0, limit: 50, title: "" };
+
+  let hangingOnly = false;
 
   let optionsCoSo = [];
   let optionsDonVi = [];
   let optionsDept = [];
+  const GROUP_OPTIONS = ["Cắt/Tổ Cắt", "Vệ sinh công nghiệp", "Khác"];
+  let selectedGroups = new Set();
+  let selectedDonVi = new Set();
+  let selectedDept = new Set();
 
   const normalizeText = (s) => (s || "").toString().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+
+  function setToCsv(setObj) {
+    const arr = Array.from(setObj || []);
+    return arr.length ? arr.join(",") : null;
+  }
+
+  function summarizeSelection(setObj) {
+    const arr = Array.from(setObj || []);
+    if (!arr.length) return "";
+    if (arr.length === 1) return arr[0];
+    return `${arr.length} đã chọn`;
+  }
+
+  function applyHangingOnly(params) {
+    if (hangingOnly) params.set("hanging_only", "1");
+  }
+
+  function syncHangingOnlyBtn() {
+    const btn = document.getElementById("hangingOnlyBtn");
+    if (!btn) return;
+    if (hangingOnly) {
+      btn.className = "px-5 py-3 rounded-xl font-bold text-on-primary editorial-gradient hover:opacity-95 transition-all";
+      btn.textContent = "Đang xem chuyền treo";
+    } else {
+      btn.className = "px-5 py-3 rounded-xl font-bold bg-surface-container-low text-primary hover:bg-surface-container-high transition-all";
+      btn.textContent = "Xem chuyền treo";
+    }
+  }
 
   function updateDeltaChip(elId, barValuesVnd) {
     const el = document.getElementById(elId);
@@ -310,22 +502,6 @@
       ratioEl.className = `mt-4 text-5xl font-extrabold tracking-tighter tabular-nums ${ok ? "text-secondary" : "text-error"}`;
     }
     if (ratioNoteEl) ratioNoteEl.textContent = ok ? "Đạt / vượt mục tiêu" : "Chưa đạt mục tiêu";
-
-    const sampleEl = document.getElementById("kpiGroupSample");
-    const sampleNoteEl = document.getElementById("kpiGroupSampleNote");
-    const groupAvgs = fillGroupAvgs(kpiData?.by_group);
-    const meetCount = Object.values(groupAvgs).filter((v) => Number(v || 0) >= TARGET).length;
-    const belowCount = 3 - meetCount;
-    if (sampleEl) sampleEl.textContent = `${meetCount}/3`;
-    if (sampleNoteEl) {
-      if (belowCount > 0) {
-        sampleNoteEl.className = "mt-6 flex items-center gap-2 text-error font-medium";
-        sampleNoteEl.innerHTML = `<span class="material-symbols-outlined">warning</span><span>${belowCount} nhóm dưới mục tiêu</span>`;
-      } else {
-        sampleNoteEl.className = "mt-6 flex items-center gap-2 text-secondary font-medium";
-        sampleNoteEl.innerHTML = `<span class="material-symbols-outlined">check_circle</span><span>Đạt mục tiêu</span>`;
-      }
-    }
   }
 
   function renderComboList(listEl, items, onPick) {
@@ -350,6 +526,44 @@
       return;
     }
     for (const x of items.slice(0, 250)) listEl.appendChild(btn(x, x));
+  }
+
+  function renderMultiComboList(listEl, items, selectedSet, { formatLabel, onToggle, onClear }) {
+    const row = (label, checked, value, isClear) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "w-full text-left px-4 py-2.5 hover:bg-surface-container-low transition-colors text-sm flex items-center gap-3";
+      b.addEventListener("mousedown", (e) => e.preventDefault());
+      b.addEventListener("click", () => {
+        if (isClear) onClear();
+        else onToggle(value);
+      });
+      const box = document.createElement("span");
+      box.className =
+        "w-4 h-4 rounded border border-outline-variant/40 flex items-center justify-center " +
+        (checked ? "bg-primary text-on-primary" : "bg-surface-container-lowest");
+      box.innerHTML = checked ? '<span class="material-symbols-outlined" style="font-size:16px;line-height:16px">check</span>' : "";
+      const text = document.createElement("span");
+      text.textContent = label;
+      b.appendChild(box);
+      b.appendChild(text);
+      return b;
+    };
+
+    listEl.innerHTML = "";
+    listEl.appendChild(row("Tất cả (bỏ chọn)", false, "", true));
+    if (!items.length) {
+      const empty = document.createElement("div");
+      empty.className = "px-4 py-3 text-sm text-on-surface-variant";
+      empty.textContent = "Không có dữ liệu";
+      listEl.appendChild(empty);
+      return;
+    }
+    for (const x of items.slice(0, 250)) {
+      const checked = selectedSet.has(x);
+      const label = formatLabel ? formatLabel(x) : x;
+      listEl.appendChild(row(label, checked, x, false));
+    }
   }
 
   function setupCombo(inputId, toggleId, listId, getOptions, onChange) {
@@ -378,6 +592,405 @@
     input.addEventListener("input", () => open(false));
     toggle.addEventListener("click", () => (list.classList.contains("hidden") ? open(true) : close()));
     input.addEventListener("blur", () => setTimeout(close, 150));
+  }
+
+  function setupMultiCombo(inputId, toggleId, listId, getOptions, selectedSet, { formatLabel, onChange }) {
+    const input = document.getElementById(inputId);
+    const toggle = document.getElementById(toggleId);
+    const list = document.getElementById(listId);
+
+    const setSummary = () => {
+      input.dataset.mode = "summary";
+      input.value = summarizeSelection(selectedSet);
+    };
+    const open = (forceAll) => {
+      const opts = getOptions();
+      const raw = (input.value || "").trim();
+      const q = forceAll ? "" : normalizeText(raw);
+      const items = opts.filter((x) => normalizeText(x).includes(q));
+      renderMultiComboList(list, items, selectedSet, {
+        formatLabel,
+        onToggle: (val) => {
+          if (selectedSet.has(val)) selectedSet.delete(val);
+          else selectedSet.add(val);
+          // keep list open; trigger change
+          onChange();
+          // re-render with same query
+          open(false);
+        },
+        onClear: () => {
+          selectedSet.clear();
+          onChange();
+          open(true);
+        },
+      });
+      list.classList.remove("hidden");
+    };
+    const close = () => {
+      list.classList.add("hidden");
+      setSummary();
+    };
+
+    // initial
+    setSummary();
+
+    input.addEventListener("focus", () => {
+      if ((input.dataset.mode || "") === "summary") input.value = "";
+      input.dataset.mode = "search";
+      open(true);
+    });
+    input.addEventListener("input", () => open(false));
+    toggle.addEventListener("click", () => (list.classList.contains("hidden") ? (input.focus(), open(true)) : close()));
+    input.addEventListener("blur", () => setTimeout(close, 150));
+  }
+
+  function showEmployeeModal() {
+    const modal = document.getElementById("employeeModal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function hideEmployeeModal() {
+    const modal = document.getElementById("employeeModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  function showExportModal() {
+    const modal = document.getElementById("exportModal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function hideExportModal() {
+    const modal = document.getElementById("exportModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    document.body.style.overflow = "";
+    const status = document.getElementById("exportStatus");
+    if (status) status.textContent = "";
+  }
+
+  function populateExportModal() {
+    const year = parseInt(document.getElementById("yearInput").value, 10);
+    const monthRaw = document.getElementById("monthSelect").value;
+    const exportMonth = document.getElementById("exportMonthSelect");
+    const exportDv = document.getElementById("exportDonViSelect");
+    if (!exportMonth || !exportDv) return;
+
+    // Months: use current month dropdown options (already filtered by current selections).
+    exportMonth.innerHTML = '<option value="all">Tất cả</option>';
+    const srcMonth = document.getElementById("monthSelect");
+    srcMonth.querySelectorAll("option").forEach((opt) => {
+      const v = (opt.value || "").toString();
+      if (!v || v === "all") return;
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v;
+      exportMonth.appendChild(o);
+    });
+    exportMonth.value = monthRaw || "all";
+
+    // Don_vi: use optionsDonVi, plus "Tất cả"
+    exportDv.innerHTML = '<option value="">Tất cả</option>';
+    for (const dv of (optionsDonVi || []).filter((x) => (x || "").toString().trim())) {
+      const o = document.createElement("option");
+      o.value = dv;
+      o.textContent = dv;
+      exportDv.appendChild(o);
+    }
+    // Prefill if a single don_vi is selected in dashboard
+    const sel = Array.from(selectedDonVi || []);
+    exportDv.value = sel.length === 1 ? sel[0] : "";
+
+    const status = document.getElementById("exportStatus");
+    if (status) status.textContent = `Năm ${year}`;
+  }
+
+  function bindOutsideClickToClose() {
+    const modal = document.getElementById("employeeModal");
+    const panel = document.getElementById("employeeModalPanel");
+    if (!modal || !panel) return;
+    modal.addEventListener("mousedown", (e) => {
+      if (modal.classList.contains("hidden")) return;
+      const target = e.target;
+      if (target instanceof Node && !panel.contains(target)) hideEmployeeModal();
+    });
+  }
+
+  function renderEmployeeRows(rows) {
+    const tbody = document.getElementById("employeeBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    if (!rows || !rows.length) {
+      tbody.innerHTML = `<tr><td class="px-4 py-6 text-on-surface-variant" colspan="6">Không có dữ liệu.</td></tr>`;
+      return;
+    }
+    for (const r of rows) {
+      const v = Number(r.metric_vnd || 0);
+      const isMeet = v >= TARGET;
+      const pillClass = isMeet ? "bg-secondary-container text-on-secondary-container" : "bg-error-container text-on-error-container";
+      const ym = r.month ? `${String(employeeModalState.year || "").padStart(4, "0")}-${String(r.month).padStart(2, "0")}` : "—";
+      const tr = document.createElement("tr");
+      tr.className = "border-t border-outline-variant/30 hover:bg-surface-container-low transition-colors";
+      tr.innerHTML = `
+        <td class="px-4 py-3 font-semibold">${(r.full_name || "").toString()}</td>
+        <td class="px-4 py-3 text-on-surface-variant tabular-nums">${(r.manv || "").toString()}</td>
+        <td class="px-4 py-3 text-on-surface-variant">${(r.don_vi || "").toString()}</td>
+        <td class="px-4 py-3 text-on-surface-variant">${(r.department || "").toString()}</td>
+        <td class="px-4 py-3 text-on-surface-variant tabular-nums">${ym}</td>
+        <td class="px-4 py-3 text-right tabular-nums">
+          <span class="px-3 py-1 rounded-full text-xs font-bold ${pillClass}">${fmtVnd(v)}</span>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function filterEmployeeRows(rows, needle) {
+    const q = (needle || "").trim().toLowerCase();
+    if (!q) return rows || [];
+    return (rows || []).filter((r) => {
+      const ym = r.month ? `${employeeModalState.year || ""}-${String(r.month).padStart(2, "0")}` : "";
+      const hay = `${r.full_name || ""} ${r.manv || ""} ${r.don_vi || ""} ${r.department || ""} ${ym}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  async function loadEmployeeModalPage() {
+    const year = employeeModalState.year;
+    if (!year) return;
+    const params = new URLSearchParams({ year: String(year), view: employeeModalState.view });
+    if (employeeModalState.month !== null) params.set("month", String(employeeModalState.month));
+    if (employeeModalState.group_name) params.set("group_name", employeeModalState.group_name);
+
+    const coSo = employeeModalState.override_co_so ?? selectedValue("coSoInput", optionsCoSo);
+    const donVi = employeeModalState.override_don_vi ?? setToCsv(selectedDonVi);
+    const dept = employeeModalState.override_department ?? setToCsv(selectedDept);
+    if (coSo) params.set("co_so", coSo);
+    if (donVi) params.set("don_vi", donVi);
+    if (dept) params.set("department", dept);
+    if (employeeModalState.exclude_don_vi) params.set("exclude_don_vi", employeeModalState.exclude_don_vi);
+    if (employeeModalState.exclude_department) params.set("exclude_department", employeeModalState.exclude_department);
+    applyHangingOnly(params);
+
+    params.set("limit", String(employeeModalState.limit));
+    params.set("offset", String(employeeModalState.offset));
+
+    const body = document.getElementById("employeeBody");
+    if (body) body.innerHTML = `<tr><td class="px-4 py-6 text-on-surface-variant" colspan="5">Đang tải...</td></tr>`;
+
+    const res = await fetch(`/api/employees/below-target?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok) {
+      if (body) body.innerHTML = `<tr><td class="px-4 py-6 text-error" colspan="5">Không tải được dữ liệu.</td></tr>`;
+      return;
+    }
+
+    employeeModalState._rawRows = data.rows || [];
+    employeeModalState._total = Number(data.total || 0);
+
+    const badge = document.getElementById("employeeTotalBadge");
+    if (badge) {
+      badge.classList.remove("hidden");
+      badge.textContent = `Tổng nhân sự dưới mục tiêu: ${fmtInt(employeeModalState._total || 0)}`;
+    }
+
+    const countEl = document.getElementById("employeeCount");
+    if (countEl) {
+      const from = employeeModalState.offset + 1;
+      const to = Math.min(employeeModalState.offset + employeeModalState.limit, employeeModalState._total);
+      countEl.textContent = employeeModalState._total ? `${fmtInt(from)}–${fmtInt(to)} / ${fmtInt(employeeModalState._total)}` : "0";
+    }
+
+    const q = document.getElementById("employeeSearch")?.value || "";
+    renderEmployeeRows(filterEmployeeRows(employeeModalState._rawRows, q));
+
+    const prev = document.getElementById("employeePrev");
+    const next = document.getElementById("employeeNext");
+    if (prev) prev.disabled = employeeModalState.offset <= 0;
+    if (next) next.disabled = employeeModalState.offset + employeeModalState.limit >= employeeModalState._total;
+  }
+
+  async function openEmployeeModal({ year, month, view, groupName, title, subtitle }) {
+    employeeModalState.year = year;
+    employeeModalState.month = month;
+    employeeModalState.view = view;
+    employeeModalState.group_name = groupName || null;
+    employeeModalState.offset = 0;
+    employeeModalState.override_co_so = null;
+    employeeModalState.override_don_vi = null;
+    employeeModalState.override_department = null;
+    employeeModalState.exclude_don_vi = null;
+    employeeModalState.exclude_department = null;
+
+    const titleEl = document.getElementById("employeeModalTitle");
+    const subEl = document.getElementById("employeeModalSubtitle");
+    if (titleEl) titleEl.textContent = title || "Nhân sự dưới mục tiêu";
+    if (subEl) subEl.textContent = subtitle || document.getElementById("scopeHint")?.textContent || "";
+
+    const search = document.getElementById("employeeSearch");
+    if (search) search.value = "";
+
+    showEmployeeModal();
+    await loadEmployeeModalPage();
+  }
+
+  async function openEmployeeModalWithOverrides({ year, month, view, groupName, title, subtitle, coSo, donVi, department, excludeDonVi, excludeDepartment }) {
+    employeeModalState.year = year;
+    employeeModalState.month = month;
+    employeeModalState.view = view;
+    employeeModalState.group_name = groupName || null;
+    employeeModalState.offset = 0;
+    employeeModalState.override_co_so = coSo || null;
+    employeeModalState.override_don_vi = donVi || null;
+    employeeModalState.override_department = department || null;
+    employeeModalState.exclude_don_vi = excludeDonVi || null;
+    employeeModalState.exclude_department = excludeDepartment || null;
+
+    const titleEl = document.getElementById("employeeModalTitle");
+    const subEl = document.getElementById("employeeModalSubtitle");
+    if (titleEl) titleEl.textContent = title || "Nhân sự dưới mục tiêu";
+    if (subEl) subEl.textContent = subtitle || document.getElementById("scopeHint")?.textContent || "";
+
+    const search = document.getElementById("employeeSearch");
+    if (search) search.value = "";
+
+    showEmployeeModal();
+    await loadEmployeeModalPage();
+  }
+
+  function handleChartBarClick(kind, rawLabel) {
+    const year = parseInt(document.getElementById("yearInput").value, 10);
+    const monthRaw = document.getElementById("monthSelect").value;
+    const monthSel = monthRaw === "all" ? null : parseInt(monthRaw, 10);
+    const groupCsv = setToCsv(selectedGroups);
+    const groupSingle = selectedGroups.size === 1 ? Array.from(selectedGroups)[0] : null;
+
+    if (kind === "mixed") {
+      // When no (or multi) group filter: bars represent groups; clicking opens that group.
+      if (!groupSingle) {
+        const groupName = fullGroupLabel(rawLabel);
+        const view = monthSel === null ? "year_sum" : "month";
+        const subtitle = monthSel === null ? `năm ${year} (tổng các tháng)` : `tháng ${monthSel}/${year}`;
+        openEmployeeModal({
+          year,
+          month: monthSel,
+          view,
+          groupName,
+          title: `Nhân sự dưới mục tiêu • ${shortGroupLabel(groupName)}`,
+          subtitle,
+        });
+        return;
+      }
+
+      // Group selected: bars may represent months (when Tháng = Tất cả) or a single bar.
+      const month = monthSel === null ? parseInt(rawLabel, 10) : monthSel;
+      if (!month || !isFinite(month)) return;
+      openEmployeeModal({
+        year,
+        month,
+        view: "month",
+        groupName: groupSingle,
+        title: `Nhân sự dưới mục tiêu • ${shortGroupLabel(groupSingle)}`,
+        subtitle: `tháng ${month}/${year}`,
+      });
+      return;
+    }
+
+    if (kind === "monthTrend") {
+      // label: yyyy-mm
+      const m = String(rawLabel).split("-")[1];
+      const month = parseInt(m, 10);
+      if (!month || !isFinite(month)) return;
+      openEmployeeModal({
+        year,
+        month,
+        view: "month",
+        groupName: groupCsv,
+        title: `Nhân sự dưới mục tiêu • ${groupSingle ? shortGroupLabel(groupSingle) : (groupCsv ? "Nhiều nhóm" : "Tất cả nhóm")}`,
+        subtitle: `tháng ${month}/${year}`,
+      });
+      return;
+    }
+  }
+
+  function handleDonutSliceClick(rawLabel) {
+    const label = (rawLabel || "").toString();
+    if (!label) return;
+
+    const year = parseInt(document.getElementById("yearInput").value, 10);
+    const monthRaw = document.getElementById("monthSelect").value;
+    const monthSel = monthRaw === "all" ? null : parseInt(monthRaw, 10);
+    const view = monthSel === null ? "year_sum" : "month";
+
+    const groupSel = setToCsv(selectedGroups);
+    const coSo = selectedValue("coSoInput", optionsCoSo);
+    const donViSel = setToCsv(selectedDonVi);
+    const deptSel = setToCsv(selectedDept);
+    const otherExcludes = (belowBreakdownState?.labels || []).filter((x) => (x || "").toString() && (x || "").toString() !== "Khác");
+
+    const mode = belowBreakdownState?.mode || "don_vi";
+    if (mode === "don_vi") {
+      if (label === "Khác") {
+        openEmployeeModalWithOverrides({
+          year,
+          month: monthSel,
+          view,
+          groupName: groupSel,
+          title: `Nhân sự dưới mục tiêu • Khác`,
+          subtitle: monthSel === null ? `năm ${year} (tổng các tháng)` : `tháng ${monthSel}/${year}`,
+          coSo,
+          donVi: donViSel, // keep current don_vi filter (multi) if any
+          department: deptSel,
+          excludeDonVi: otherExcludes.join(","),
+        });
+        return;
+      }
+      openEmployeeModalWithOverrides({
+        year,
+        month: monthSel,
+        view,
+        groupName: groupSel,
+        title: `Nhân sự dưới mục tiêu • ${label}`,
+        subtitle: monthSel === null ? `năm ${year} (tổng các tháng)` : `tháng ${monthSel}/${year}`,
+        coSo,
+        donVi: label,
+        department: deptSel,
+      });
+      return;
+    }
+
+    // mode === "department"
+    if (label === "Khác") {
+      openEmployeeModalWithOverrides({
+        year,
+        month: monthSel,
+        view,
+        groupName: groupSel,
+        title: `Nhân sự dưới mục tiêu • Khác`,
+        subtitle: monthSel === null ? `năm ${year} (tổng các tháng)` : `tháng ${monthSel}/${year}`,
+        coSo,
+        donVi: donViSel,
+        department: deptSel, // keep department filter (multi) if any
+        excludeDepartment: otherExcludes.join(","),
+      });
+      return;
+    }
+    openEmployeeModalWithOverrides({
+      year,
+      month: monthSel,
+      view,
+      groupName: groupSel,
+      title: `Nhân sự dưới mục tiêu • ${label}`,
+      subtitle: monthSel === null ? `năm ${year} (tổng các tháng)` : `tháng ${monthSel}/${year}`,
+      coSo,
+      donVi: donViSel,
+      department: label,
+    });
   }
 
   function selectedValue(inputId, options) {
@@ -437,7 +1050,7 @@
     },
   };
 
-  function renderBarLine(canvasId, existingChart, labels, barValuesVnd) {
+  function renderBarLine(canvasId, existingChart, labels, barValuesVnd, clickKind) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return existingChart;
     const ctx = canvas.getContext("2d");
@@ -476,6 +1089,13 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        onClick: (_evt, elements) => {
+          if (!elements || !elements.length) return;
+          const idx = elements[0].index;
+          const label = labels[idx];
+          if (!label) return;
+          handleChartBarClick(clickKind, String(label));
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -493,6 +1113,7 @@
                 return [
                   `Lương BQ trong giờ: ${fmtInt(Math.round(v))} (nghìn VND)`,
                   `Chênh lệch: ${sign}${diffAbs}k (${sign}${pctAbs}%)`,
+                  "Bấm vào cột để xem danh sách nhân sự dưới mục tiêu",
                 ];
               },
               labelTextColor: (c) => {
@@ -526,13 +1147,339 @@
   }
 
   function renderMixed(labels, barValuesVnd) {
-    mixedChart = renderBarLine("mixedChart", mixedChart, labels, barValuesVnd);
+    mixedChart = renderBarLine("mixedChart", mixedChart, labels, barValuesVnd, "mixed");
     updateDeltaChip("mixedDeltaChip", barValuesVnd);
   }
 
   function renderMonthTrend(labels, barValuesVnd) {
-    monthTrendChart = renderBarLine("monthTrendChart", monthTrendChart, labels, barValuesVnd);
-    updateDeltaChip("monthDeltaChip", barValuesVnd);
+    monthTrendChart = renderBarLine("monthTrendChart", monthTrendChart, labels, barValuesVnd, "monthTrend");
+  }
+
+  const PIE_PALETTE = [
+    "#1E3A8A", // Deep Indigo
+    "#1D4ED8", // Royal Blue
+    "#3B82F6", // Bright Azure
+    "#93C5FD", // Soft Sky
+    "#DBEAFE", // Pale Frost
+  ];
+
+  const donutCenterPlugin = {
+    id: "donutCenterPlugin",
+    afterDraw(chart, _args, opts) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      if (!meta?.data?.length) return;
+      const { x, y } = meta.data[0];
+      const total = Number(opts?.total || 0);
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#191c1d";
+      ctx.font = "800 40px Manrope, Inter, sans-serif";
+      ctx.fillText(fmtInt(total), x, y - 6);
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "700 11px Inter, sans-serif";
+      ctx.fillText("NHÂN SỰ", x, y + 22);
+      ctx.fillText("KHÔNG ĐẠT", x, y + 38);
+      ctx.restore();
+    },
+  };
+
+  const donutPctLabelPlugin = {
+    id: "donutPctLabelPlugin",
+    afterDatasetsDraw(chart) {
+      try {
+        const dataset = chart.data?.datasets?.[0];
+        const data = Array.isArray(dataset?.data) ? dataset.data : [];
+        const total = Number(chart?.options?.plugins?.donutCenterPlugin?.total || 0);
+        if (!total || !data.length) return;
+
+        const meta = chart.getDatasetMeta(0);
+        if (!meta?.data?.length) return;
+
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.font = "800 12px Inter, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "rgba(15, 23, 42, 0.35)";
+        ctx.shadowBlur = 6;
+
+        meta.data.forEach((arc, i) => {
+          const v = Number(data[i] || 0);
+          if (!v) return;
+          const pct = (v / total) * 100;
+          if (pct < 4.5) return; // tránh rối khi lát quá nhỏ
+          const angle = (arc.startAngle + arc.endAngle) / 2;
+          const r = (arc.outerRadius + arc.innerRadius) / 2;
+          const x = arc.x + Math.cos(angle) * r;
+          const y = arc.y + Math.sin(angle) * r;
+          ctx.fillText(`${pct.toFixed(1)}%`, x, y);
+        });
+
+        ctx.restore();
+      } catch (e) {
+        return;
+      }
+    },
+  };
+
+  function renderDonut(labels, counts, totalAll) {
+    const canvas = document.getElementById("belowDonutChart");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (belowDonutChart) belowDonutChart.destroy();
+    const total = Number(totalAll || 0) || counts.reduce((a, b) => a + b, 0);
+    belowDonutChart = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels,
+        datasets: [
+          {
+            data: counts,
+            backgroundColor: labels.map((_, i) => PIE_PALETTE[i % PIE_PALETTE.length]),
+            borderColor: "#ffffff",
+            borderWidth: 3,
+            hoverOffset: 6,
+            cutout: "68%",
+            spacing: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        onClick: (_evt, elements) => {
+          if (!elements || !elements.length) return;
+          const idx = elements[0].index;
+          const label = labels[idx];
+          if (!label) return;
+          handleDonutSliceClick(String(label));
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            displayColors: true,
+            callbacks: {
+              label: (c) => {
+                const v = Number(c.parsed || 0);
+                const pct = total ? (v / total) * 100 : 0;
+                return [`${c.label}: ${fmtInt(v)} (${pct.toFixed(1)}%)`, "Bấm vào lát để xem danh sách nhân sự dưới mục tiêu"];
+              },
+            },
+          },
+          donutCenterPlugin: { total },
+        },
+      },
+      plugins: [donutCenterPlugin, donutPctLabelPlugin],
+    });
+  }
+
+  function renderDonutLegendSimple(items, labels) {
+    const box = document.getElementById("belowDonutLegendSimple");
+    if (!box) return;
+    box.innerHTML = "";
+    const arr = Array.isArray(items) ? items : [];
+    if (!arr.length) {
+      box.innerHTML = `<div class="text-on-surface-variant">Không có dữ liệu.</div>`;
+      return;
+    }
+    const labelOrder = Array.isArray(labels) ? labels : arr.map((x) => (x.label || "").toString());
+    const colorMap = new Map();
+    labelOrder.forEach((l, i) => colorMap.set(l, PIE_PALETTE[i % PIE_PALETTE.length]));
+
+    for (const x of arr) {
+      const l = (x.label || "").toString();
+      const color = colorMap.get(l) || PIE_PALETTE[0];
+      const item = document.createElement("div");
+      item.className = "inline-flex items-center gap-2 text-on-surface";
+      item.innerHTML = `
+        <span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span>
+        <span class="font-semibold">${l}</span>
+      `;
+      box.appendChild(item);
+    }
+  }
+
+  function sparklineSvg(values) {
+    const vals = (values || []).map((x) => Number(x || 0));
+    const w = 110;
+    const h = 22;
+    const max = Math.max(1, ...vals);
+    const min = 0;
+    const pts = vals
+      .map((v, i) => {
+        const x = (i / Math.max(1, vals.length - 1)) * (w - 2) + 1;
+        const y = h - 1 - ((v - min) / (max - min || 1)) * (h - 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+    return `
+      <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+        <polyline fill="none" stroke="rgba(0,64,161,0.9)" stroke-width="2" points="${pts}" />
+      </svg>
+    `;
+  }
+
+  function percentBarHtml({ widthPct, labelPct, color }) {
+    const w = Math.max(0, Math.min(100, Number(widthPct || 0)));
+    const p = Math.max(0, Math.min(100, Number(labelPct || 0)));
+    const barBg = "bg-surface-container-high";
+    return `
+      <div class="flex items-center justify-end gap-3">
+        <div class="w-[120px] h-2 rounded-full ${barBg} overflow-hidden">
+          <div class="h-full rounded-full" style="width:${w.toFixed(1)}%; background:${color};"></div>
+        </div>
+        <div class="w-[56px] text-right text-xs font-bold tabular-nums text-on-surface-variant">${p.toFixed(1)}%</div>
+      </div>
+    `;
+  }
+
+  function sumArrays(a, b) {
+    const out = [];
+    const n = Math.max(a?.length || 0, b?.length || 0);
+    for (let i = 0; i < n; i++) out.push(Number(a?.[i] || 0) + Number(b?.[i] || 0));
+    return out;
+  }
+
+  async function loadBelowBreakdown(year, month, view, groupName, coSo, donVi, dept) {
+    try {
+      const params = new URLSearchParams({ year: String(year), view });
+      if (month !== null) params.set("month", String(month));
+      if (groupName) params.set("group_name", groupName);
+      if (coSo) params.set("co_so", coSo);
+      if (donVi) params.set("don_vi", donVi);
+      if (dept) params.set("department", dept);
+      applyHangingOnly(params);
+      const res = await fetch(`/api/below-target/breakdown?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) return;
+
+      const subtitle = document.getElementById("belowDonutSubtitle");
+      const modeLabel = data.mode === "department" ? "theo bộ phận" : "theo đơn vị";
+      const scopeLabel = month === null ? `năm ${year} (tổng các tháng)` : `tháng ${month}/${year}`;
+      if (subtitle) subtitle.textContent = `${scopeLabel} • ${modeLabel}`;
+
+      const donutItems = data.donut || [];
+      const labels = donutItems.map((x) => (x.label || "").toString());
+      const counts = donutItems.map((x) => Number(x.count || 0));
+      renderDonut(labels, counts, Number(data.total || 0));
+      renderDonutLegendSimple(donutItems, labels);
+      belowBreakdownState = { mode: data.mode || "don_vi", labels };
+
+      const totalAll = Number(data.total || 0) || counts.reduce((a, b) => a + b, 0);
+      const colorMap = new Map();
+      labels.forEach((l, i) => colorMap.set(l, PIE_PALETTE[i % PIE_PALETTE.length]));
+
+      const tbody = document.getElementById("belowBreakdownBody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      const table = data.table || [];
+      if (!table.length) {
+        tbody.innerHTML = `<tr><td class="px-4 py-6 text-on-surface-variant" colspan="4">Không có dữ liệu.</td></tr>`;
+        return;
+      }
+
+      // Group table by Đơn vị (default view). Expand to see Bộ phận list (scrollable).
+      const byDv = new Map(); // don_vi -> { total, sparkline, rows[] }
+      for (const r of table) {
+        const dv = (r.don_vi || "(Trống)").toString();
+        const dep = (r.department || "(Trống)").toString();
+        const cnt = Number(r.count || 0);
+        const sp = Array.isArray(r.sparkline) ? r.sparkline.map((x) => Number(x || 0)) : [];
+        if (!byDv.has(dv)) byDv.set(dv, { total: 0, sparkline: sp, rows: [] });
+        const cur = byDv.get(dv);
+        cur.total += cnt;
+        cur.sparkline = sumArrays(cur.sparkline, sp);
+        cur.rows.push({ department: dep, count: cnt, sparkline: sp });
+      }
+
+      const dvs = Array.from(byDv.entries())
+        .map(([don_vi, v]) => ({ don_vi, ...v }))
+        .sort((a, b) => b.total - a.total);
+
+      const maxDv = Math.max(1, ...dvs.map((x) => Number(x.total || 0)));
+
+      // Render table like qc_dashboard: color + count + percent bar, then trend + details.
+      for (let idx = 0; idx < dvs.length; idx++) {
+        const dvItem = dvs[idx];
+        const color = colorMap.get(dvItem.don_vi) || PIE_PALETTE[idx % PIE_PALETTE.length];
+        const pctShare = totalAll ? (Number(dvItem.total || 0) / totalAll) * 100 : 0;
+        const pctMax = maxDv ? (Number(dvItem.total || 0) / maxDv) * 100 : 0;
+        const tr = document.createElement("tr");
+        tr.className = "border-t border-outline-variant/30 hover:bg-surface-container-low transition-colors";
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-semibold">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span>
+              <span class="truncate">${dvItem.don_vi}</span>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-right font-extrabold tabular-nums text-error">${fmtInt(dvItem.total || 0)}</td>
+          <td class="px-4 py-3 text-right">${percentBarHtml({ widthPct: pctMax, labelPct: pctShare, color })}</td>
+          <td class="px-4 py-3 text-right">${sparklineSvg(dvItem.sparkline || [])}</td>
+          <td class="px-4 py-3 text-right">
+            <button type="button" class="px-3 py-1.5 rounded-md bg-surface-container-high text-on-surface-variant hover:bg-surface-container transition-colors text-xs font-bold" data-dv="${dvItem.don_vi}">
+              Chi tiết
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        const detailsTr = document.createElement("tr");
+        detailsTr.className = "hidden";
+        detailsTr.dataset.dv = dvItem.don_vi;
+        const rows = (dvItem.rows || []).slice().sort((a, b) => b.count - a.count);
+        const maxDep = Math.max(1, ...rows.map((x) => Number(x.count || 0)));
+        const detailRowsHtml = rows
+          .map(
+            (x) => `
+            <div class="flex items-center justify-between gap-3 py-2 border-b border-outline-variant/20 last:border-b-0">
+              <div class="min-w-0">
+                <div class="font-semibold text-on-surface truncate">${x.department}</div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="font-extrabold tabular-nums text-error w-[56px] text-right">${fmtInt(x.count || 0)}</div>
+                <div class="w-[190px] text-right">
+                  ${percentBarHtml({
+                    widthPct: maxDep ? (Number(x.count || 0) / maxDep) * 100 : 0,
+                    labelPct: dvItem.total ? (Number(x.count || 0) / Number(dvItem.total || 1)) * 100 : 0,
+                    color,
+                  })}
+                </div>
+              </div>
+            </div>
+          `
+          )
+          .join("");
+
+        detailsTr.innerHTML = `
+          <td colspan="5" class="pb-4">
+            <div class="mt-2 rounded-xl bg-surface-container-high p-4 text-sm text-on-surface-variant">
+              <div class="flex items-center justify-between gap-3 mb-3">
+                <div class="font-bold text-on-surface">Bộ phận của ${dvItem.don_vi}</div>
+                <div class="text-xs text-on-surface-variant">Scroll để xem thêm</div>
+              </div>
+              <div class="max-h-64 overflow-auto pr-1">
+                ${detailRowsHtml || '<div class="py-2">Không có dữ liệu.</div>'}
+              </div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(detailsTr);
+
+        const btn = tr.querySelector("button[data-dv]");
+        btn.addEventListener("click", () => {
+          const open = detailsTr.classList.contains("hidden");
+          tbody.querySelectorAll("tr[data-dv]").forEach((row) => row.classList.add("hidden"));
+          if (!open) return;
+          detailsTr.classList.remove("hidden");
+        });
+      }
+    } catch (e) {
+      return;
+    }
   }
 
   const ymLabel = (year, month) => `${year}-${String(month).padStart(2, "0")}`;
@@ -542,10 +1489,11 @@
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    const groupName = document.getElementById("groupSelect").value || null;
+    const groupCsv = setToCsv(selectedGroups);
+    const groupSingle = selectedGroups.size === 1 ? Array.from(selectedGroups)[0] : null;
     const coSo = selectedValue("coSoInput", optionsCoSo);
-    const donVi = selectedValue("donViInput", optionsDonVi);
-    const dept = selectedValue("deptInput", optionsDept);
+    const donVi = setToCsv(selectedDonVi);
+    const dept = setToCsv(selectedDept);
 
     for (const p of points || []) {
       const month = Number(p.month || 0);
@@ -599,6 +1547,7 @@
           if (coSo) params.set("co_so", coSo);
           if (donVi) params.set("don_vi", donVi);
           if (dept) params.set("department", dept);
+          applyHangingOnly(params);
           const res = await fetch(`/api/trend/monthly-details?${params.toString()}`);
           const payload = await res.json();
           if (!res.ok) {
@@ -670,6 +1619,7 @@
         if (coSo) params.set("co_so", coSo);
         if (donVi) params.set("don_vi", donVi);
         if (dept) params.set("department", dept);
+        applyHangingOnly(params);
         const res = await fetch(`/api/insights?${params.toString()}`);
         if (!res.ok) return;
         payload = await res.json();
@@ -689,19 +1639,21 @@
     const monthRaw = document.getElementById("monthSelect").value;
     const month = monthRaw === "all" ? null : parseInt(monthRaw, 10);
     const status = document.getElementById("loadStatus");
-    const groupName = document.getElementById("groupSelect").value || null;
+    const groupCsv = setToCsv(selectedGroups);
+    const groupSingle = selectedGroups.size === 1 ? Array.from(selectedGroups)[0] : null;
     const coSo = selectedValue("coSoInput", optionsCoSo);
-    const donVi = selectedValue("donViInput", optionsDonVi);
-    const dept = selectedValue("deptInput", optionsDept);
+    const donVi = setToCsv(selectedDonVi);
+    const dept = setToCsv(selectedDept);
     status.textContent = "Đang cập nhật...";
 
     const view = month === null ? "year_avg" : "month";
     const params = new URLSearchParams({ year: String(year), view });
     if (month !== null) params.set("month", String(month));
-    if (groupName) params.set("group_name", groupName);
+    if (groupCsv) params.set("group_name", groupCsv);
     if (coSo) params.set("co_so", coSo);
     if (donVi) params.set("don_vi", donVi);
     if (dept) params.set("department", dept);
+    applyHangingOnly(params);
 
     const res = await fetch(`/api/insights?${params.toString()}`);
     const text = await res.text();
@@ -712,8 +1664,8 @@
     const data = JSON.parse(text);
     status.textContent = "";
 
-    document.getElementById("scopeHint").textContent =
-      month === null ? `năm ${year} (bình quân tháng)` : `tháng ${month}/${year}`;
+    const scopeLabel = month === null ? `năm ${year} (bình quân tháng)` : `tháng ${month}/${year}`;
+    document.getElementById("scopeHint").textContent = scopeLabel;
 
     const tbody = document.getElementById("insightBody");
     tbody.innerHTML = "";
@@ -722,11 +1674,13 @@
 
     const byGroup = data.by_group || [];
     if (!byGroup.length) {
-      tbody.innerHTML = `<tr><td class="px-5 py-6 text-on-surface-variant" colspan="5">Không có dữ liệu.</td></tr>`;
+      tbody.innerHTML = `<tr><td class="px-5 py-6 text-on-surface-variant" colspan="4">Không có dữ liệu.</td></tr>`;
       document.getElementById("totalCount").textContent = "0";
       const dvEl = document.getElementById("kpiDonViCount");
       if (dvEl) dvEl.textContent = "0";
-      updateKpiCards({ year, month, view, kpiData: { by_group: [] }, scopeLabel: document.getElementById("scopeHint").textContent });
+      const pctEl = document.getElementById("belowPctHint");
+      if (pctEl) pctEl.textContent = "—";
+      updateKpiCards({ year, month, view, kpiData: { by_group: [] }, scopeLabel });
       renderMixed(["—"], [0]);
       return;
     }
@@ -743,7 +1697,6 @@
         <td class="px-5 py-4 font-semibold">${shortGroupLabel(row.group)}</td>
         <td class="px-5 py-4 text-right text-on-surface-variant tabular-nums">${fmtK(row.min_vnd)}</td>
         <td class="px-5 py-4 text-right text-on-surface-variant tabular-nums">${fmtK(row.max_vnd)}</td>
-        <td class="px-5 py-4 text-right text-on-surface-variant tabular-nums">${fmtK(row.median_vnd)}</td>
         <td class="px-5 py-4">
           <div class="flex items-center justify-end gap-2">
             <span class="px-3 py-1 rounded-full text-xs font-bold tabular-nums ${isMeet ? "bg-secondary-container text-on-secondary-container" : "bg-error-container text-on-error-container"}">
@@ -757,53 +1710,159 @@
       `;
       tbody.appendChild(tr);
     }
-    // Headcount display:
-    // - Month selected: headcount for that month
-    // - Month=all: average headcount across available months
-    await updateHeadcount(year, month, groupName);
-    await updateParticipation(year, month, groupName);
+    // Below-target display:
+    // - Month selected: distinct employees below target in that month
+    // - Month=all: average monthly distinct employees below target
+    const belowCount = await updateBelowTargetCount(year, month, groupCsv);
+    await updateParticipation(year, month, groupCsv);
+    const headcountTotal = await fetchHeadcountValue(year, month, groupCsv);
+    const pctEl = document.getElementById("belowPctHint");
+    if (pctEl) {
+      if (!headcountTotal) {
+        pctEl.textContent = "—";
+      } else {
+        const pct = (Number(belowCount || 0) / Number(headcountTotal || 0)) * 100;
+        pctEl.textContent = `${pct.toFixed(1)}% trên tổng mẫu dữ liệu`;
+      }
+    }
 
     // Chart behavior:
-    // - Nhóm = Tất cả: cột theo nhóm (Avg)
-    // - Nhóm cụ thể:
+    // - 0 hoặc nhiều Nhóm: cột theo nhóm (Avg)
+    // - 1 Nhóm:
     //   - Tháng cụ thể: 1 cột (Avg)
     //   - Tháng = Tất cả: cột theo tháng trong năm (Avg)
-    if (!groupName) {
+    if (!groupSingle) {
       renderMixed(labels, barVals);
     } else if (month !== null) {
       const only = byGroup.length ? byGroup[0].avg_vnd : 0;
-      renderMixed([shortGroupLabel(groupName)], [only]);
+      renderMixed([shortGroupLabel(groupSingle)], [only]);
     } else {
       const byMonth = data.by_month || [];
       const mLabels = byMonth.map((x) => String(x.month));
       const mVals = byMonth.map((x) => x.avg_vnd);
-      renderMixed(mLabels.length ? mLabels : [shortGroupLabel(groupName)], mLabels.length ? mVals : [0]);
+      renderMixed(mLabels.length ? mLabels : [shortGroupLabel(groupSingle)], mLabels.length ? mVals : [0]);
     }
 
     // KPI calculations (ignore "Nhóm" selection; keep other filters + time scope).
     let kpiPayload = data;
-    if (groupName) {
+    if (groupCsv) {
       const kpiParams = new URLSearchParams({ year: String(year), view });
       if (month !== null) kpiParams.set("month", String(month));
       if (coSo) kpiParams.set("co_so", coSo);
       if (donVi) kpiParams.set("don_vi", donVi);
       if (dept) kpiParams.set("department", dept);
+      applyHangingOnly(kpiParams);
       const kpiRes = await fetch(`/api/insights?${kpiParams.toString()}`);
       if (kpiRes.ok) kpiPayload = await kpiRes.json();
     }
-    updateKpiCards({ year, month, view, kpiData: kpiPayload, scopeLabel: document.getElementById("scopeHint").textContent });
+    updateKpiCards({ year, month, view, kpiData: kpiPayload, scopeLabel });
 
     // Always show the month trend chart (year view), regardless of the Month dropdown.
     // This helps users see up/down trend when filtering by Cơ sở / Đơn vị / Bộ phận.
-    await loadMonthTrend(year, groupName, coSo, donVi, dept, month === null ? data : null);
+    await loadMonthTrend(year, groupCsv, coSo, donVi, dept, month === null ? data : null);
+
+    await loadBelowBreakdown(year, month, view, groupCsv, coSo, donVi, dept);
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("refreshBtn").addEventListener("click", () => window.location.reload());
+    try {
+      hangingOnly = (localStorage.getItem("rcp_hanging_only") || "") === "1";
+    } catch (e) {}
+    syncHangingOnlyBtn();
+    document.getElementById("hangingOnlyBtn")?.addEventListener("click", async () => {
+      hangingOnly = !hangingOnly;
+      try {
+        localStorage.setItem("rcp_hanging_only", hangingOnly ? "1" : "0");
+      } catch (e) {}
+      syncHangingOnlyBtn();
+      await refreshFilterOptions(true);
+      loadStats();
+    });
     // Auto-load on first visit so users don't need to click "Load".
     setupCombo("coSoInput", "coSoToggle", "coSoList", () => optionsCoSo, scheduleReload);
-    setupCombo("donViInput", "donViToggle", "donViList", () => optionsDonVi, scheduleReload);
-    setupCombo("deptInput", "deptToggle", "deptList", () => optionsDept, scheduleReload);
+    setupMultiCombo("groupInput", "groupToggle", "groupList", () => GROUP_OPTIONS, selectedGroups, { formatLabel: shortGroupLabel, onChange: scheduleReload });
+    setupMultiCombo("donViInput", "donViToggle", "donViList", () => optionsDonVi, selectedDonVi, { onChange: scheduleReload });
+    setupMultiCombo("deptInput", "deptToggle", "deptList", () => optionsDept, selectedDept, { onChange: scheduleReload });
+
+    // Employee modal UX
+    bindOutsideClickToClose();
+    document.getElementById("employeeModalClose")?.addEventListener("click", hideEmployeeModal);
+    document.getElementById("employeeModalBackdrop")?.addEventListener("mousedown", hideEmployeeModal);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") hideEmployeeModal();
+    });
+    document.getElementById("employeeSearch")?.addEventListener("input", () => {
+      renderEmployeeRows(filterEmployeeRows(employeeModalState._rawRows || [], document.getElementById("employeeSearch").value));
+    });
+    document.getElementById("employeePrev")?.addEventListener("click", async () => {
+      employeeModalState.offset = Math.max(0, employeeModalState.offset - employeeModalState.limit);
+      await loadEmployeeModalPage();
+    });
+    document.getElementById("employeeNext")?.addEventListener("click", async () => {
+      employeeModalState.offset = employeeModalState.offset + employeeModalState.limit;
+      await loadEmployeeModalPage();
+    });
+    document.getElementById("employeeFullView")?.addEventListener("click", () => {
+      const year = employeeModalState.year;
+      if (!year) return;
+      const params = new URLSearchParams({ year: String(year), view: employeeModalState.view });
+      if (employeeModalState.month !== null) params.set("month", String(employeeModalState.month));
+      if (employeeModalState.group_name) params.set("group_name", employeeModalState.group_name);
+
+      const coSo = employeeModalState.override_co_so ?? selectedValue("coSoInput", optionsCoSo);
+      const donVi = employeeModalState.override_don_vi ?? setToCsv(selectedDonVi);
+      const dept = employeeModalState.override_department ?? setToCsv(selectedDept);
+      if (coSo) params.set("co_so", coSo);
+      if (donVi) params.set("don_vi", donVi);
+      if (dept) params.set("department", dept);
+      if (employeeModalState.exclude_don_vi) params.set("exclude_don_vi", employeeModalState.exclude_don_vi);
+      if (employeeModalState.exclude_department) params.set("exclude_department", employeeModalState.exclude_department);
+      applyHangingOnly(params);
+
+      window.open(`/rcp/preview/below-target?${params.toString()}`, "_blank", "noopener");
+    });
+
+    // Export Excel modal
+    document.getElementById("exportExcelBtn")?.addEventListener("click", () => {
+      populateExportModal();
+      showExportModal();
+    });
+    document.getElementById("exportModalClose")?.addEventListener("click", hideExportModal);
+    document.getElementById("exportModalBackdrop")?.addEventListener("mousedown", hideExportModal);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") hideExportModal();
+    });
+    document.getElementById("exportDownloadBtn")?.addEventListener("click", () => {
+      const year = parseInt(document.getElementById("yearInput").value, 10);
+      const monthVal = document.getElementById("exportMonthSelect")?.value || "all";
+      const dvVal = (document.getElementById("exportDonViSelect")?.value || "").trim();
+
+      const params = new URLSearchParams({ year: String(year) });
+      if (monthVal !== "all") params.set("month", String(parseInt(monthVal, 10)));
+
+      // Apply current dashboard filters + modal overrides
+      const groupCsv = setToCsv(selectedGroups);
+      const coSo = selectedValue("coSoInput", optionsCoSo);
+      const deptCsv = setToCsv(selectedDept);
+      if (groupCsv) params.set("group_name", groupCsv);
+      if (coSo) params.set("co_so", coSo);
+      if (deptCsv) params.set("department", deptCsv);
+      if (dvVal) params.set("don_vi", dvVal);
+      else {
+        const dvCsv = setToCsv(selectedDonVi);
+        if (dvCsv) params.set("don_vi", dvCsv);
+      }
+      applyHangingOnly(params);
+
+      const status = document.getElementById("exportStatus");
+      if (status) status.textContent = "Đang tạo file...";
+      // Trigger download
+      window.location.href = `/api/export/below-target.xlsx?${params.toString()}`;
+      setTimeout(() => {
+        if (status) status.textContent = "Đã gửi yêu cầu tải xuống.";
+      }, 400);
+    });
 
     refreshFilterOptions(true).then(loadStats);
   });
@@ -822,21 +1881,21 @@
     }, 250);
   }
 
-  document.getElementById("groupSelect").addEventListener("change", scheduleReload);
   document.getElementById("monthSelect").addEventListener("change", scheduleReload);
 
   async function refreshFilterOptions(resetMonth) {
     const year = parseInt(document.getElementById("yearInput").value, 10);
-    const groupName = document.getElementById("groupSelect").value || null;
+    const groupCsv = setToCsv(selectedGroups);
     const coSo = selectedValue("coSoInput", optionsCoSo);
-    const donVi = selectedValue("donViInput", optionsDonVi);
-    const dept = selectedValue("deptInput", optionsDept);
+    const donVi = setToCsv(selectedDonVi);
+    const dept = setToCsv(selectedDept);
 
     const params = new URLSearchParams({ year: String(year) });
-    if (groupName) params.set("group_name", groupName);
+    if (groupCsv) params.set("group_name", groupCsv);
     if (coSo) params.set("co_so", coSo);
     if (donVi) params.set("don_vi", donVi);
     if (dept) params.set("department", dept);
+    applyHangingOnly(params);
     const res = await fetch(`/api/filters?${params.toString()}`);
     const data = await res.json();
     if (!res.ok) return;
@@ -847,8 +1906,15 @@
 
     // Clear invalid selections
     if (document.getElementById("coSoInput").value && !optionsCoSo.includes(document.getElementById("coSoInput").value)) document.getElementById("coSoInput").value = "";
-    if (document.getElementById("donViInput").value && !optionsDonVi.includes(document.getElementById("donViInput").value)) document.getElementById("donViInput").value = "";
-    if (document.getElementById("deptInput").value && !optionsDept.includes(document.getElementById("deptInput").value)) document.getElementById("deptInput").value = "";
+    for (const v of Array.from(selectedDonVi)) if (!optionsDonVi.includes(v)) selectedDonVi.delete(v);
+    for (const v of Array.from(selectedDept)) if (!optionsDept.includes(v)) selectedDept.delete(v);
+    // sync summaries
+    const dvInput = document.getElementById("donViInput");
+    if (dvInput) { dvInput.dataset.mode = "summary"; dvInput.value = summarizeSelection(selectedDonVi); }
+    const depInput = document.getElementById("deptInput");
+    if (depInput) { depInput.dataset.mode = "summary"; depInput.value = summarizeSelection(selectedDept); }
+    const grpInput = document.getElementById("groupInput");
+    if (grpInput) { grpInput.dataset.mode = "summary"; grpInput.value = summarizeSelection(selectedGroups); }
 
     const select = document.getElementById("monthSelect");
     const current = resetMonth ? "all" : select.value;
@@ -864,27 +1930,56 @@
     select.value = allowed.has(current) ? current : "all";
   }
 
-  async function updateHeadcount(year, month, groupName) {
+  async function updateBelowTargetCount(year, month, groupName) {
+    try {
+      const view = month === null ? "year_avg" : "month";
+      const params = new URLSearchParams({ year: String(year), view });
+      if (month !== null) params.set("month", String(month));
+      if (groupName) params.set("group_name", groupName);
+      const coSo = selectedValue("coSoInput", optionsCoSo);
+      const donVi = setToCsv(selectedDonVi);
+      const dept = setToCsv(selectedDept);
+      if (coSo) params.set("co_so", coSo);
+      if (donVi) params.set("don_vi", donVi);
+      if (dept) params.set("department", dept);
+      applyHangingOnly(params);
+      const res = await fetch(`/api/below-target-count?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) return;
+      const v = Number(data.below_count || 0);
+      document.getElementById("totalCount").textContent = fmtInt(v);
+      return v;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  async function fetchHeadcountValue(year, month, groupName) {
     try {
       const params = new URLSearchParams({ year: String(year) });
       if (groupName) params.set("group_name", groupName);
       const coSo = selectedValue("coSoInput", optionsCoSo);
-      const donVi = selectedValue("donViInput", optionsDonVi);
-      const dept = selectedValue("deptInput", optionsDept);
+      const donVi = setToCsv(selectedDonVi);
+      const dept = setToCsv(selectedDept);
       if (coSo) params.set("co_so", coSo);
       if (donVi) params.set("don_vi", donVi);
       if (dept) params.set("department", dept);
-      const res = await fetch(`/api/headcount?${params.toString()}`);
-      const data = await res.json();
-      if (!res.ok) return;
+      applyHangingOnly(params);
       if (month === null) {
-        document.getElementById("totalCount").textContent = fmtInt(data.avg_headcount || 0);
-        return Number(data.avg_headcount || 0);
+        // Month = all: denominator should be "tổng mẫu dữ liệu" (sum rows across months),
+        // not unique employees across the year.
+        const res = await fetch(`/api/headcount?${params.toString()}`);
+        const data = await res.json();
+        if (!res.ok) return 0;
+        const points = data.points || [];
+        return points.reduce((acc, p) => acc + Number(p.headcount || 0), 0);
+      } else {
+        const res = await fetch(`/api/headcount?${params.toString()}`);
+        const data = await res.json();
+        if (!res.ok) return 0;
+        const point = (data.points || []).find((p) => Number(p.month) === Number(month));
+        return Number(point ? point.headcount : 0);
       }
-      const point = (data.points || []).find((p) => Number(p.month) === Number(month));
-      const v = Number(point ? point.headcount : 0);
-      document.getElementById("totalCount").textContent = fmtInt(v);
-      return v;
     } catch (e) {
       return 0;
     }
@@ -896,11 +1991,12 @@
       if (month !== null) params.set("month", String(month));
       if (groupName) params.set("group_name", groupName);
       const coSo = selectedValue("coSoInput", optionsCoSo);
-      const donVi = selectedValue("donViInput", optionsDonVi);
-      const dept = selectedValue("deptInput", optionsDept);
+      const donVi = setToCsv(selectedDonVi);
+      const dept = setToCsv(selectedDept);
       if (coSo) params.set("co_so", coSo);
       if (donVi) params.set("don_vi", donVi);
       if (dept) params.set("department", dept);
+      applyHangingOnly(params);
       const res = await fetch(`/api/participation?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) return 0;

@@ -123,7 +123,7 @@
             <a
               class="{% if active_nav == 'rcp_data' %}text-blue-900 border-b-2 border-blue-900 pb-1{% else %}text-slate-500 font-medium hover:text-blue-800 transition-colors{% endif %}"
               href="/rcp/data"
-              >Load Excel</a
+              >Input Data</a
             >
             <a
               class="{% if active_nav == 'rcp_dashboard' %}text-blue-900 border-b-2 border-blue-900 pb-1{% else %}text-slate-500 font-medium hover:text-blue-800 transition-colors{% endif %}"
@@ -136,6 +136,27 @@
           <div class="hidden sm:block text-sm text-on-surface-variant">
             Mục tiêu: <span class="font-semibold text-on-surface">{{ target_salary_vnd_fmt }}</span> VND
           </div>
+          {% if user %}
+          <div class="hidden lg:flex items-center gap-2 text-sm text-slate-700 bg-white/70 border border-slate-200 rounded-full px-3 py-1">
+            <span class="material-symbols-outlined text-slate-500">account_circle</span>
+            <span class="truncate max-w-[200px]">{{ user.get("ho_ten") }}</span>
+          </div>
+          <a
+            href="/rcp/logout"
+            class="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-blue-900 hover:text-blue-700 transition-colors"
+          >
+            <span class="material-symbols-outlined">logout</span>
+            Đăng xuất
+          </a>
+          {% else %}
+          <a
+            href="/rcp/login"
+            class="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-blue-900 hover:text-blue-700 transition-colors"
+          >
+            <span class="material-symbols-outlined">login</span>
+            Đăng nhập
+          </a>
+          {% endif %}
         </div>
       </div>
     </header>

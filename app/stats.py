@@ -4,8 +4,28 @@ from collections import defaultdict
 
 from sqlmodel import Session, select
 from sqlalchemy import func
+from sqlalchemy import exists
 
-from app.models import PayrollRow
+from app.models import HangingLine, PayrollRow
+
+
+def _split_multi(value: str | None) -> list[str] | None:
+    if not value:
+        return None
+    parts = [p.strip() for p in value.split(",") if p.strip()]
+    return parts or None
+
+
+def _apply_csv_in(query, column, csv_value: str | None):
+    values = _split_multi(csv_value)
+    if not values:
+        return query
+    try:
+        py_type = getattr(getattr(column, "type", None), "python_type", None)
+    except Exception:
+        py_type = None
+    col_expr = func.trim(column) if py_type is str else column
+    return query.where(col_expr.in_(values))
 
 
 def _exclude_management_departments(query):
@@ -17,9 +37,22 @@ def _exclude_management_departments(query):
     return query.where(~(dept_lc.like("%lãnh đạo%") | dept_lc.like("%lanh dao%")))
 
 
-def month_stats(session: Session, *, year: int, month: int, target_salary_vnd: int) -> list[dict]:
+def _hanging_only_filter(query, *, hanging_only: bool):
+    if not hanging_only:
+        return query
+    sub = (
+        select(HangingLine.id)
+        .where(HangingLine.don_vi == PayrollRow.don_vi)
+        .where(HangingLine.department == PayrollRow.department)
+        .limit(1)
+    )
+    return query.where(exists(sub))
+
+
+def month_stats(session: Session, *, year: int, month: int, target_salary_vnd: int, hanging_only: bool = False) -> list[dict]:
     q = select(PayrollRow).where(PayrollRow.year == year, PayrollRow.month == month)
     q = _exclude_management_departments(q)
+    q = _hanging_only_filter(q, hanging_only=hanging_only)
     rows = session.exec(q).all()
 
     buckets: dict[str, dict[str, int]] = defaultdict(lambda: {"total": 0, "not_meet": 0})
@@ -39,9 +72,10 @@ def month_stats(session: Session, *, year: int, month: int, target_salary_vnd: i
     return results
 
 
-def year_timeseries(session: Session, *, year: int, target_salary_vnd: int) -> list[dict]:
+def year_timeseries(session: Session, *, year: int, target_salary_vnd: int, hanging_only: bool = False) -> list[dict]:
     q = select(PayrollRow).where(PayrollRow.year == year)
     q = _exclude_management_departments(q)
+    q = _hanging_only_filter(q, hanging_only=hanging_only)
     rows = session.exec(q).all()
 
     buckets: dict[tuple[int, str], dict[str, int]] = defaultdict(lambda: {"total": 0, "not_meet": 0})
@@ -79,6 +113,7 @@ def metric_insights(
     co_so: str | None,
     don_vi: str | None,
     department: str | None,
+    hanging_only: bool = False,
 ) -> tuple[list[dict], list[dict]]:
     """
     Returns:
@@ -87,16 +122,14 @@ def metric_insights(
     """
     base = select(PayrollRow).where(PayrollRow.year == year)
     base = _exclude_management_departments(base)
+    base = _hanging_only_filter(base, hanging_only=hanging_only)
     if month is not None:
         base = base.where(PayrollRow.month == month)
-    if group_filter:
-        base = base.where(PayrollRow.group_name == group_filter)
+    base = _apply_csv_in(base, PayrollRow.group_name, group_filter)
     if co_so:
         base = base.where(PayrollRow.co_so == co_so)
-    if don_vi:
-        base = base.where(PayrollRow.don_vi == don_vi)
-    if department:
-        base = base.where(PayrollRow.department == department)
+    base = _apply_csv_in(base, PayrollRow.don_vi, don_vi)
+    base = _apply_csv_in(base, PayrollRow.department, department)
 
     subq = base.subquery()
 
@@ -133,14 +166,12 @@ def metric_insights(
             func.avg(PayrollRow.metric_vnd).label("avg_vnd"),
         ).where(PayrollRow.year == year)
         q = _exclude_management_departments(q)
-        if group_filter:
-            q = q.where(PayrollRow.group_name == group_filter)
+        q = _hanging_only_filter(q, hanging_only=hanging_only)
+        q = _apply_csv_in(q, PayrollRow.group_name, group_filter)
         if co_so:
             q = q.where(PayrollRow.co_so == co_so)
-        if don_vi:
-            q = q.where(PayrollRow.don_vi == don_vi)
-        if department:
-            q = q.where(PayrollRow.department == department)
+        q = _apply_csv_in(q, PayrollRow.don_vi, don_vi)
+        q = _apply_csv_in(q, PayrollRow.department, department)
         q = q.group_by(PayrollRow.month).order_by(PayrollRow.month)
         by_month_rows = session.exec(q).all()
         for r in by_month_rows:
@@ -163,24 +194,22 @@ def headcount_by_month(
     co_so: str | None,
     don_vi: str | None,
     department: str | None,
+    hanging_only: bool = False,
 ) -> list[dict]:
     query = select(
         PayrollRow.month.label("month"),
         func.count(func.distinct(PayrollRow.manv)).label("headcount"),
     ).where(PayrollRow.year == year)
     query = _exclude_management_departments(query)
-    if group_filter:
-        query = query.where(PayrollRow.group_name == group_filter)
+    query = _hanging_only_filter(query, hanging_only=hanging_only)
+    query = _apply_csv_in(query, PayrollRow.group_name, group_filter)
     if co_so:
         query = query.where(PayrollRow.co_so == co_so)
-    if don_vi:
-        query = query.where(PayrollRow.don_vi == don_vi)
-    if department:
-        query = query.where(PayrollRow.department == department)
+    query = _apply_csv_in(query, PayrollRow.don_vi, don_vi)
+    query = _apply_csv_in(query, PayrollRow.department, department)
     query = query.group_by(PayrollRow.month).order_by(PayrollRow.month)
     rows = session.exec(query).all()
     out: list[dict] = []
     for r in rows:
         out.append({"month": int(r.month or 0), "headcount": int(r.headcount or 0)})
     return out
-

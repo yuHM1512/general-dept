@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from datetime import date
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Index
+from sqlalchemy import Column, Index, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
 
@@ -36,6 +38,20 @@ class PayrollRow(SQLModel, table=True):
 Index("ux_payrollrow_year_month_manv", PayrollRow.year, PayrollRow.month, PayrollRow.manv, unique=True)
 
 
+class GeneralEmployee(SQLModel, table=True):
+    __tablename__ = "general_employees"
+
+    ma_nv: str = Field(primary_key=True, max_length=16)
+    ho_ten: str = Field(default="")
+    chuc_vu: str = Field(default="")
+    don_vi: str = Field(default="")
+    bo_phan: str = Field(default="")
+    station: list = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default=text("'[]'::jsonb")),
+    )
+
+
 class IngestJob(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
@@ -51,3 +67,16 @@ class IngestJob(SQLModel, table=True):
     invalid: int = 0
 
     error: str | None = None
+
+
+class HangingLine(SQLModel, table=True):
+    __tablename__ = "hanging_line"
+
+    id: int | None = Field(default=None, primary_key=True)
+    don_vi: str = Field(index=True)
+    department: str = Field(index=True)
+    ngay_ap_dung: date = Field(default_factory=date.today, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+
+Index("ux_hanging_line_don_vi_department", HangingLine.don_vi, HangingLine.department, unique=True)

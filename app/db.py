@@ -66,6 +66,19 @@ def _apply_light_migrations() -> None:
                 )
             )
 
+        if "hanging_line" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("hanging_line")}
+            if "ngay_ap_dung" not in cols:
+                conn.execute(text("ALTER TABLE hanging_line ADD COLUMN ngay_ap_dung DATE NOT NULL DEFAULT CURRENT_DATE"))
+            if "created_at" not in cols:
+                conn.execute(text("ALTER TABLE hanging_line ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT NOW()"))
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_hanging_line_don_vi_department "
+                    "ON hanging_line(don_vi, department)"
+                )
+            )
+
 
 def get_session():
     with Session(engine) as session:

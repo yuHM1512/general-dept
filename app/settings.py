@@ -14,10 +14,13 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8012
 
+    session_secret: str = "change-me-in-env"
+
     database_url: str
     db_connect_timeout: int = 5
 
     target_salary_vnd: int = 5_600_000
+    preview_max_rows: int = 20_000
     create_tables_on_startup: bool = False
     allow_local_ingest: bool = False
     default_excel_path: str | None = None

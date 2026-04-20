@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Xem đầy đủ • Nhân sự dưới mục tiêu</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      .font-headline {
+        font-family: "Manrope", sans-serif;
+      }
+      .editorial-gradient {
+        background: linear-gradient(135deg, #004275 0%, #005a9c 100%);
+      }
+      @media print {
+        .no-print {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-white text-slate-900">
+    <div class="max-w-6xl mx-auto px-6 py-8">
+      <div class="flex items-start justify-between gap-6">
+        <div>
+          <div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Preview</div>
+          <h1 class="mt-2 text-2xl font-extrabold font-headline">Danh sách nhân sự dưới mục tiêu</h1>
+          <div class="mt-1 text-sm text-slate-600">{{ scope_hint }}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm text-slate-600">
+            Mục tiêu: <span class="font-extrabold text-orange-600">{{ target_salary_vnd_fmt }}</span> VND
+          </div>
+          <div class="mt-2 no-print">
+            <button
+              type="button"
+              onclick="window.print()"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white font-bold editorial-gradient hover:opacity-95 transition-all"
+            >
+              In / Lưu PDF
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 flex flex-wrap items-center gap-2 text-xs text-slate-700">
+        {% if filters.group_name %}
+        <span class="px-3 py-1 rounded-full bg-slate-100">Nhóm: <b>{{ filters.group_name }}</b></span>
+        {% endif %}
+        {% if filters.co_so %}
+        <span class="px-3 py-1 rounded-full bg-slate-100">Cơ sở: <b>{{ filters.co_so }}</b></span>
+        {% endif %}
+        {% if filters.don_vi %}
+        <span class="px-3 py-1 rounded-full bg-slate-100">Đơn vị: <b>{{ filters.don_vi }}</b></span>
+        {% endif %}
+        {% if filters.department %}
+        <span class="px-3 py-1 rounded-full bg-slate-100">Bộ phận: <b>{{ filters.department }}</b></span>
+        {% endif %}
+        {% if filters.hanging_only %}
+        <span class="px-3 py-1 rounded-full bg-slate-100">Chuyền treo</span>
+        {% endif %}
+        {% if filters.exclude_don_vi %}
+        <span class="px-3 py-1 rounded-full bg-slate-100">Loại trừ Đơn vị: <b>{{ filters.exclude_don_vi }}</b></span>
+        {% endif %}
+        {% if filters.exclude_department %}
+        <span class="px-3 py-1 rounded-full bg-slate-100">Loại trừ Bộ phận: <b>{{ filters.exclude_department }}</b></span>
+        {% endif %}
+      </div>
+
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="text-sm text-slate-700">
+          Hiển thị <b>{{ shown }}</b> / <b>{{ total }}</b> dòng
+          {% if truncated %}
+          <span class="ml-2 text-xs text-rose-700 bg-rose-50 px-2 py-1 rounded-full"
+            >Đang giới hạn {{ max_rows }} dòng để tránh quá tải.</span
+          >
+          {% endif %}
+        </div>
+        <div class="text-xs text-slate-500">
+          {% if filters.view == "year_avg" %}
+          Mỗi dòng = 1 nhân sự (bình quân năm).
+          {% else %}
+          Mỗi dòng = 1 nhân sự trong 1 tháng.
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mt-4 overflow-auto rounded-2xl border border-slate-200">
+        <table class="min-w-full text-sm">
+          <thead class="sticky top-0 bg-slate-50 text-xs uppercase tracking-widest text-slate-600 border-b border-slate-200">
+            <tr>
+              <th class="text-left px-4 py-3">Họ tên</th>
+              <th class="text-left px-4 py-3">Mã NV</th>
+              <th class="text-left px-4 py-3">Đơn vị</th>
+              <th class="text-left px-4 py-3">Bộ phận</th>
+              <th class="text-left px-4 py-3">Tháng</th>
+              <th class="text-right px-4 py-3">Mức lương</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% if not rows %}
+            <tr>
+              <td class="px-4 py-10 text-slate-500" colspan="6">Không có dữ liệu.</td>
+            </tr>
+            {% else %}
+            {% for r in rows %}
+            {% set ym = ("{:04d}-{:02d}".format(year, r.month)) if r.month is not none else "—" %}
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-3 font-semibold">{{ r.full_name }}</td>
+              <td class="px-4 py-3 text-slate-600 tabular-nums">{{ r.manv }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ r.don_vi }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ r.department }}</td>
+              <td class="px-4 py-3 text-slate-600 tabular-nums">{{ ym }}</td>
+              <td class="px-4 py-3 text-right tabular-nums font-bold">{{ "{:,}".format(r.metric_vnd).replace(",", ",") }}</td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
