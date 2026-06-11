@@ -4,6 +4,7 @@ from sqlalchemy import inspect, text
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.settings import settings
+from app.services import classify_group
 
 engine = create_engine(
     settings.database_url,
@@ -65,6 +66,19 @@ def _apply_light_migrations() -> None:
                     "ON payrollrow(year, month, manv)"
                 )
             )
+            rows = conn.execute(
+                text("SELECT id, department, job_title, group_name FROM payrollrow")
+            ).mappings()
+            updates = []
+            for row in rows:
+                group_name = classify_group(row["department"] or "", row["job_title"] or "")
+                if (row["group_name"] or "") != group_name:
+                    updates.append({"id": row["id"], "group_name": group_name})
+            if updates:
+                conn.execute(
+                    text("UPDATE payrollrow SET group_name = :group_name WHERE id = :id"),
+                    updates,
+                )
 
         if "hanging_line" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("hanging_line")}

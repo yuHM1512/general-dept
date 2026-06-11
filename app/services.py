@@ -26,6 +26,11 @@ def remove_diacritics(text: str) -> str:
     return "".join([c for c in nfkd if not unicodedata.combining(c)])
 
 
+def _normalize_text_key(text: str) -> str:
+    normalized = remove_diacritics((text or "").strip().lower())
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
 def to_int_money(value: object) -> int:
     if value is None:
         return 0
@@ -49,15 +54,12 @@ def to_int_money(value: object) -> int:
 
 
 def classify_group(department: str, job_title: str) -> str:
-    department_trim = (department or "").strip()
-    if department_trim in {"Cắt", "Tổ Cắt"}:
+    department_key = _normalize_text_key(department)
+    if department_key in {"cat", "to cat"}:
         return "Cắt/Tổ Cắt"
 
-    title = (job_title or "").strip()
-    title_low = title.lower()
-    title_low_ascii = remove_diacritics(title_low)
-    if ("vệ sinh công nghiệp" in title_low) or ("ve sinh cong nghiep" in title_low_ascii):
+    title_key = _normalize_text_key(job_title)
+    if "ve sinh cong nghiep" in title_key or "ve sinh vien" in title_key:
         return "Vệ sinh công nghiệp"
 
     return "Khác"
-
