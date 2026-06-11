@@ -1484,7 +1484,7 @@
 
   const ymLabel = (year, month) => `${year}-${String(month).padStart(2, "0")}`;
 
-  function renderMonthTrendTable(year, points, coSoLabel) {
+  function renderMonthTrendTable(year, points, coSoLabel, groupName) {
     const tbody = document.getElementById("monthTrendBody");
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -1628,7 +1628,7 @@
       const labels = byMonth.map((x) => ymLabel(year, Number(x.month || 0)));
       const values = byMonth.map((x) => x.avg_vnd);
       renderMonthTrend(labels.length ? labels : ["-"], labels.length ? values : [0]);
-      renderMonthTrendTable(year, byMonth, coSo || "Tất cả");
+      renderMonthTrendTable(year, byMonth, coSo || "Tất cả", groupName);
     } catch (e) {
       return;
     }
