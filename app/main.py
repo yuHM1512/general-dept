@@ -862,7 +862,7 @@ def _bien_figure(mo_ta: str, kich_thuoc: str) -> dict:
     if "nền xanh dương" in mo:  bg = "#1E40AF"
     elif "nền xanh lá" in mo:   bg = "#16A34A"
     elif "nền đỏ" in mo:        bg = "#DC2626"
-    elif "nền vàng" in mo:      bg = "#D97706"
+    elif "nền vàng" in mo:      bg = "#FFE600"
     elif "nền trắng" in mo:     bg = "#F8FAFC"
     elif "nền xanh" in mo:      bg = "#2563EB"
     else:                        bg = "#94A3B8"
@@ -872,13 +872,13 @@ def _bien_figure(mo_ta: str, kich_thuoc: str) -> dict:
     elif "chữ đỏ" in mo:    fg = "#EF4444"
     elif "chữ đen" in mo:   fg = "#1F2937"
     elif "chữ xanh" in mo:  fg = "#2563EB"
-    elif bg == "#F8FAFC":   fg = "#1F2937"
+    elif bg in ("#F8FAFC", "#FFE600"):  fg = "#1F2937"   # dark on light/yellow
     else:                   fg = "#FFFFFF"
 
     # Diagonal stripe overlay
     stripes = ""
     if "sọc xéo" in mo:
-        sc = "#1F293777" if "nền đỏ" in mo else "#7C620077"
+        sc = "#1F293788"  # dark stripes work on both red and yellow
         stripes = (
             f"repeating-linear-gradient(45deg, transparent 0px, transparent 7px,"
             f" {sc} 7px, {sc} 14px)"
