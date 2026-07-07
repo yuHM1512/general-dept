@@ -169,23 +169,42 @@ tailwind.config = {
             </div>
           </button>
           <div class="accordion-content" id="cnt-{{ section.id }}">
-            <div class="px-lg pb-lg space-y-lg divide-y divide-outline-variant/10">
-              {% for tc in section.criteria %}
-              <div class="pt-lg flex flex-col md:flex-row md:items-start justify-between gap-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
-                <div class="flex-1">
-                  <p class="font-body-md text-on-surface leading-relaxed">{{ tc.noi_dung }}</p>
-                  <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
-                    class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none font-body-md text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+            <div class="px-lg pb-lg space-y-md pt-md">
+              {% for bien in section.biens %}
+              <!-- Biển card -->
+              <div class="border border-outline-variant/20 rounded-xl overflow-hidden">
+                <!-- Biển header -->
+                <div class="bg-tertiary/8 border-b border-outline-variant/15 px-lg py-md">
+                  <p class="font-bold text-[14px] text-tertiary leading-snug">{{ bien.ten_goi }}</p>
+                  <p class="text-[12px] text-on-surface-variant mt-xs leading-relaxed">{{ bien.mo_ta }}</p>
+                  {% if bien.kich_thuoc %}
+                  <span class="inline-flex items-center gap-xs mt-sm text-[11px] font-semibold text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full">
+                    <span class="material-symbols-outlined text-[13px]">straighten</span>
+                    {{ bien.kich_thuoc }}
+                  </span>
+                  {% endif %}
                 </div>
-                <div class="flex items-center gap-sm flex-shrink-0">
-                  <button type="button" onclick="toggleNote({{ tc.id }})" class="note-icon material-symbols-outlined text-outline hover:text-primary transition-colors p-1 text-[22px]" title="Ghi chú">sticky_note_2</button>
-                  <input type="hidden" name="score_{{ tc.id }}" id="score_{{ tc.id }}" value="">
-                  <div class="score-group flex bg-surface-container-low p-1 rounded-full border border-outline-variant/20 gap-1">
-                    {% for sv in [0, 1, 2] %}
-                    <button type="button" class="score-btn sc-unset px-4 py-1.5 rounded-full font-bold text-label-md text-[13px] transition-all active:scale-95"
-                            data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},{{ sv }})">{{ sv }}</button>
-                    {% endfor %}
+                <!-- 5 criteria for this biển -->
+                <div class="divide-y divide-outline-variant/10">
+                  {% for tc in bien.criteria %}
+                  <div class="px-lg py-md flex flex-col md:flex-row md:items-start justify-between gap-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
+                    <div class="flex-1">
+                      <p class="font-body-md text-on-surface leading-relaxed text-[14px]">{{ tc.noi_dung }}</p>
+                      <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
+                        class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none font-body-md text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+                    </div>
+                    <div class="flex items-center gap-sm flex-shrink-0">
+                      <button type="button" onclick="toggleNote({{ tc.id }})" class="note-icon material-symbols-outlined text-outline hover:text-primary transition-colors p-1 text-[22px]" title="Ghi chú">sticky_note_2</button>
+                      <input type="hidden" name="score_{{ tc.id }}" id="score_{{ tc.id }}" value="">
+                      <div class="score-group flex bg-surface-container-low p-1 rounded-full border border-outline-variant/20 gap-1">
+                        {% for sv in [0, 1, 2] %}
+                        <button type="button" class="score-btn sc-unset px-4 py-1.5 rounded-full font-bold text-label-md text-[13px] transition-all active:scale-95"
+                                data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},{{ sv }})">{{ sv }}</button>
+                        {% endfor %}
+                      </div>
+                    </div>
                   </div>
+                  {% endfor %}
                 </div>
               </div>
               {% endfor %}

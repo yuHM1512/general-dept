@@ -18,6 +18,7 @@ def create_db_and_tables() -> None:
     _apply_rename_migrations()   # rename old table names → new names BEFORE create_all
     SQLModel.metadata.create_all(engine)
     _apply_light_migrations()
+    _migrate_to_bien()
     _seed_users()
     from app.audit_seed import seed_if_empty
     seed_if_empty(engine)
@@ -186,12 +187,16 @@ def _apply_light_migrations() -> None:
                     {"dot_id": dot_id, "id": row.id},
                 )
 
-        # Add active column to audit_5s_tieu_chi if missing
+        # Add active + bien_id columns to audit_5s_tieu_chi if missing
         if "audit_5s_tieu_chi" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("audit_5s_tieu_chi")}
             if "active" not in cols:
                 conn.execute(
                     text("ALTER TABLE audit_5s_tieu_chi ADD COLUMN active BOOLEAN NOT NULL DEFAULT TRUE")
+                )
+            if "bien_id" not in cols:
+                conn.execute(
+                    text("ALTER TABLE audit_5s_tieu_chi ADD COLUMN bien_id INTEGER REFERENCES audit_5s_bien(id)")
                 )
 
         # Add role column to general_employees if missing
@@ -201,6 +206,76 @@ def _apply_light_migrations() -> None:
                 conn.execute(
                     text("ALTER TABLE general_employees ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'")
                 )
+
+
+def _migrate_to_bien() -> None:
+    """
+    One-time migration: replace the old flat TRUC_QUAN tieu_chi (IDs 14-33,
+    5 generic criteria per linh_vuc) with the biển-based structure
+    (20 biển × 5 criteria = IDs 14-113).  Idempotent: skips when audit_5s_bien
+    already has rows.
+    """
+    insp = inspect(engine)
+    if "audit_5s_bien" not in insp.get_table_names():
+        return
+    with engine.begin() as conn:
+        bien_count = conn.execute(text("SELECT COUNT(*) FROM audit_5s_bien")).scalar()
+        if bien_count and bien_count > 0:
+            return  # Already migrated or fresh DB will be seeded normally
+
+        # Check old flat TRUC_QUAN tieu_chi still exist
+        old_count = conn.execute(
+            text("SELECT COUNT(*) FROM audit_5s_tieu_chi WHERE id BETWEEN 14 AND 33")
+        ).scalar()
+        if not old_count:
+            return  # Nothing to migrate
+
+        from app.audit_seed import BIEN_DATA, TIEU_CHI_DATA, AP_DUNG_DATA
+
+        # Remove old scoring detail, assignments, and tieu_chi (IDs 14-33)
+        conn.execute(text("DELETE FROM audit_5s_chi_tiet_diem WHERE tieu_chi_id BETWEEN 14 AND 33"))
+        conn.execute(text("DELETE FROM audit_5s_ap_dung WHERE tieu_chi_id BETWEEN 14 AND 33"))
+        conn.execute(text("DELETE FROM audit_5s_tieu_chi WHERE id BETWEEN 14 AND 33"))
+
+        # Seed biển
+        conn.execute(
+            text(
+                "INSERT INTO audit_5s_bien (id, linh_vuc_id, ten_goi, mo_ta, kich_thuoc, so_thu_tu) "
+                "VALUES (:id, :linh_vuc_id, :ten_goi, :mo_ta, :kich_thuoc, :so_thu_tu)"
+            ),
+            [{"id": i, "linh_vuc_id": lv, "ten_goi": tg, "mo_ta": mt, "kich_thuoc": kt, "so_thu_tu": st}
+             for i, lv, tg, mt, kt, st in BIEN_DATA],
+        )
+
+        # Seed new TRUC_QUAN tieu_chi (IDs 14-113)
+        tv_tc = [(i, lv, bi, n, nd) for i, lv, bi, n, nd in TIEU_CHI_DATA if bi is not None]
+        conn.execute(
+            text(
+                "INSERT INTO audit_5s_tieu_chi (id, linh_vuc_id, bien_id, so_thu_tu, noi_dung, active) "
+                "VALUES (:id, :linh_vuc_id, :bien_id, :so_thu_tu, :noi_dung, TRUE)"
+            ),
+            [{"id": i, "linh_vuc_id": lv, "bien_id": bi, "so_thu_tu": n, "noi_dung": nd}
+             for i, lv, bi, n, nd in tv_tc],
+        )
+
+        # Restore ap_dung for new tieu_chi IDs
+        new_ids = {i for i, *_ in tv_tc}
+        conn.execute(
+            text(
+                "INSERT INTO audit_5s_ap_dung (bo_phan_id, tieu_chi_id) "
+                "VALUES (:bo_phan_id, :tieu_chi_id) ON CONFLICT DO NOTHING"
+            ),
+            [{"bo_phan_id": bp, "tieu_chi_id": tc} for bp, tc in AP_DUNG_DATA if tc in new_ids],
+        )
+
+        # Update sequences
+        for tbl, col in [("audit_5s_bien", "id"), ("audit_5s_tieu_chi", "id")]:
+            conn.execute(
+                text(
+                    f"SELECT setval(pg_get_serial_sequence('{tbl}', '{col}'), "
+                    f"(SELECT MAX({col}) FROM {tbl}))"
+                )
+            )
 
 
 def _seed_users() -> None:

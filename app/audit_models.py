@@ -30,10 +30,21 @@ class AuditLinhVuc(SQLModel, table=True):
     thu_tu: int
 
 
+class AuditBien(SQLModel, table=True):
+    __tablename__ = "audit_5s_bien"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    linh_vuc_id: int = Field(foreign_key="audit_5s_linh_vuc.id", index=True)
+    ten_goi: str = Field(max_length=300)
+    mo_ta: str = Field(default="")
+    kich_thuoc: str = Field(default="", max_length=100)
+    so_thu_tu: int = Field(default=0)
+
+
 class AuditTieuChi(SQLModel, table=True):
     __tablename__ = "audit_5s_tieu_chi"
     id: Optional[int] = Field(default=None, primary_key=True)
     linh_vuc_id: int = Field(foreign_key="audit_5s_linh_vuc.id")
+    bien_id: Optional[int] = Field(default=None, foreign_key="audit_5s_bien.id")
     so_thu_tu: int
     noi_dung: str
     active: bool = Field(default=True)

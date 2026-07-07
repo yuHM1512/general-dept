@@ -189,73 +189,72 @@ tailwind.config = {
       <span class="msym material-symbols-outlined text-white text-[20px]"
             style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">{{ sect.icon }}</span>
       <h2 class="font-label-md text-[13px] uppercase tracking-widest font-bold text-white">{{ sect.ten }}</h2>
-      <span class="ml-auto font-label-md text-[11px] text-white/70" id="sect-count-{{ sect.id }}">{{ sect.criteria | length }} tiêu chí</span>
+      <span class="ml-auto font-label-md text-[11px] text-white/70">{{ sect.biens | length }} biển</span>
     </div>
 
-    <!-- Criteria list -->
-    <ul class="divide-y divide-outline-variant/10" id="tc-list-{{ sect.id }}">
-      {% for tc in sect.criteria %}
-      <li class="group flex items-start gap-xs px-lg py-[14px]" id="tc-row-{{ tc.id }}" data-tc-id="{{ tc.id }}" data-lv-id="{{ sect.id }}">
-        <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-surface-container flex items-center justify-center font-label-md text-[11px] text-on-surface-variant font-bold">{{ loop.index }}</span>
-        <div class="flex-1 min-w-0 mx-sm">
-          <div id="tc-view-{{ tc.id }}" class="flex items-start gap-xs">
-            <p class="flex-1 text-[14px] leading-snug text-on-surface {% if not tc.active %}opacity-40 line-through decoration-outline/60{% endif %}" id="tc-text-{{ tc.id }}">{{ tc.noi_dung }}</p>
-            <button onclick="startEdit({{ tc.id }})" title="Chỉnh sửa nội dung"
-              class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-surface-container-high rounded-lg text-on-surface-variant hover:text-primary">
-              <span class="msym material-symbols-outlined text-[16px]">edit</span>
-            </button>
-          </div>
-          <div id="tc-edit-{{ tc.id }}" class="hidden">
-            <textarea id="tc-textarea-{{ tc.id }}"
-              class="w-full bg-surface-container-low rounded-lg px-sm py-xs text-[14px] leading-snug text-on-surface border-2 border-primary/30 focus:border-primary outline-none"
-              rows="3">{{ tc.noi_dung }}</textarea>
-            <div class="flex gap-xs mt-xs">
-              <button onclick="saveEdit({{ tc.id }})" class="px-md py-xs bg-primary text-white rounded-full text-[12px] font-bold hover:bg-primary-container transition-colors">Lưu</button>
-              <button onclick="cancelEdit({{ tc.id }})" class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[12px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
-            </div>
-          </div>
-          <div class="mt-xs flex items-center gap-xs">
+    <!-- Biển list -->
+    <div class="divide-y divide-outline-variant/10">
+    {% for bien in sect.biens %}
+    <div class="px-lg pt-md pb-lg" id="bien-row-{{ bien.id }}">
+
+      <!-- Biển header -->
+      <div class="flex items-start justify-between gap-md mb-sm">
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-[14px] text-tertiary leading-snug">{{ bien.ten_goi }}</p>
+          <p class="text-[12px] text-on-surface-variant mt-xs leading-relaxed">{{ bien.mo_ta }}</p>
+          {% if bien.kich_thuoc %}
+          <span class="inline-flex items-center gap-xs mt-xs text-[11px] font-medium text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full">
+            <span class="msym material-symbols-outlined text-[13px]">straighten</span>
+            {{ bien.kich_thuoc }}
+          </span>
+          {% endif %}
+          <!-- Assignment at biển level (applies to all 5 criteria) -->
+          <div class="mt-sm flex items-center gap-xs">
             <span class="inline-flex items-center gap-xs px-sm py-[2px] rounded-full bg-surface-container text-[11px] font-medium text-on-surface-variant">
               <span class="msym material-symbols-outlined text-[13px]">domain</span>
-              <span id="tc-assign-count-{{ tc.id }}">{{ tc.assigned_count }}</span> đơn vị
+              <span id="bien-assign-count-{{ bien.id }}">{{ bien.assigned_count }}</span> đơn vị
             </span>
-            <button onclick="openAssign({{ tc.id }}, this)" title="Phân công đơn vị"
-              id="tc-assign-btn-{{ tc.id }}"
-              class="inline-flex items-center gap-xs px-sm py-[3px] rounded-full border border-primary/40 bg-primary/5 hover:bg-primary hover:text-white hover:border-primary transition-all text-[11px] font-semibold text-primary">
+            <button onclick="openAssignBien({{ bien.id }}, {{ bien.criteria | map(attribute='id') | list }}, this)"
+              id="bien-assign-btn-{{ bien.id }}"
+              class="inline-flex items-center gap-xs px-sm py-[3px] rounded-full border border-tertiary/40 bg-tertiary/5 hover:bg-tertiary hover:text-white hover:border-tertiary transition-all text-[11px] font-semibold text-tertiary">
               <span class="msym material-symbols-outlined text-[13px]">edit_note</span>
               Phân công
             </button>
           </div>
         </div>
-        <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5" title="Bật/tắt tiêu chí">
-          <input type="checkbox" class="sr-only peer" {% if tc.active %}checked{% endif %}
-                 onchange="toggleCriteria({{ tc.id }}, this)">
-          <div class="toggle-track w-11 h-6 rounded-full border border-outline-variant/30 bg-surface-container-high peer-checked:bg-secondary relative">
-            <div class="toggle-thumb absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow {% if tc.active %}translate-x-5{% else %}translate-x-0{% endif %}"></div>
-          </div>
-        </label>
-      </li>
-      {% else %}
-      <li class="px-lg py-lg text-on-surface-variant font-label-md text-label-md text-center">Chưa có tiêu chí</li>
-      {% endfor %}
-    </ul>
-
-    <div id="add-form-{{ sect.id }}" class="hidden px-lg py-md border-t border-outline-variant/10 bg-surface-container-low/50">
-      <textarea id="add-text-{{ sect.id }}" rows="3"
-        class="w-full bg-white rounded-lg px-sm py-xs text-[14px] leading-snug text-on-surface border-2 border-primary/30 focus:border-primary outline-none"
-        placeholder="Nhập nội dung tiêu chí mới..."></textarea>
-      <div class="flex gap-xs mt-xs">
-        <button onclick="submitAdd({{ sect.id }})" class="px-md py-xs bg-primary text-white rounded-full text-[12px] font-bold hover:bg-primary-container transition-colors">Thêm</button>
-        <button onclick="cancelAdd({{ sect.id }})" class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[12px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
       </div>
+
+      <!-- 5 criteria (edit-in-place, no toggle/assign per criterion) -->
+      <ul class="space-y-xs pl-sm border-l-2 border-tertiary/20">
+        {% for tc in bien.criteria %}
+        <li class="group" id="tc-row-{{ tc.id }}">
+          <div id="tc-view-{{ tc.id }}" class="flex items-start gap-xs py-xs">
+            <span class="shrink-0 text-[11px] font-bold text-tertiary/60 mt-0.5 w-4">{{ tc.noi_dung[0] }}.</span>
+            <p class="flex-1 text-[13px] leading-snug text-on-surface" id="tc-text-{{ tc.id }}">{{ tc.noi_dung[3:] if tc.noi_dung[1:3] == '. ' else tc.noi_dung }}</p>
+            <button onclick="startEdit({{ tc.id }})" title="Chỉnh sửa"
+              class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-tertiary">
+              <span class="msym material-symbols-outlined text-[15px]">edit</span>
+            </button>
+          </div>
+          <div id="tc-edit-{{ tc.id }}" class="hidden pl-4">
+            <textarea id="tc-textarea-{{ tc.id }}"
+              class="w-full bg-surface-container-low rounded-lg px-sm py-xs text-[13px] leading-snug text-on-surface border-2 border-tertiary/30 focus:border-tertiary outline-none"
+              rows="2">{{ tc.noi_dung }}</textarea>
+            <div class="flex gap-xs mt-xs">
+              <button onclick="saveEdit({{ tc.id }})" class="px-md py-xs bg-tertiary text-white rounded-full text-[11px] font-bold hover:opacity-80 transition-opacity">Lưu</button>
+              <button onclick="cancelEdit({{ tc.id }})" class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[11px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+
     </div>
-    <div class="px-lg py-sm border-t border-outline-variant/10">
-      <button onclick="showAddForm({{ sect.id }})" id="add-btn-{{ sect.id }}"
-        class="flex items-center gap-xs text-[13px] font-medium text-primary hover:text-primary-container transition-colors py-xs">
-        <span class="msym material-symbols-outlined text-[18px]">add_circle</span>
-        Thêm tiêu chí
-      </button>
+    {% else %}
+    <p class="px-lg py-lg text-on-surface-variant font-label-md text-label-md text-center">Chưa có biển</p>
+    {% endfor %}
     </div>
+
   </div>
   {% endfor %}
   </div>
@@ -540,6 +539,17 @@ function escHtml(str) {
 
 // Close drawer on Escape
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAssign(); });
+
+// Assignment for a biển: uses the first tc_id for the toggle API, mirrors count to bien badge
+function openAssignBien(bienId, tcIds, btn) {
+  // Use the first tc_id as the "representative" for the assign drawer
+  // When any tc in the bien is toggled, we sync all tc of the bien together
+  _currentBienId = bienId;
+  _currentBienTcIds = tcIds;
+  openAssign(tcIds[0], btn);
+}
+let _currentBienId = null;
+let _currentBienTcIds = [];
 
 // ── Tab navigation ────────────────────────────────────────────────────────
 function switchTab(loai) {

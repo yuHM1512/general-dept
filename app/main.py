@@ -23,7 +23,7 @@ from app.db import create_db_and_tables, get_session
 from app.ingest import ingest_workbook_with_progress
 from app.models import GeneralEmployee, HangingLine, IngestJob, PayrollRow
 from app.audit_models import (
-    AuditDonVi, AuditBoPhan, AuditLinhVuc, AuditTieuChi, AuditApDung,
+    AuditDonVi, AuditBoPhan, AuditLinhVuc, AuditBien, AuditTieuChi, AuditApDung,
     AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem,
 )
 from app.schemas import (
@@ -672,31 +672,58 @@ def five_s_settings(
     for ad in session.exec(select(AuditApDung)).all():
         tc_to_bp.setdefault(ad.tieu_chi_id, []).append(ad.bo_phan_id)
 
+    # Pre-load all bien objects keyed by id
+    all_bien = {b.id: b for b in session.exec(select(AuditBien)).all()}
+
     sections = []
     for lv in session.exec(
         select(AuditLinhVuc).order_by(AuditLinhVuc.loai, AuditLinhVuc.thu_tu)
     ).all():
-        criteria = session.exec(
+        all_tc = session.exec(
             select(AuditTieuChi)
             .where(AuditTieuChi.linh_vuc_id == lv.id)
-            .order_by(AuditTieuChi.so_thu_tu)
+            .order_by(AuditTieuChi.bien_id, AuditTieuChi.so_thu_tu)
         ).all()
-        sections.append({
-            "id": lv.id,
-            "ma": lv.ma,
-            "ten": lv.ten,
-            "loai": lv.loai,
-            "icon": lv.icon or "checklist",
-            "criteria": [
-                {
-                    "id": tc.id,
-                    "noi_dung": tc.noi_dung,
-                    "active": tc.active,
-                    "assigned_count": len(tc_to_bp.get(tc.id, [])),
-                }
-                for tc in criteria
-            ],
-        })
+
+        if lv.loai == "TRUC_QUAN":
+            bien_ids: list[int] = list(dict.fromkeys(tc.bien_id for tc in all_tc if tc.bien_id))
+            biens = []
+            for b_id in bien_ids:
+                b = all_bien.get(b_id)
+                if not b:
+                    continue
+                b_tc = [tc for tc in all_tc if tc.bien_id == b_id]
+                # assigned_count for bien = distinct bo_phan assigned to any of its tc
+                bp_set: set[int] = set()
+                for tc in b_tc:
+                    bp_set.update(tc_to_bp.get(tc.id, []))
+                biens.append({
+                    "id": b.id,
+                    "ten_goi": b.ten_goi,
+                    "mo_ta": b.mo_ta,
+                    "kich_thuoc": b.kich_thuoc,
+                    "assigned_count": len(bp_set),
+                    "criteria": [
+                        {"id": tc.id, "noi_dung": tc.noi_dung, "active": tc.active}
+                        for tc in b_tc
+                    ],
+                })
+            sections.append({
+                "id": lv.id, "ma": lv.ma, "ten": lv.ten,
+                "loai": lv.loai, "icon": lv.icon or "checklist",
+                "criteria": [], "biens": biens,
+            })
+        else:
+            sections.append({
+                "id": lv.id, "ma": lv.ma, "ten": lv.ten,
+                "loai": lv.loai, "icon": lv.icon or "checklist",
+                "biens": [],
+                "criteria": [
+                    {"id": tc.id, "noi_dung": tc.noi_dung, "active": tc.active,
+                     "assigned_count": len(tc_to_bp.get(tc.id, []))}
+                    for tc in all_tc
+                ],
+            })
 
     # Data for assignment drawer (embedded in page as JS)
     don_vi_list = session.exec(select(AuditDonVi).order_by(AuditDonVi.id)).all()
@@ -848,24 +875,52 @@ def _build_checklist_sections(bo_phan_id: int, loai: str, session: Session) -> l
         .where(AuditLinhVuc.loai.in_(loai_filter))
         .order_by(AuditLinhVuc.loai, AuditLinhVuc.thu_tu)
     ).all():
-        criteria = [
-            {"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung}
-            for tc in session.exec(
+        all_tc = [
+            tc for tc in session.exec(
                 select(AuditTieuChi)
                 .where(AuditTieuChi.linh_vuc_id == lv.id, AuditTieuChi.active == True)
-                .order_by(AuditTieuChi.so_thu_tu)
+                .order_by(AuditTieuChi.bien_id, AuditTieuChi.so_thu_tu)
             ).all()
             if tc.id in ap_dung_ids
         ]
-        if criteria:
-            sections.append({
-                "id": lv.id,
-                "ma": lv.ma,
-                "ten": lv.ten,
-                "loai": lv.loai,
-                "icon": lv.icon or "checklist",
-                "criteria": criteria,
-            })
+        if not all_tc:
+            continue
+
+        flat = [{"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung} for tc in all_tc]
+
+        biens: list[dict] = []
+        if lv.loai == "TRUC_QUAN":
+            # Preserve insertion order (dict dedup by bien_id)
+            bien_ids: list[int] = list(dict.fromkeys(tc.bien_id for tc in all_tc if tc.bien_id))
+            bien_objs = {
+                b.id: b for b in session.exec(
+                    select(AuditBien).where(AuditBien.id.in_(bien_ids))
+                ).all()
+            }
+            for b_id in bien_ids:
+                b = bien_objs.get(b_id)
+                if not b:
+                    continue
+                biens.append({
+                    "id": b.id,
+                    "ten_goi": b.ten_goi,
+                    "mo_ta": b.mo_ta,
+                    "kich_thuoc": b.kich_thuoc,
+                    "criteria": [
+                        {"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung}
+                        for tc in all_tc if tc.bien_id == b_id
+                    ],
+                })
+
+        sections.append({
+            "id": lv.id,
+            "ma": lv.ma,
+            "ten": lv.ten,
+            "loai": lv.loai,
+            "icon": lv.icon or "checklist",
+            "criteria": flat,
+            "biens": biens,
+        })
     return sections
 
 
