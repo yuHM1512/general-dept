@@ -187,8 +187,8 @@ def seed_if_empty(engine) -> None:
         )
         conn.execute(
             text(
-                "INSERT INTO audit_5s_tieu_chi (id, linh_vuc_id, so_thu_tu, noi_dung) "
-                "VALUES (:id, :linh_vuc_id, :so_thu_tu, :noi_dung)"
+                "INSERT INTO audit_5s_tieu_chi (id, linh_vuc_id, so_thu_tu, noi_dung, active) "
+                "VALUES (:id, :linh_vuc_id, :so_thu_tu, :noi_dung, TRUE)"
             ),
             [{"id": i, "linh_vuc_id": lv, "so_thu_tu": n, "noi_dung": nd}
              for i, lv, n, nd in TIEU_CHI_DATA],
