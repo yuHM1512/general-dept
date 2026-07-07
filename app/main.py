@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import re as _re
 import threading
 from pathlib import Path
 from datetime import date, datetime
@@ -853,6 +854,64 @@ def audit_get_bo_phan(
     return [{"id": bp.id, "ten": bp.ten} for bp in items]
 
 
+def _bien_figure(mo_ta: str, kich_thuoc: str) -> dict:
+    """Derive CSS properties for a mini sign preview from description text."""
+    mo = mo_ta.lower()
+
+    # Background colour
+    if "nền xanh dương" in mo:  bg = "#1E40AF"
+    elif "nền xanh lá" in mo:   bg = "#16A34A"
+    elif "nền đỏ" in mo:        bg = "#DC2626"
+    elif "nền vàng" in mo:      bg = "#D97706"
+    elif "nền trắng" in mo:     bg = "#F8FAFC"
+    elif "nền xanh" in mo:      bg = "#2563EB"
+    else:                        bg = "#94A3B8"
+
+    # Text colour (explicit override takes priority)
+    if "chữ trắng" in mo:   fg = "#FFFFFF"
+    elif "chữ đỏ" in mo:    fg = "#EF4444"
+    elif "chữ đen" in mo:   fg = "#1F2937"
+    elif "chữ xanh" in mo:  fg = "#2563EB"
+    elif bg == "#F8FAFC":   fg = "#1F2937"
+    else:                   fg = "#FFFFFF"
+
+    # Diagonal stripe overlay
+    stripes = ""
+    if "sọc xéo" in mo:
+        sc = "#1F293777" if "nền đỏ" in mo else "#7C620077"
+        stripes = (
+            f"repeating-linear-gradient(45deg, transparent 0px, transparent 7px,"
+            f" {sc} 7px, {sc} 14px)"
+        )
+
+    # Shape hint for special icons
+    if "viền đỏ" in mo and "hình tròn" in mo:   shape = "ban"       # prohibition ⊘
+    elif "hình tròn" in mo and "xanh dương" in mo: shape = "mandate" # mandatory ●
+    elif "hình tam giác" in mo:                   shape = "warn"      # warning △
+    elif "andon" in mo_ta.lower():                shape = "andon"     # traffic lights
+    else:                                         shape = "rect"
+
+    # Aspect ratio from kích thước string
+    m = _re.search(r'(\d+)\s*[xX×]\s*(\d+)', kich_thuoc)
+    if m:
+        wv, hv = int(m.group(1)), int(m.group(2))
+    elif "tivi" in kich_thuoc.lower():
+        wv, hv = 16, 9
+    elif "rộng bản" in kich_thuoc.lower():
+        wv, hv = 5, 1
+    else:
+        wv, hv = 2, 1
+
+    dh = 64
+    dw = max(32, min(round(dh * wv / hv), 160))
+
+    return {
+        "bg": bg, "fg": fg, "stripes": stripes, "shape": shape,
+        "w": dw, "h": dh,
+        "border": "1px solid #CBD5E1" if bg == "#F8FAFC" else "none",
+    }
+
+
 def _build_checklist_sections(bo_phan_id: int, loai: str, session: Session) -> list[dict]:
     """Return sections with their applicable criteria for a given bo_phan and loai."""
     loai_filter: list[str] = []
@@ -906,6 +965,7 @@ def _build_checklist_sections(bo_phan_id: int, loai: str, session: Session) -> l
                     "ten_goi": b.ten_goi,
                     "mo_ta": b.mo_ta,
                     "kich_thuoc": b.kich_thuoc,
+                    "figure": _bien_figure(b.mo_ta, b.kich_thuoc),
                     "criteria": [
                         {"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung}
                         for tc in all_tc if tc.bien_id == b_id

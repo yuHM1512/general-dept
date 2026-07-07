@@ -185,17 +185,40 @@ tailwind.config = {
                   <span class="material-symbols-outlined bien-chevron shrink-0 text-outline text-[20px] transition-transform duration-200">expand_more</span>
                 </button>
 
-                <!-- Expandable body: mô tả + kích thước + 5 criteria -->
+                <!-- Expandable body: figure + mô tả + 5 criteria -->
                 <div class="bien-body hidden">
-                  <!-- Mô tả -->
-                  <div class="px-lg pt-sm pb-md border-t border-outline-variant/10 bg-tertiary/[0.04]">
-                    <p class="text-[12px] text-on-surface-variant leading-relaxed">{{ bien.mo_ta }}</p>
-                    {% if bien.kich_thuoc %}
-                    <span class="inline-flex items-center gap-xs mt-xs text-[11px] font-semibold text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full">
-                      <span class="material-symbols-outlined text-[13px]">straighten</span>
-                      {{ bien.kich_thuoc }}
-                    </span>
-                    {% endif %}
+                  <!-- Figure + mô tả side-by-side -->
+                  <div class="flex gap-md items-start px-lg pt-md pb-md border-t border-outline-variant/10 bg-tertiary/[0.04]">
+
+                    {% set f = bien.figure %}
+                    <div style="width:{{ f.w }}px;min-width:{{ f.w }}px;height:{{ f.h }}px;background-color:{{ f.bg }};{% if f.stripes %}background-image:{{ f.stripes }};{% endif %}border:{{ f.border }};border-radius:{% if f.shape in ['ban','mandate'] %}50%{% else %}4px{% endif %};display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;flex-shrink:0;overflow:hidden;">
+                      {% if f.shape == 'ban' %}
+                        <svg width="72%" height="72%" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="#DC2626" stroke-width="2.5"/><line x1="6.5" y1="17.5" x2="17.5" y2="6.5" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round"/></svg>
+                      {% elif f.shape == 'warn' %}
+                        <svg width="80%" height="80%" viewBox="0 0 24 24"><polygon points="12,2.5 22.5,21 1.5,21" fill="#D97706" stroke="#1F2937" stroke-width="1.5" stroke-linejoin="round"/><text x="12" y="18.5" text-anchor="middle" fill="#1F2937" font-size="10" font-weight="900" font-family="sans-serif">!</text></svg>
+                      {% elif f.shape == 'andon' %}
+                        <div style="display:flex;flex-direction:column;gap:5px">
+                          <div style="width:12px;height:12px;border-radius:50%;background:#DC2626"></div>
+                          <div style="width:12px;height:12px;border-radius:50%;background:#D97706"></div>
+                          <div style="width:12px;height:12px;border-radius:50%;background:#16A34A"></div>
+                        </div>
+                      {% else %}
+                        <div style="width:62%;height:2.5px;background:{{ f.fg }};opacity:.9;border-radius:2px"></div>
+                        <div style="width:48%;height:2.5px;background:{{ f.fg }};opacity:.7;border-radius:2px"></div>
+                        {% if f.h > 40 %}<div style="width:34%;height:2.5px;background:{{ f.fg }};opacity:.5;border-radius:2px"></div>{% endif %}
+                      {% endif %}
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                      <p class="text-[12px] text-on-surface-variant leading-relaxed">{{ bien.mo_ta }}</p>
+                      {% if bien.kich_thuoc %}
+                      <span class="inline-flex items-center gap-xs mt-xs text-[11px] font-semibold text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full">
+                        <span class="material-symbols-outlined text-[13px]">straighten</span>
+                        {{ bien.kich_thuoc }}
+                      </span>
+                      {% endif %}
+                    </div>
+
                   </div>
                   <!-- 5 criteria -->
                   <div class="divide-y divide-outline-variant/10">
