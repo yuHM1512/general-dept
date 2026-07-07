@@ -271,6 +271,9 @@ function toggleBien(id) {
     chevron.style.transform = 'rotate(180deg)';
     item.querySelector('.bien-hdr').classList.add('bg-tertiary/5');
   }
+  // Recalculate parent section accordion height to avoid clipping
+  const accContent = item.closest('.accordion-content');
+  if (accContent) accContent.style.maxHeight = accContent.scrollHeight + 'px';
 }
 
 function updateBienProgress(tcId) {
