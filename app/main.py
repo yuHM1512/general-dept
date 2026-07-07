@@ -966,6 +966,7 @@ def _build_checklist_sections(bo_phan_id: int, loai: str, session: Session) -> l
                     "mo_ta": b.mo_ta,
                     "kich_thuoc": b.kich_thuoc,
                     "figure": _bien_figure(b.mo_ta, b.kich_thuoc),
+                    "img_url": f"/static/bien_preview/bien_{b.id:02d}.png",
                     "criteria": [
                         {"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung}
                         for tc in all_tc if tc.bien_id == b_id
