@@ -22,6 +22,10 @@ from starlette.requests import Request
 from app.db import create_db_and_tables, get_session
 from app.ingest import ingest_workbook_with_progress
 from app.models import GeneralEmployee, HangingLine, IngestJob, PayrollRow
+from app.audit_models import (
+    AuditDonVi, AuditBoPhan, AuditLinhVuc, AuditTieuChi, AuditApDung,
+    AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem,
+)
 from app.schemas import (
     IngestJobResponse,
     IngestJobStatus,
@@ -72,15 +76,26 @@ def _current_user(request: Request) -> dict | None:
         return None
 
 
+def _is_admin(request: Request) -> bool:
+    user = _current_user(request)
+    return user is not None and user.get("role") == "admin"
+
+
 @app.middleware("http")
-async def _require_login_for_rcp(request: Request, call_next):
+async def _require_login(request: Request, call_next):
     path = request.url.path
 
-    if path == "/" or path == "/health" or path.startswith("/static"):
+    if path == "/health" or path.startswith("/static"):
         return await call_next(request)
 
-    if path.startswith("/rcp") or path.startswith("/api"):
-        if path.startswith("/rcp/login"):
+    needs_auth = (
+        path == "/"
+        or path.startswith("/rcp")
+        or path.startswith("/internal-audit")
+        or path.startswith("/api")
+    )
+    if needs_auth:
+        if path == "/login" or path == "/logout" or path.startswith("/rcp/login") or path == "/rcp/logout":
             return await call_next(request)
 
         user = _current_user(request)
@@ -91,7 +106,7 @@ async def _require_login_for_rcp(request: Request, call_next):
             next_url = path
             if request.url.query:
                 next_url = f"{path}?{request.url.query}"
-            return RedirectResponse(url=f"/rcp/login?next={quote(next_url)}", status_code=303)
+            return RedirectResponse(url=f"/login?next={quote(next_url)}", status_code=303)
 
     return await call_next(request)
 
@@ -175,8 +190,8 @@ def homepage(request: Request) -> HTMLResponse:
     )
 
 
-@app.get("/rcp/login", response_class=HTMLResponse)
-def rcp_login_page(
+@app.get("/login", response_class=HTMLResponse)
+def login_page(
     request: Request,
     next: str | None = Query(default=None),
     session: Session = Depends(get_session),
@@ -185,7 +200,7 @@ def rcp_login_page(
     create_db_and_tables()
 
     if _current_user(request):
-        return RedirectResponse(url=next or "/rcp", status_code=303)
+        return RedirectResponse(url=next or "/", status_code=303)
 
     return templates.TemplateResponse(
         "login_rcp.html",
@@ -200,8 +215,16 @@ def rcp_login_page(
     )
 
 
-@app.post("/rcp/login")
-def rcp_login_submit(
+@app.get("/rcp/login", response_class=HTMLResponse)
+def rcp_login_page(
+    request: Request,
+    next: str | None = Query(default=None),
+) -> RedirectResponse:
+    return RedirectResponse(url=f"/login?next={quote(next or '/rcp')}", status_code=303)
+
+
+@app.post("/login")
+def login_submit(
     request: Request,
     ma_nv: str = Form(...),
     next: str | None = Query(default=None),
@@ -245,18 +268,34 @@ def rcp_login_submit(
         "chuc_vu": employee.chuc_vu,
         "don_vi": employee.don_vi,
         "bo_phan": employee.bo_phan,
+        "role": employee.role,
     }
 
-    return RedirectResponse(url=next or "/rcp", status_code=303)
+    return RedirectResponse(url=next or "/", status_code=303)
 
 
-@app.get("/rcp/logout")
-def rcp_logout(request: Request) -> RedirectResponse:
+@app.post("/rcp/login")
+def rcp_login_submit(
+    request: Request,
+    ma_nv: str = Form(...),
+    next: str | None = Query(default=None),
+    session: Session = Depends(get_session),
+):
+    return login_submit(request=request, ma_nv=ma_nv, next=next, session=session)
+
+
+@app.get("/logout")
+def logout(request: Request) -> RedirectResponse:
     try:
         request.session.clear()  # type: ignore[attr-defined]
     except Exception:
         pass
-    return RedirectResponse(url="/rcp/login", status_code=303)
+    return RedirectResponse(url="/login?next=/", status_code=303)
+
+
+@app.get("/rcp/logout")
+def rcp_logout(request: Request) -> RedirectResponse:
+    return logout(request)
 
 
 @app.get("/rcp", response_class=HTMLResponse)
@@ -494,6 +533,559 @@ def preview_below_target_page(
             "max_rows": max_rows,
             "rows": rows,
             "user": _current_user(request),
+        },
+    )
+
+
+@app.get("/internal-audit", response_class=HTMLResponse)
+def internal_audit_home(
+    request: Request,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "home_internal.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+        },
+    )
+
+
+@app.get("/internal-audit/5s", response_class=HTMLResponse)
+def five_s_admin(
+    request: Request,
+    page: int = Query(default=1),
+    ket_luan: str = Query(default=""),
+    don_vi_id: int = Query(default=0),
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+    PAGE_SIZE = 20
+
+    all_phieus = session.exec(select(AuditPhieuKiemTra)).all()
+    tong_phieu = len(all_phieus)
+    diem_tb = round(sum(p.ty_le or 0 for p in all_phieus) / tong_phieu * 100, 1) if tong_phieu else 0.0
+    can_ci = sum(1 for p in all_phieus if p.ket_luan in ("Cần cải thiện", "Không đạt"))
+
+    q = select(AuditPhieuKiemTra).order_by(AuditPhieuKiemTra.created_at.desc())
+    if ket_luan:
+        q = q.where(AuditPhieuKiemTra.ket_luan == ket_luan)
+    phieus = session.exec(q).all()
+
+    if don_vi_id:
+        bp_ids = {bp.id for bp in session.exec(
+            select(AuditBoPhan).where(AuditBoPhan.don_vi_id == don_vi_id)
+        ).all()}
+        phieus = [p for p in phieus if p.bo_phan_id in bp_ids]
+
+    total_rows = len(phieus)
+    total_pages = max(1, (total_rows + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = max(1, min(page, total_pages))
+    phieus_page = phieus[(page - 1) * PAGE_SIZE: page * PAGE_SIZE]
+
+    bp_cache: dict = {}
+    dv_cache: dict = {}
+
+    def _get_bp(bp_id):
+        if bp_id not in bp_cache:
+            bp_cache[bp_id] = session.get(AuditBoPhan, bp_id)
+        return bp_cache[bp_id]
+
+    def _get_dv(dv_id):
+        if dv_id not in dv_cache:
+            dv_cache[dv_id] = session.get(AuditDonVi, dv_id)
+        return dv_cache[dv_id]
+
+    loai_labels = {"5S": "5S", "TRUC_QUAN": "Trực quan", "DAY_DU": "Đầy đủ"}
+    rows = []
+    for p in phieus_page:
+        bp = _get_bp(p.bo_phan_id)
+        dv = _get_dv(bp.don_vi_id) if bp else None
+        dot = session.get(AuditDotKiemTra, p.dot_id) if p.dot_id else None
+        rows.append({
+            "id": p.id,
+            "bo_phan_ten": bp.ten if bp else "",
+            "don_vi_ten": dv.ten if dv else "",
+            "don_vi_ma": dv.ma if dv else "",
+            "loai": p.loai,
+            "loai_label": loai_labels.get(p.loai, p.loai),
+            "ty_le_pct": round((p.ty_le or 0) * 100, 1),
+            "ket_luan": p.ket_luan or "—",
+            "ngay": p.created_at.strftime("%d/%m/%Y") if p.created_at else "",
+            "ky": dot.ky if dot else "",
+            "nguoi_kiem_tra": p.nguoi_kiem_tra or "",
+        })
+
+    don_vi_list = session.exec(select(AuditDonVi).order_by(AuditDonVi.id)).all()
+
+    return templates.TemplateResponse(
+        "5s_admin.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+            "stats": {
+                "tong_phieu": tong_phieu,
+                "diem_tb": diem_tb,
+                "can_cai_thien": can_ci,
+            },
+            "rows": rows,
+            "don_vi_list": [{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list],
+            "filter": {"ket_luan": ket_luan, "don_vi_id": don_vi_id},
+            "pagination": {"page": page, "total_pages": total_pages, "total_rows": total_rows},
+        },
+    )
+
+
+@app.get("/internal-audit/5s/new", response_class=HTMLResponse)
+def five_s_new(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+    don_vi_list = session.exec(select(AuditDonVi).order_by(AuditDonVi.id)).all()
+    return templates.TemplateResponse(
+        "5s_new.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+            "don_vi_list": [{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list],
+        },
+    )
+
+
+@app.get("/internal-audit/5s/settings", response_class=HTMLResponse)
+def five_s_settings(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    if not _is_admin(request):
+        return RedirectResponse(url="/internal-audit/5s", status_code=303)
+    create_db_and_tables()
+
+    # Build assignment lookup: tieu_chi_id → set of bo_phan_id
+    tc_to_bp: dict[int, list[int]] = {}
+    for ad in session.exec(select(AuditApDung)).all():
+        tc_to_bp.setdefault(ad.tieu_chi_id, []).append(ad.bo_phan_id)
+
+    sections = []
+    for lv in session.exec(
+        select(AuditLinhVuc).order_by(AuditLinhVuc.loai, AuditLinhVuc.thu_tu)
+    ).all():
+        criteria = session.exec(
+            select(AuditTieuChi)
+            .where(AuditTieuChi.linh_vuc_id == lv.id)
+            .order_by(AuditTieuChi.so_thu_tu)
+        ).all()
+        sections.append({
+            "id": lv.id,
+            "ma": lv.ma,
+            "ten": lv.ten,
+            "loai": lv.loai,
+            "icon": lv.icon or "checklist",
+            "criteria": [
+                {
+                    "id": tc.id,
+                    "noi_dung": tc.noi_dung,
+                    "active": tc.active,
+                    "assigned_count": len(tc_to_bp.get(tc.id, [])),
+                }
+                for tc in criteria
+            ],
+        })
+
+    # Data for assignment drawer (embedded in page as JS)
+    don_vi_list = session.exec(select(AuditDonVi).order_by(AuditDonVi.id)).all()
+    bo_phan_list = session.exec(select(AuditBoPhan).order_by(AuditBoPhan.don_vi_id, AuditBoPhan.id)).all()
+    import json as _json
+    don_vi_json = _json.dumps([{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list])
+    bo_phan_json = _json.dumps([{"id": bp.id, "ten": bp.ten, "don_vi_id": bp.don_vi_id} for bp in bo_phan_list])
+    tc_assignments_json = _json.dumps({str(k): v for k, v in tc_to_bp.items()})
+
+    return templates.TemplateResponse(
+        "5s_settings.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+            "sections": sections,
+            "don_vi_json": don_vi_json,
+            "bo_phan_json": bo_phan_json,
+            "tc_assignments_json": tc_assignments_json,
+        },
+    )
+
+
+@app.post("/api/audit/5s/tieu-chi/{tc_id}/toggle")
+def toggle_tieu_chi(
+    request: Request,
+    tc_id: int,
+    session: Session = Depends(get_session),
+):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể thay đổi tiêu chí")
+    tc = session.get(AuditTieuChi, tc_id)
+    if not tc:
+        raise HTTPException(status_code=404, detail="Tiêu chí không tồn tại")
+    tc.active = not tc.active
+    session.add(tc)
+    session.commit()
+    return {"id": tc_id, "active": tc.active}
+
+
+@app.put("/api/audit/5s/tieu-chi/{tc_id}")
+async def update_tieu_chi_text(
+    tc_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403)
+    data = await request.json()
+    noi_dung = (data.get("noi_dung") or "").strip()
+    if not noi_dung:
+        raise HTTPException(status_code=400, detail="Nội dung không được để trống")
+    tc = session.get(AuditTieuChi, tc_id)
+    if not tc:
+        raise HTTPException(status_code=404)
+    tc.noi_dung = noi_dung
+    session.add(tc)
+    session.commit()
+    return {"id": tc_id, "noi_dung": tc.noi_dung}
+
+
+@app.post("/api/audit/5s/linh-vuc/{lv_id}/tieu-chi")
+async def add_tieu_chi(
+    lv_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403)
+    data = await request.json()
+    noi_dung = (data.get("noi_dung") or "").strip()
+    if not noi_dung:
+        raise HTTPException(status_code=400, detail="Nội dung không được để trống")
+    lv = session.get(AuditLinhVuc, lv_id)
+    if not lv:
+        raise HTTPException(status_code=404)
+    last = session.exec(
+        select(AuditTieuChi)
+        .where(AuditTieuChi.linh_vuc_id == lv_id)
+        .order_by(AuditTieuChi.so_thu_tu.desc())
+    ).first()
+    next_stt = (last.so_thu_tu + 1) if last else 1
+    tc = AuditTieuChi(linh_vuc_id=lv_id, so_thu_tu=next_stt, noi_dung=noi_dung, active=True)
+    session.add(tc)
+    session.commit()
+    session.refresh(tc)
+    return {"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung, "active": True}
+
+
+@app.post("/api/audit/5s/tieu-chi/{tc_id}/ap-dung/{bp_id}")
+def toggle_ap_dung(
+    tc_id: int,
+    bp_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403)
+    existing = session.exec(
+        select(AuditApDung).where(
+            AuditApDung.tieu_chi_id == tc_id,
+            AuditApDung.bo_phan_id == bp_id,
+        )
+    ).first()
+    if existing:
+        session.delete(existing)
+        assigned = False
+    else:
+        session.add(AuditApDung(tieu_chi_id=tc_id, bo_phan_id=bp_id))
+        assigned = True
+    session.commit()
+    return {"tieu_chi_id": tc_id, "bo_phan_id": bp_id, "assigned": assigned}
+
+
+@app.get("/api/audit/bo-phan")
+def audit_get_bo_phan(
+    don_vi_id: int = Query(...),
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    create_db_and_tables()
+    items = session.exec(
+        select(AuditBoPhan)
+        .where(AuditBoPhan.don_vi_id == don_vi_id)
+        .order_by(AuditBoPhan.id)
+    ).all()
+    return [{"id": bp.id, "ten": bp.ten} for bp in items]
+
+
+def _build_checklist_sections(bo_phan_id: int, loai: str, session: Session) -> list[dict]:
+    """Return sections with their applicable criteria for a given bo_phan and loai."""
+    loai_filter: list[str] = []
+    if loai in ("5S", "DAY_DU"):
+        loai_filter.append("5S")
+    if loai in ("TRUC_QUAN", "DAY_DU"):
+        loai_filter.append("TRUC_QUAN")
+
+    # Fetch applicable tieu_chi IDs for this bo_phan
+    ap_dung_ids = {
+        row.tieu_chi_id
+        for row in session.exec(
+            select(AuditApDung).where(AuditApDung.bo_phan_id == bo_phan_id)
+        ).all()
+    }
+
+    sections = []
+    for lv in session.exec(
+        select(AuditLinhVuc)
+        .where(AuditLinhVuc.loai.in_(loai_filter))
+        .order_by(AuditLinhVuc.loai, AuditLinhVuc.thu_tu)
+    ).all():
+        criteria = [
+            {"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung}
+            for tc in session.exec(
+                select(AuditTieuChi)
+                .where(AuditTieuChi.linh_vuc_id == lv.id, AuditTieuChi.active == True)
+                .order_by(AuditTieuChi.so_thu_tu)
+            ).all()
+            if tc.id in ap_dung_ids
+        ]
+        if criteria:
+            sections.append({
+                "id": lv.id,
+                "ma": lv.ma,
+                "ten": lv.ten,
+                "loai": lv.loai,
+                "icon": lv.icon or "checklist",
+                "criteria": criteria,
+            })
+    return sections
+
+
+@app.get("/internal-audit/5s/checklist", response_class=HTMLResponse)
+def five_s_checklist(
+    request: Request,
+    bo_phan_id: int | None = Query(default=None),
+    loai: str = Query(default="DAY_DU"),
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+
+    if bo_phan_id is None:
+        return RedirectResponse(url="/internal-audit/5s/new", status_code=303)
+
+    bo_phan = session.get(AuditBoPhan, bo_phan_id)
+    if not bo_phan:
+        raise HTTPException(status_code=404, detail="Bộ phận không tồn tại")
+
+    don_vi = session.get(AuditDonVi, bo_phan.don_vi_id)
+    sections = _build_checklist_sections(bo_phan_id, loai, session)
+    total_criteria = sum(len(s["criteria"]) for s in sections)
+
+    loai_labels = {"5S": "5S", "TRUC_QUAN": "Trực quan", "DAY_DU": "Đầy đủ"}
+
+    return templates.TemplateResponse(
+        "5s_checklist.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+            "bo_phan": {
+                "id": bo_phan.id,
+                "ten": bo_phan.ten,
+                "don_vi_ten": don_vi.ma if don_vi else "",
+                "don_vi_id": bo_phan.don_vi_id,
+            },
+            "loai": loai,
+            "loai_label": loai_labels.get(loai, loai),
+            "sections": sections,
+            "total_criteria": total_criteria,
+        },
+    )
+
+
+@app.post("/internal-audit/submit")
+async def audit_submit(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> RedirectResponse:
+    create_db_and_tables()
+    form = await request.form()
+    bo_phan_id = int(form.get("bo_phan_id", 0))
+    loai = str(form.get("loai", "DAY_DU"))
+
+    if not bo_phan_id:
+        raise HTTPException(status_code=400, detail="Thiếu bo_phan_id")
+
+    # Collect scores from form: keys like "score_<tieu_chi_id>"
+    scores: dict[int, int] = {}
+    notes: dict[int, str] = {}
+    for key, val in form.items():
+        if key.startswith("score_"):
+            tc_id = int(key[6:])
+            try:
+                scores[tc_id] = int(val)
+            except (ValueError, TypeError):
+                pass
+        elif key.startswith("note_"):
+            tc_id = int(key[5:])
+            if str(val).strip():
+                notes[tc_id] = str(val).strip()
+
+    so_diem = sum(scores.values())
+    tong_diem = len(scores) * 2
+    ty_le = so_diem / tong_diem if tong_diem else 0.0
+
+    if ty_le > 0.90:
+        ket_luan = "Tốt"
+    elif ty_le >= 0.75:
+        ket_luan = "Đạt"
+    elif ty_le >= 0.50:
+        ket_luan = "Cần cải thiện"
+    else:
+        ket_luan = "Không đạt"
+
+    user = _current_user(request)
+    nguoi_kiem_tra = user.get("ma_nv", "") if user else ""
+    now = datetime.utcnow()
+    ky = f"{now.year}-{now.month:02d}"
+
+    # Find or create dot_kiem_tra for this period
+    dot = session.exec(
+        select(AuditDotKiemTra).where(AuditDotKiemTra.ky == ky)
+    ).first()
+    if not dot:
+        dot = AuditDotKiemTra(
+            ky=ky,
+            ngay_kiem_tra=now.date(),
+            nguoi_kiem_tra=nguoi_kiem_tra or None,
+        )
+        session.add(dot)
+        session.commit()
+        session.refresh(dot)
+    elif not dot.nguoi_kiem_tra and nguoi_kiem_tra:
+        dot.nguoi_kiem_tra = nguoi_kiem_tra
+        session.add(dot)
+        session.commit()
+
+    phieu = AuditPhieuKiemTra(
+        dot_id=dot.id,
+        bo_phan_id=bo_phan_id,
+        loai=loai,
+        so_diem=so_diem,
+        tong_diem=tong_diem,
+        ty_le=round(ty_le, 4),
+        ket_luan=ket_luan,
+        nguoi_kiem_tra=nguoi_kiem_tra,
+        completed_at=now,
+    )
+    session.add(phieu)
+    session.commit()
+    session.refresh(phieu)
+
+    for tc_id, diem in scores.items():
+        session.add(AuditChiTietDiem(
+            phieu_id=phieu.id,
+            tieu_chi_id=tc_id,
+            diem=diem,
+            ghi_chu=notes.get(tc_id),
+        ))
+    session.commit()
+
+    return RedirectResponse(url=f"/internal-audit/result/{phieu.id}", status_code=303)
+
+
+@app.get("/internal-audit/result/{phieu_id}", response_class=HTMLResponse)
+def audit_result(
+    request: Request,
+    phieu_id: int,
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+    phieu = session.get(AuditPhieuKiemTra, phieu_id)
+    if not phieu:
+        raise HTTPException(status_code=404, detail="Phiếu không tồn tại")
+
+    bo_phan = session.get(AuditBoPhan, phieu.bo_phan_id)
+    don_vi = session.get(AuditDonVi, bo_phan.don_vi_id) if bo_phan else None
+
+    # Build section-level breakdown
+    detail_rows = session.exec(
+        select(AuditChiTietDiem).where(AuditChiTietDiem.phieu_id == phieu_id)
+    ).all()
+    diem_by_tc: dict[int, int] = {d.tieu_chi_id: d.diem for d in detail_rows}
+
+    loai_filter: list[str] = []
+    if phieu.loai in ("5S", "DAY_DU"):
+        loai_filter.append("5S")
+    if phieu.loai in ("TRUC_QUAN", "DAY_DU"):
+        loai_filter.append("TRUC_QUAN")
+
+    sections_result = []
+    for lv in session.exec(
+        select(AuditLinhVuc)
+        .where(AuditLinhVuc.loai.in_(loai_filter))
+        .order_by(AuditLinhVuc.loai, AuditLinhVuc.thu_tu)
+    ).all():
+        tc_ids = [
+            tc.id for tc in session.exec(
+                select(AuditTieuChi).where(AuditTieuChi.linh_vuc_id == lv.id)
+            ).all()
+            if tc.id in diem_by_tc
+        ]
+        if not tc_ids:
+            continue
+        sect_so_diem = sum(diem_by_tc.get(tc_id, 0) for tc_id in tc_ids)
+        sect_tong = len(tc_ids) * 2
+        sections_result.append({
+            "ma": lv.ma,
+            "ten": lv.ten,
+            "loai": lv.loai,
+            "so_diem": sect_so_diem,
+            "tong_diem": sect_tong,
+            "ty_le": round(sect_so_diem / sect_tong, 4) if sect_tong else 0.0,
+        })
+
+    ty_le_pct = round((phieu.ty_le or 0.0) * 100, 1)
+    ket_luan_map = {
+        "Tốt": "success",
+        "Đạt": "primary",
+        "Cần cải thiện": "warning",
+        "Không đạt": "error",
+    }
+
+    return templates.TemplateResponse(
+        "5s_result.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+            "phieu": {
+                "id": phieu.id,
+                "loai": phieu.loai,
+                "so_diem": phieu.so_diem or 0,
+                "tong_diem": phieu.tong_diem or 0,
+                "ty_le_pct": ty_le_pct,
+                "ket_luan": phieu.ket_luan or "—",
+                "nguoi_kiem_tra": phieu.nguoi_kiem_tra or "",
+                "ngay": phieu.completed_at.strftime("%d/%m/%Y") if phieu.completed_at else "",
+            },
+            "bo_phan": {
+                "id": bo_phan.id if bo_phan else 0,
+                "ten": bo_phan.ten if bo_phan else "",
+                "don_vi_ten": don_vi.ma if don_vi else "",
+            },
+            "sections": sections_result,
+            "ket_luan_color": ket_luan_map.get(phieu.ket_luan or "", "primary"),
         },
     )
 

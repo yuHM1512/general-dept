@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Checklist {{ loai_label }} – {{ bo_phan.don_vi_ten }} {{ bo_phan.ten }}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{extend:{
+    colors:{
+      "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+      "on-primary-container":"#82afe9","surface":"#F9F9FA",
+      "surface-container-lowest":"#FFFFFF","surface-container-low":"#f3f3f8",
+      "surface-container":"#ededf2","surface-container-high":"#EBEBEB",
+      "surface-dim":"#d9dadf","outline-variant":"#C1C7D2","outline":"#727780",
+      "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+      "secondary":"#1b6d24","on-secondary":"#ffffff",
+      "secondary-container":"#a0f499","on-secondary-container":"#207128",
+      "tertiary":"#00312a","tertiary-fixed-dim":"#7AD7C6",
+      "error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6",
+      "background":"#f9f9fe",
+    },
+    spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem","gutter":"1.5rem"},
+    borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"],"body-lg":["Inter"]},
+    fontSize:{
+      "body-md":   ["16px",{"lineHeight":"24px","fontWeight":"400"}],
+      "body-lg":   ["18px",{"lineHeight":"28px","fontWeight":"400"}],
+      "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+      "label-md":  ["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+    },
+  }},
+}
+</script>
+<style>
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  .accordion-content{max-height:0;overflow:hidden;transition:max-height .3s ease-out}
+  .accordion-active .accordion-content{max-height:4000px}
+  .accordion-active .chevron{transform:rotate(180deg)}
+  .chevron{transition:transform .3s}
+  .progress-bar{transition:width .5s cubic-bezier(.4,0,.2,1)}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+  /* Score chip states – radio-style, traffic-light palette */
+  .sc-unset {background:#fff;color:#727780;border:1.5px dashed #C1C7D2;transition:all .15s}
+  .sc-unset:hover{background:#f3f3f8;border-color:#727780;color:#42474f}
+  .sc-0 {background:#ba1a1a;color:#fff;border:1.5px solid #ba1a1a;box-shadow:0 2px 8px rgba(186,26,26,.35)}
+  .sc-1 {background:#e8a000;color:#fff;border:1.5px solid #e8a000;box-shadow:0 2px 6px rgba(232,160,0,.35)}
+  .sc-2 {background:#1b6d24;color:#fff;border:1.5px solid #1b6d24;box-shadow:0 2px 8px rgba(27,109,36,.35)}
+  /* Accordion header turns blue when open */
+  .accordion-active > button{background:#002c50 !important}
+  .accordion-active > button .section-title{color:#fff !important}
+  .accordion-active > button .section-icon{color:rgba(255,255,255,.85) !important}
+  .accordion-active > button .section-badge{background:rgba(255,255,255,.18) !important;color:#fff !important}
+  .accordion-active > button .chevron{color:#fff !important}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md" style="min-height:max(884px,100dvh)">
+
+<!-- Global progress bar -->
+<div class="fixed top-0 left-0 w-full h-1 bg-tertiary-fixed-dim z-[60]">
+  <div id="global-progress-bar" class="h-full bg-tertiary progress-bar" style="width:0%"></div>
+</div>
+
+<!-- Sticky header -->
+<header class="w-full sticky top-1 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm">
+  <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center gap-sm">
+      <a href="/internal-audit/5s" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</a>
+      <div>
+        <span class="font-label-md text-label-md text-on-surface-variant">{{ bo_phan.don_vi_ten }} • {{ bo_phan.ten }}</span>
+        <h1 class="text-[18px] md:text-[22px] font-headline-md font-bold text-primary tracking-tight">Checklist {{ loai_label }}</h1>
+      </div>
+    </div>
+    <div class="hidden md:flex flex-col items-end">
+      <span class="font-label-md text-label-md text-on-surface-variant">Tiến độ</span>
+      <span id="hdr-progress" class="font-body-md font-semibold text-primary">0 / {{ total_criteria }} tiêu chí</span>
+    </div>
+  </div>
+  <!-- Mobile progress text -->
+  <div class="md:hidden flex justify-between items-center px-xs">
+    <span id="mob-progress" class="font-label-md text-label-md text-on-surface-variant">0 / {{ total_criteria }} tiêu chí hoàn thành</span>
+    <span id="mob-pct" class="font-label-md text-label-md text-primary font-bold">0%</span>
+  </div>
+</header>
+
+<form id="audit-form" method="POST" action="/internal-audit/submit">
+  <input type="hidden" name="bo_phan_id" value="{{ bo_phan.id }}">
+  <input type="hidden" name="loai" value="{{ loai }}">
+
+  <main class="max-w-4xl mx-auto px-4 md:px-margin py-lg pb-40">
+
+    <!-- 5S sections -->
+    {% set ns5 = namespace(has=false) %}
+    {% for section in sections %}{% if section.loai == '5S' %}{% set ns5.has = true %}{% endif %}{% endfor %}
+    {% set nstv = namespace(has=false) %}
+    {% for section in sections %}{% if section.loai == 'TRUC_QUAN' %}{% set nstv.has = true %}{% endif %}{% endfor %}
+
+    {% if ns5.has %}
+    <div class="mb-lg">
+      <div class="flex items-center gap-sm bg-primary text-on-primary px-lg py-sm rounded-xl mb-md shadow-sm">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">filter_5</span>
+        <h2 class="font-label-md text-[13px] uppercase tracking-widest font-bold">Khu vực 5S</h2>
+      </div>
+      <div class="space-y-md">
+        {% for section in sections %}{% if section.loai == '5S' %}
+        <div class="accordion-item bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm" id="acc-{{ section.id }}">
+          <button type="button" class="w-full flex items-center justify-between px-lg py-md text-left transition-colors" style="background:rgba(0,44,80,0.07)" onclick="toggleAcc('acc-{{ section.id }}')">
+            <div class="flex items-center gap-md">
+              <span class="material-symbols-outlined section-icon text-primary-container">{{ section.icon }}</span>
+              <span class="section-title font-headline-md font-bold text-primary text-[16px]">{{ section.ten }}</span>
+            </div>
+            <div class="flex items-center gap-md">
+              <span id="sp-{{ section.id }}" class="section-badge font-label-md text-on-surface-variant bg-surface-container px-2 py-1 rounded-full text-[11px] font-bold">0/{{ section.criteria|length }}</span>
+              <span class="material-symbols-outlined chevron text-outline">expand_more</span>
+            </div>
+          </button>
+          <div class="accordion-content" id="cnt-{{ section.id }}">
+            <div class="px-lg pb-lg space-y-lg divide-y divide-outline-variant/10">
+              {% for tc in section.criteria %}
+              <div class="pt-lg flex flex-col md:flex-row md:items-start justify-between gap-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
+                <div class="flex-1">
+                  <p class="font-body-md text-on-surface leading-relaxed">{{ tc.noi_dung }}</p>
+                  <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
+                    class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none font-body-md text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+                </div>
+                <div class="flex items-center gap-sm flex-shrink-0">
+                  <button type="button" onclick="toggleNote({{ tc.id }})" class="note-icon material-symbols-outlined text-outline hover:text-primary transition-colors p-1 text-[22px]" title="Ghi chú">sticky_note_2</button>
+                  <input type="hidden" name="score_{{ tc.id }}" id="score_{{ tc.id }}" value="">
+                  <div class="score-group flex bg-surface-container-low p-1 rounded-full border border-outline-variant/20 gap-1">
+                    {% for sv in [0, 1, 2] %}
+                    <button type="button" class="score-btn sc-unset px-4 py-1.5 rounded-full font-bold text-label-md text-[13px] transition-all active:scale-95"
+                            data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},{{ sv }})">{{ sv }}</button>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Trực quan sections -->
+    {% if nstv.has %}
+    <div class="mb-lg">
+      <div class="flex items-center gap-sm bg-tertiary text-white px-lg py-sm rounded-xl mb-md shadow-sm">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">visibility</span>
+        <h2 class="font-label-md text-[13px] uppercase tracking-widest font-bold">Quản trị Trực quan</h2>
+      </div>
+      <div class="space-y-md">
+        {% for section in sections %}{% if section.loai == 'TRUC_QUAN' %}
+        <div class="accordion-item bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm" id="acc-{{ section.id }}">
+          <button type="button" class="w-full flex items-center justify-between px-lg py-md text-left transition-colors" style="background:rgba(0,49,42,0.07)" onclick="toggleAcc('acc-{{ section.id }}')">
+            <div class="flex items-center gap-md">
+              <span class="material-symbols-outlined section-icon text-tertiary">{{ section.icon }}</span>
+              <span class="section-title font-headline-md font-bold text-tertiary text-[16px]">{{ section.ten }}</span>
+            </div>
+            <div class="flex items-center gap-md">
+              <span id="sp-{{ section.id }}" class="section-badge font-label-md text-on-surface-variant bg-surface-container px-2 py-1 rounded-full text-[11px] font-bold">0/{{ section.criteria|length }}</span>
+              <span class="material-symbols-outlined chevron text-outline">expand_more</span>
+            </div>
+          </button>
+          <div class="accordion-content" id="cnt-{{ section.id }}">
+            <div class="px-lg pb-lg space-y-lg divide-y divide-outline-variant/10">
+              {% for tc in section.criteria %}
+              <div class="pt-lg flex flex-col md:flex-row md:items-start justify-between gap-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
+                <div class="flex-1">
+                  <p class="font-body-md text-on-surface leading-relaxed">{{ tc.noi_dung }}</p>
+                  <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
+                    class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none font-body-md text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+                </div>
+                <div class="flex items-center gap-sm flex-shrink-0">
+                  <button type="button" onclick="toggleNote({{ tc.id }})" class="note-icon material-symbols-outlined text-outline hover:text-primary transition-colors p-1 text-[22px]" title="Ghi chú">sticky_note_2</button>
+                  <input type="hidden" name="score_{{ tc.id }}" id="score_{{ tc.id }}" value="">
+                  <div class="score-group flex bg-surface-container-low p-1 rounded-full border border-outline-variant/20 gap-1">
+                    {% for sv in [0, 1, 2] %}
+                    <button type="button" class="score-btn sc-unset px-4 py-1.5 rounded-full font-bold text-label-md text-[13px] transition-all active:scale-95"
+                            data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},{{ sv }})">{{ sv }}</button>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <!-- Floating bottom bar -->
+  <div class="fixed bottom-0 left-0 w-full bg-surface-container/90 backdrop-blur-xl border-t border-outline-variant/10 px-4 md:px-margin py-md z-50 flex items-center justify-between shadow-[0px_-8px_24px_rgba(0,0,0,.04)]">
+    <div class="flex flex-col">
+      <span class="font-label-md text-label-md text-on-surface-variant">Tổng điểm hiện tại</span>
+      <div class="flex items-baseline gap-xs">
+        <span id="live-score" class="text-[24px] font-headline-md font-bold text-primary leading-none">0</span>
+        <span class="text-on-surface-variant font-body-md">/ <span id="live-max">{{ total_criteria * 2 }}</span></span>
+      </div>
+    </div>
+    <div class="flex items-center gap-md">
+      <button type="button" onclick="saveDraft()" class="hidden md:flex px-6 py-2 rounded-full font-semibold text-primary hover:bg-surface-container-high transition-colors font-body-md text-[14px]">Lưu nháp</button>
+      <button type="submit" id="submit-btn"
+              class="flex items-center gap-sm bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 md:px-8 py-3 md:py-4 rounded-full font-bold font-headline-md text-[15px] shadow-lg shadow-primary-container/20 active:scale-95 transition-all">
+        Hoàn tất
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </button>
+    </div>
+  </div>
+</form>
+
+<script>
+const TOTAL = {{ total_criteria }};
+
+function toggleAcc(id) {
+  const item = document.getElementById(id);
+  const content = item.querySelector('.accordion-content');
+  const isActive = item.classList.contains('accordion-active');
+  if (isActive) {
+    item.classList.remove('accordion-active');
+    content.style.maxHeight = null;
+  } else {
+    item.classList.add('accordion-active');
+    content.style.maxHeight = content.scrollHeight + 'px';
+    // Recalculate after images/fonts load
+    setTimeout(() => { if (content.style.maxHeight) content.style.maxHeight = content.scrollHeight + 'px'; }, 300);
+  }
+}
+
+function selectScore(btn, tcId, score) {
+  const group = btn.closest('.score-group');
+  group.querySelectorAll('.score-btn').forEach(b => {
+    b.classList.remove('sc-0', 'sc-1', 'sc-2');
+    b.classList.add('sc-unset');
+  });
+  btn.classList.remove('sc-unset');
+  btn.classList.add('sc-' + score);
+  document.getElementById('score_' + tcId).value = score;
+  updateSectionProgress(btn.closest('[data-sect]').dataset.sect);
+  updateLiveScore();
+}
+
+function updateSectionProgress(sectId) {
+  const rows = document.querySelectorAll('[data-sect="' + sectId + '"]');
+  let done = 0;
+  rows.forEach(r => {
+    const inp = document.getElementById('score_' + r.dataset.tc);
+    if (inp && inp.value !== '') done++;
+  });
+  const sp = document.getElementById('sp-' + sectId);
+  if (sp) sp.textContent = done + '/' + rows.length;
+}
+
+function updateLiveScore() {
+  let score = 0, done = 0;
+  document.querySelectorAll('[id^="score_"]').forEach(inp => {
+    if (inp.value !== '') { score += parseInt(inp.value); done++; }
+  });
+  document.getElementById('live-score').textContent = score;
+  const pct = TOTAL ? Math.round(done / TOTAL * 100) : 0;
+  document.getElementById('global-progress-bar').style.width = pct + '%';
+  document.getElementById('hdr-progress').textContent = done + ' / ' + TOTAL + ' tiêu chí';
+  document.getElementById('mob-progress').textContent = done + ' / ' + TOTAL + ' tiêu chí hoàn thành';
+  document.getElementById('mob-pct').textContent = pct + '%';
+}
+
+function toggleNote(tcId) {
+  const ta = document.getElementById('note_' + tcId);
+  const icon = ta.previousElementSibling;
+  if (ta.classList.contains('hidden')) {
+    ta.classList.remove('hidden');
+    icon.style.fontVariationSettings = "'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24";
+    icon.classList.add('text-primary');
+    icon.classList.remove('text-outline');
+  } else {
+    ta.classList.add('hidden');
+    icon.style.fontVariationSettings = "'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24";
+    icon.classList.remove('text-primary');
+    icon.classList.add('text-outline');
+  }
+}
+
+function saveDraft() {
+  // Collect current scores into sessionStorage for persistence
+  const data = {};
+  document.querySelectorAll('[id^="score_"]').forEach(inp => { if (inp.value !== '') data[inp.id] = inp.value; });
+  sessionStorage.setItem('audit_draft', JSON.stringify(data));
+  alert('Đã lưu nháp vào trình duyệt.');
+}
+
+// Restore draft if available
+(function() {
+  const draft = sessionStorage.getItem('audit_draft');
+  if (!draft) return;
+  try {
+    const data = JSON.parse(draft);
+    Object.entries(data).forEach(([id, val]) => {
+      const inp = document.getElementById(id);
+      if (!inp) return;
+      inp.value = val;
+      const tcId = id.replace('score_', '');
+      const btn = document.querySelector('.score-btn[data-tc="' + tcId + '"][data-score="' + val + '"]');
+      if (btn) {
+        const group = btn.closest('.score-group');
+        group.querySelectorAll('.score-btn').forEach(b => {
+          b.classList.remove('sc-0', 'sc-1', 'sc-2');
+          b.classList.add('sc-unset');
+        });
+        btn.classList.remove('sc-unset');
+        btn.classList.add('sc-' + val);
+      }
+    });
+    // Update all section progress + live score
+    document.querySelectorAll('[data-sect]').forEach(r => updateSectionProgress(r.dataset.sect));
+    updateLiveScore();
+  } catch(e) {}
+})();
+
+// Submit confirmation
+document.getElementById('audit-form').addEventListener('submit', function(e) {
+  const unscored = document.querySelectorAll('[id^="score_"]');
+  let missing = 0;
+  unscored.forEach(inp => { if (inp.value === '') missing++; });
+  if (missing > 0) {
+    if (!confirm(missing + ' tiêu chí chưa được chấm điểm. Tiếp tục nộp phiếu?')) {
+      e.preventDefault();
+      return;
+    }
+  }
+  sessionStorage.removeItem('audit_draft');
+});
+
+// Open first accordion by default
+document.querySelectorAll('.accordion-item')[0] && toggleAcc(document.querySelectorAll('.accordion-item')[0].id);
+</script>
+</body>
+</html>

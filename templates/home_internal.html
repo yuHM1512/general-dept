@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Đánh giá nội bộ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+        "on-primary-container":"#82afe9","surface":"#F9F9FA",
+        "surface-container-lowest":"#FFFFFF","surface-container-low":"#f3f3f8",
+        "surface-container":"#ededf2","surface-container-high":"#EBEBEB",
+        "outline-variant":"#C1C7D2","outline":"#727780",
+        "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+        "secondary":"#1b6d24","on-secondary":"#ffffff",
+        "tertiary":"#00312a","background":"#f9f9fe",
+      },
+      spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+      borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+      fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
+      fontSize:{
+        "body-md":    ["16px",{"lineHeight":"24px","fontWeight":"400"}],
+        "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+        "label-md":   ["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+      },
+    },
+  },
+}
+</script>
+<style>
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .reveal{animation:fadeUp .5s cubic-bezier(.16,1,.3,1) forwards}
+  .reveal-1{animation-delay:.06s;opacity:0}
+  .reveal-2{animation-delay:.14s;opacity:0}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+
+<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center gap-md">
+  <a href="/" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</a>
+  <div>
+    <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Nội bộ</p>
+    <h1 class="text-[20px] font-headline-md font-bold text-primary tracking-tight leading-tight">Đánh giá nội bộ</h1>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 md:px-margin pt-xl pb-28">
+
+  <div class="mb-xxl reveal">
+    <p class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-sm">Chọn loại đánh giá</p>
+    <h2 class="text-[26px] md:text-[32px] font-headline-md font-bold text-primary leading-tight">Các module đánh giá</h2>
+    <p class="text-on-surface-variant font-body-md mt-sm">Chọn module phù hợp để bắt đầu hoặc xem kết quả đánh giá.</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-lg">
+
+    <!-- 5S & Trực quan — active -->
+    <a href="/internal-audit/5s"
+       class="group relative flex flex-col bg-primary text-white rounded-xl p-lg shadow-lg hover:shadow-xl hover:-translate-y-1 active:scale-[.98] transition-all duration-200 reveal reveal-1 overflow-hidden">
+      <!-- Background decoration -->
+      <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-12 translate-x-12 pointer-events-none"></div>
+      <div class="absolute bottom-0 right-4 w-20 h-20 bg-white/5 rounded-full translate-y-6 pointer-events-none"></div>
+
+      <div class="flex items-start justify-between mb-xl relative z-10">
+        <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center">
+          <span class="material-symbols-outlined text-[26px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">fact_check</span>
+        </div>
+        <span class="flex items-center gap-xs bg-white/20 rounded-full px-md py-xs font-label-md text-label-md text-white text-[11px] font-bold uppercase tracking-widest">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-300 inline-block"></span>
+          Hoạt động
+        </span>
+      </div>
+      <div class="relative z-10 mt-auto">
+        <h3 class="font-headline-md font-bold text-[20px] text-white leading-snug mb-xs">Kiểm tra 5S &amp; Trực quan</h3>
+        <p class="font-label-md text-[13px] text-white/70 mb-lg">Đánh giá 5S và tiêu chí quản trị trực quan theo khu vực.</p>
+        <span class="inline-flex items-center gap-sm font-label-md text-[13px] font-bold text-white group-hover:gap-md transition-all">
+          Xem tổng quan
+          <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+        </span>
+      </div>
+    </a>
+
+    <!-- OPEX — placeholder -->
+    <div class="group relative flex flex-col bg-surface-container-lowest border-2 border-dashed border-outline-variant rounded-xl p-lg shadow-sm reveal reveal-2 overflow-hidden opacity-60 cursor-not-allowed">
+      <div class="flex items-start justify-between mb-xl">
+        <div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center">
+          <span class="material-symbols-outlined text-[26px] text-outline" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">trending_up</span>
+        </div>
+        <span class="flex items-center gap-xs bg-surface-container rounded-full px-md py-xs font-label-md text-label-md text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
+          <span class="w-1.5 h-1.5 rounded-full bg-outline inline-block"></span>
+          Sắp ra mắt
+        </span>
+      </div>
+      <div class="mt-auto">
+        <h3 class="font-headline-md font-bold text-[20px] text-on-surface leading-snug mb-xs">OPEX</h3>
+        <p class="font-label-md text-[13px] text-on-surface-variant mb-lg">Đánh giá hiệu suất vận hành và cải tiến liên tục.</p>
+        <span class="inline-flex items-center gap-sm font-label-md text-[13px] font-bold text-on-surface-variant">
+          <span class="material-symbols-outlined text-[18px]">lock</span>
+          Chưa khả dụng
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+</body>
+</html>

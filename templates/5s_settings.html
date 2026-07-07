@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cài đặt tiêu chí 5S</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{extend:{
+    colors:{
+      "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+      "surface":"#F9F9FA","surface-container-lowest":"#FFFFFF",
+      "surface-container-low":"#f3f3f8","surface-container":"#ededf2",
+      "surface-container-high":"#EBEBEB","outline-variant":"#C1C7D2",
+      "outline":"#727780","on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+      "secondary":"#1b6d24","on-secondary":"#ffffff",
+      "secondary-container":"#a0f499","tertiary":"#00312a","background":"#f9f9fe",
+    },
+    spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+    borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
+    fontSize:{
+      "body-md":   ["16px",{"lineHeight":"24px","fontWeight":"400"}],
+      "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+      "label-md":  ["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+    },
+  }},
+}
+</script>
+<style>
+  .msym{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+  .toggle-track{transition:background .2s}
+  input:checked ~ .toggle-track{background:#1b6d24}
+  input:checked ~ .toggle-track .toggle-thumb{transform:translateX(20px)}
+  .toggle-thumb{transition:transform .2s}
+  textarea{resize:none;overflow:hidden}
+  .drawer-enter{transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+  .drawer-open{transform:translateX(0)}
+  .overlay-enter{opacity:0;transition:opacity .2s}
+  .overlay-open{opacity:1}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen pb-24">
+
+<!-- Header -->
+<header class="w-full sticky top-0 z-30 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center justify-between gap-md">
+  <div class="flex items-center gap-md min-w-0">
+    <a href="/internal-audit/5s" class="msym material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150 shrink-0">arrow_back</a>
+    <div class="min-w-0">
+      <p class="font-label-md text-label-md text-on-surface-variant">5S &amp; Trực quan</p>
+      <h1 class="text-[18px] md:text-[22px] font-headline-md font-bold text-primary tracking-tight leading-tight">Cài đặt tiêu chí</h1>
+    </div>
+  </div>
+  <span class="font-label-md text-label-md text-on-surface-variant hidden md:block">{{ sections | length }} nhóm</span>
+</header>
+
+<!-- Tab bar (sticky below header) -->
+<div class="sticky top-[69px] z-20 bg-background/95 backdrop-blur-md border-b border-outline-variant/20">
+  <div class="max-w-3xl mx-auto px-4 md:px-margin flex gap-xs py-sm">
+    <button id="tab-5s" onclick="switchTab('5S')"
+      class="tab-btn flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-semibold transition-all">
+      <span class="msym material-symbols-outlined text-[16px]">checklist</span>
+      5S
+      <span class="tab-count px-xs py-[1px] rounded-full text-[10px] font-bold ml-xs">{{ sections | selectattr('loai','eq','5S') | list | length }} nhóm</span>
+    </button>
+    <button id="tab-tv" onclick="switchTab('TRUC_QUAN')"
+      class="tab-btn flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-semibold transition-all">
+      <span class="msym material-symbols-outlined text-[16px]">visibility</span>
+      Trực quan
+      <span class="tab-count px-xs py-[1px] rounded-full text-[10px] font-bold ml-xs">{{ sections | selectattr('loai','eq','TRUC_QUAN') | list | length }} nhóm</span>
+    </button>
+  </div>
+</div>
+
+<main class="max-w-3xl mx-auto px-4 md:px-margin pt-lg">
+
+  <!-- Block 5S -->
+  <div id="block-5S" class="space-y-lg pb-24">
+  {% for sect in sections if sect.loai == '5S' %}
+  <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+
+    <!-- Section header -->
+    <div class="flex items-center gap-md px-lg py-md {% if sect.loai == '5S' %}bg-primary{% else %}bg-tertiary{% endif %}">
+      <span class="msym material-symbols-outlined text-white text-[20px]"
+            style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">{{ sect.icon }}</span>
+      <h2 class="font-label-md text-[13px] uppercase tracking-widest font-bold text-white">{{ sect.ten }}</h2>
+      <span class="ml-auto font-label-md text-[11px] text-white/70" id="sect-count-{{ sect.id }}">{{ sect.criteria | length }} tiêu chí</span>
+    </div>
+
+    <!-- Criteria list -->
+    <ul class="divide-y divide-outline-variant/10" id="tc-list-{{ sect.id }}">
+      {% for tc in sect.criteria %}
+      <li class="group flex items-start gap-xs px-lg py-[14px]" id="tc-row-{{ tc.id }}" data-tc-id="{{ tc.id }}" data-lv-id="{{ sect.id }}">
+
+        <!-- Number badge -->
+        <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-surface-container flex items-center justify-center font-label-md text-[11px] text-on-surface-variant font-bold">{{ loop.index }}</span>
+
+        <!-- Content area -->
+        <div class="flex-1 min-w-0 mx-sm">
+          <!-- View mode -->
+          <div id="tc-view-{{ tc.id }}" class="flex items-start gap-xs">
+            <p class="flex-1 text-[14px] leading-snug text-on-surface {% if not tc.active %}opacity-40 line-through decoration-outline/60{% endif %}" id="tc-text-{{ tc.id }}">{{ tc.noi_dung }}</p>
+            <button onclick="startEdit({{ tc.id }})" title="Chỉnh sửa nội dung"
+              class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-surface-container-high rounded-lg text-on-surface-variant hover:text-primary">
+              <span class="msym material-symbols-outlined text-[16px]">edit</span>
+            </button>
+          </div>
+          <!-- Edit mode (hidden) -->
+          <div id="tc-edit-{{ tc.id }}" class="hidden">
+            <textarea id="tc-textarea-{{ tc.id }}"
+              class="w-full bg-surface-container-low rounded-lg px-sm py-xs text-[14px] leading-snug text-on-surface border-2 border-primary/30 focus:border-primary outline-none"
+              rows="3">{{ tc.noi_dung }}</textarea>
+            <div class="flex gap-xs mt-xs">
+              <button onclick="saveEdit({{ tc.id }})"
+                class="px-md py-xs bg-primary text-white rounded-full text-[12px] font-bold hover:bg-primary-container transition-colors">Lưu</button>
+              <button onclick="cancelEdit({{ tc.id }})"
+                class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[12px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
+            </div>
+          </div>
+
+          <!-- Assignment row: count badge + action button -->
+          <div class="mt-xs flex items-center gap-xs">
+            <span class="inline-flex items-center gap-xs px-sm py-[2px] rounded-full bg-surface-container text-[11px] font-medium text-on-surface-variant">
+              <span class="msym material-symbols-outlined text-[13px]">domain</span>
+              <span id="tc-assign-count-{{ tc.id }}">{{ tc.assigned_count }}</span> đơn vị
+            </span>
+            <button onclick="openAssign({{ tc.id }}, this)" title="Phân công đơn vị"
+              id="tc-assign-btn-{{ tc.id }}"
+              class="inline-flex items-center gap-xs px-sm py-[3px] rounded-full border border-primary/40 bg-primary/5 hover:bg-primary hover:text-white hover:border-primary transition-all text-[11px] font-semibold text-primary">
+              <span class="msym material-symbols-outlined text-[13px]">edit_note</span>
+              Phân công
+            </button>
+          </div>
+        </div>
+
+        <!-- Active toggle -->
+        <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5" title="Bật/tắt tiêu chí">
+          <input type="checkbox" class="sr-only peer" {% if tc.active %}checked{% endif %}
+                 onchange="toggleCriteria({{ tc.id }}, this)">
+          <div class="toggle-track w-11 h-6 rounded-full border border-outline-variant/30 bg-surface-container-high peer-checked:bg-secondary relative">
+            <div class="toggle-thumb absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow {% if tc.active %}translate-x-5{% else %}translate-x-0{% endif %}"></div>
+          </div>
+        </label>
+      </li>
+      {% else %}
+      <li class="px-lg py-lg text-on-surface-variant font-label-md text-label-md text-center">Chưa có tiêu chí</li>
+      {% endfor %}
+    </ul>
+
+    <!-- Add new row (hidden form) -->
+    <div id="add-form-{{ sect.id }}" class="hidden px-lg py-md border-t border-outline-variant/10 bg-surface-container-low/50">
+      <textarea id="add-text-{{ sect.id }}" rows="3"
+        class="w-full bg-white rounded-lg px-sm py-xs text-[14px] leading-snug text-on-surface border-2 border-primary/30 focus:border-primary outline-none"
+        placeholder="Nhập nội dung tiêu chí mới..."></textarea>
+      <div class="flex gap-xs mt-xs">
+        <button onclick="submitAdd({{ sect.id }})"
+          class="px-md py-xs bg-primary text-white rounded-full text-[12px] font-bold hover:bg-primary-container transition-colors">Thêm</button>
+        <button onclick="cancelAdd({{ sect.id }})"
+          class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[12px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
+      </div>
+    </div>
+
+    <!-- Add button -->
+    <div class="px-lg py-sm border-t border-outline-variant/10">
+      <button onclick="showAddForm({{ sect.id }})" id="add-btn-{{ sect.id }}"
+        class="flex items-center gap-xs text-[13px] font-medium text-primary hover:text-primary-container transition-colors py-xs">
+        <span class="msym material-symbols-outlined text-[18px]">add_circle</span>
+        Thêm tiêu chí
+      </button>
+    </div>
+
+  </div>
+  {% endfor %}
+  </div>
+
+  <!-- Block Trực quan -->
+  <div id="block-TRUC_QUAN" class="space-y-lg pb-24 hidden">
+  {% for sect in sections if sect.loai == 'TRUC_QUAN' %}
+  <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+
+    <!-- Section header -->
+    <div class="flex items-center gap-md px-lg py-md bg-tertiary">
+      <span class="msym material-symbols-outlined text-white text-[20px]"
+            style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">{{ sect.icon }}</span>
+      <h2 class="font-label-md text-[13px] uppercase tracking-widest font-bold text-white">{{ sect.ten }}</h2>
+      <span class="ml-auto font-label-md text-[11px] text-white/70" id="sect-count-{{ sect.id }}">{{ sect.criteria | length }} tiêu chí</span>
+    </div>
+
+    <!-- Criteria list -->
+    <ul class="divide-y divide-outline-variant/10" id="tc-list-{{ sect.id }}">
+      {% for tc in sect.criteria %}
+      <li class="group flex items-start gap-xs px-lg py-[14px]" id="tc-row-{{ tc.id }}" data-tc-id="{{ tc.id }}" data-lv-id="{{ sect.id }}">
+        <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-surface-container flex items-center justify-center font-label-md text-[11px] text-on-surface-variant font-bold">{{ loop.index }}</span>
+        <div class="flex-1 min-w-0 mx-sm">
+          <div id="tc-view-{{ tc.id }}" class="flex items-start gap-xs">
+            <p class="flex-1 text-[14px] leading-snug text-on-surface {% if not tc.active %}opacity-40 line-through decoration-outline/60{% endif %}" id="tc-text-{{ tc.id }}">{{ tc.noi_dung }}</p>
+            <button onclick="startEdit({{ tc.id }})" title="Chỉnh sửa nội dung"
+              class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-surface-container-high rounded-lg text-on-surface-variant hover:text-primary">
+              <span class="msym material-symbols-outlined text-[16px]">edit</span>
+            </button>
+          </div>
+          <div id="tc-edit-{{ tc.id }}" class="hidden">
+            <textarea id="tc-textarea-{{ tc.id }}"
+              class="w-full bg-surface-container-low rounded-lg px-sm py-xs text-[14px] leading-snug text-on-surface border-2 border-primary/30 focus:border-primary outline-none"
+              rows="3">{{ tc.noi_dung }}</textarea>
+            <div class="flex gap-xs mt-xs">
+              <button onclick="saveEdit({{ tc.id }})" class="px-md py-xs bg-primary text-white rounded-full text-[12px] font-bold hover:bg-primary-container transition-colors">Lưu</button>
+              <button onclick="cancelEdit({{ tc.id }})" class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[12px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
+            </div>
+          </div>
+          <div class="mt-xs flex items-center gap-xs">
+            <span class="inline-flex items-center gap-xs px-sm py-[2px] rounded-full bg-surface-container text-[11px] font-medium text-on-surface-variant">
+              <span class="msym material-symbols-outlined text-[13px]">domain</span>
+              <span id="tc-assign-count-{{ tc.id }}">{{ tc.assigned_count }}</span> đơn vị
+            </span>
+            <button onclick="openAssign({{ tc.id }}, this)" title="Phân công đơn vị"
+              id="tc-assign-btn-{{ tc.id }}"
+              class="inline-flex items-center gap-xs px-sm py-[3px] rounded-full border border-primary/40 bg-primary/5 hover:bg-primary hover:text-white hover:border-primary transition-all text-[11px] font-semibold text-primary">
+              <span class="msym material-symbols-outlined text-[13px]">edit_note</span>
+              Phân công
+            </button>
+          </div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5" title="Bật/tắt tiêu chí">
+          <input type="checkbox" class="sr-only peer" {% if tc.active %}checked{% endif %}
+                 onchange="toggleCriteria({{ tc.id }}, this)">
+          <div class="toggle-track w-11 h-6 rounded-full border border-outline-variant/30 bg-surface-container-high peer-checked:bg-secondary relative">
+            <div class="toggle-thumb absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow {% if tc.active %}translate-x-5{% else %}translate-x-0{% endif %}"></div>
+          </div>
+        </label>
+      </li>
+      {% else %}
+      <li class="px-lg py-lg text-on-surface-variant font-label-md text-label-md text-center">Chưa có tiêu chí</li>
+      {% endfor %}
+    </ul>
+
+    <div id="add-form-{{ sect.id }}" class="hidden px-lg py-md border-t border-outline-variant/10 bg-surface-container-low/50">
+      <textarea id="add-text-{{ sect.id }}" rows="3"
+        class="w-full bg-white rounded-lg px-sm py-xs text-[14px] leading-snug text-on-surface border-2 border-primary/30 focus:border-primary outline-none"
+        placeholder="Nhập nội dung tiêu chí mới..."></textarea>
+      <div class="flex gap-xs mt-xs">
+        <button onclick="submitAdd({{ sect.id }})" class="px-md py-xs bg-primary text-white rounded-full text-[12px] font-bold hover:bg-primary-container transition-colors">Thêm</button>
+        <button onclick="cancelAdd({{ sect.id }})" class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[12px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
+      </div>
+    </div>
+    <div class="px-lg py-sm border-t border-outline-variant/10">
+      <button onclick="showAddForm({{ sect.id }})" id="add-btn-{{ sect.id }}"
+        class="flex items-center gap-xs text-[13px] font-medium text-primary hover:text-primary-container transition-colors py-xs">
+        <span class="msym material-symbols-outlined text-[18px]">add_circle</span>
+        Thêm tiêu chí
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+  </div>
+
+</main>
+
+<!-- Assignment drawer overlay -->
+<div id="assign-overlay"
+  class="fixed inset-0 bg-on-surface/30 z-40 hidden overlay-enter"
+  onclick="closeAssign()"></div>
+
+<!-- Assignment drawer -->
+<div id="assign-drawer"
+  class="fixed right-0 top-0 h-full w-full max-w-sm bg-surface-container-lowest z-50 flex flex-col shadow-2xl drawer-enter">
+  <div class="flex items-center gap-md px-lg py-md border-b border-outline-variant/20 shrink-0 bg-primary">
+    <button onclick="closeAssign()" class="p-1 text-white/80 hover:text-white transition-colors">
+      <span class="msym material-symbols-outlined text-[22px]">close</span>
+    </button>
+    <div class="min-w-0">
+      <p class="font-label-md text-[11px] uppercase tracking-widest text-white/70">Phân công tiêu chí</p>
+      <h3 class="text-[15px] font-bold text-white leading-snug truncate" id="drawer-title">—</h3>
+    </div>
+  </div>
+  <p class="px-lg py-md text-[13px] text-on-surface-variant leading-snug border-b border-outline-variant/10 shrink-0 line-clamp-3" id="drawer-tc-text"></p>
+  <div class="overflow-y-auto flex-1 px-lg py-md space-y-lg" id="drawer-body"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-on-surface text-surface px-lg py-sm rounded-full font-label-md text-[13px] shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 whitespace-nowrap">
+  Đã lưu
+</div>
+
+<script>
+// ── Embedded data from server ─────────────────────────────────────────────
+const DON_VI  = {{ don_vi_json | safe }};
+const BO_PHAN = {{ bo_phan_json | safe }};
+const TC_ASSIGN = {{ tc_assignments_json | safe }};   // {"tc_id": [bp_id, ...]}
+
+// current state in-memory (mirrors DB)
+const assignments = {};
+for (const [k, v] of Object.entries(TC_ASSIGN)) {
+  assignments[k] = new Set(v);
+}
+function getAssigned(tcId) {
+  return assignments[String(tcId)] || (assignments[String(tcId)] = new Set());
+}
+
+// ── Toggle active ─────────────────────────────────────────────────────────
+function toggleCriteria(tcId, checkbox) {
+  const active = checkbox.checked;
+  const textEl = document.getElementById('tc-text-' + tcId);
+  if (active) textEl.classList.remove('opacity-40', 'line-through', 'decoration-outline/60');
+  else        textEl.classList.add('opacity-40', 'line-through', 'decoration-outline/60');
+
+  fetch('/api/audit/5s/tieu-chi/' + tcId + '/toggle', { method: 'POST' })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(data => {
+      checkbox.checked = data.active;
+      const thumb = checkbox.closest('label').querySelector('.toggle-thumb');
+      if (data.active) { thumb.classList.add('translate-x-5'); thumb.classList.remove('translate-x-0'); }
+      else             { thumb.classList.remove('translate-x-5'); thumb.classList.add('translate-x-0'); }
+      showToast(data.active ? 'Đã bật tiêu chí' : 'Đã tắt tiêu chí');
+    })
+    .catch(() => { checkbox.checked = !active; showToast('Lỗi, thử lại sau'); });
+}
+
+// ── Inline edit ───────────────────────────────────────────────────────────
+function startEdit(tcId) {
+  document.getElementById('tc-view-' + tcId).classList.add('hidden');
+  document.getElementById('tc-edit-' + tcId).classList.remove('hidden');
+  const ta = document.getElementById('tc-textarea-' + tcId);
+  autoResize(ta);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+function cancelEdit(tcId) {
+  const ta = document.getElementById('tc-textarea-' + tcId);
+  ta.value = document.getElementById('tc-text-' + tcId).textContent;
+  document.getElementById('tc-edit-' + tcId).classList.add('hidden');
+  document.getElementById('tc-view-' + tcId).classList.remove('hidden');
+}
+function saveEdit(tcId) {
+  const ta = document.getElementById('tc-textarea-' + tcId);
+  const noi_dung = ta.value.trim();
+  if (!noi_dung) { showToast('Nội dung không được để trống'); return; }
+  fetch('/api/audit/5s/tieu-chi/' + tcId, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({noi_dung}),
+  })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(data => {
+      document.getElementById('tc-text-' + tcId).textContent = data.noi_dung;
+      cancelEdit(tcId);
+      showToast('Đã lưu nội dung');
+    })
+    .catch(() => showToast('Lỗi, thử lại sau'));
+}
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+document.querySelectorAll('textarea').forEach(ta => {
+  ta.addEventListener('input', () => autoResize(ta));
+});
+
+// ── Add new criterion ─────────────────────────────────────────────────────
+function showAddForm(lvId) {
+  document.getElementById('add-btn-' + lvId).classList.add('hidden');
+  const form = document.getElementById('add-form-' + lvId);
+  form.classList.remove('hidden');
+  const ta = document.getElementById('add-text-' + lvId);
+  ta.value = '';
+  ta.focus();
+}
+function cancelAdd(lvId) {
+  document.getElementById('add-form-' + lvId).classList.add('hidden');
+  document.getElementById('add-btn-' + lvId).classList.remove('hidden');
+}
+function submitAdd(lvId) {
+  const ta = document.getElementById('add-text-' + lvId);
+  const noi_dung = ta.value.trim();
+  if (!noi_dung) { showToast('Nhập nội dung tiêu chí'); return; }
+  fetch('/api/audit/5s/linh-vuc/' + lvId + '/tieu-chi', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({noi_dung}),
+  })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(data => {
+      appendCriterionRow(lvId, data);
+      cancelAdd(lvId);
+      showToast('Đã thêm tiêu chí mới');
+    })
+    .catch(() => showToast('Lỗi, thử lại sau'));
+}
+function appendCriterionRow(lvId, tc) {
+  const list = document.getElementById('tc-list-' + lvId);
+  // Remove "empty" placeholder if present
+  list.querySelectorAll('li.text-center').forEach(el => el.remove());
+
+  const idx = list.querySelectorAll('li[data-tc-id]').length + 1;
+  const li = document.createElement('li');
+  li.className = 'group flex items-start gap-xs px-lg py-[14px]';
+  li.id = 'tc-row-' + tc.id;
+  li.dataset.tcId = tc.id;
+  li.dataset.lvId = lvId;
+  li.innerHTML = `
+    <span class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-surface-container flex items-center justify-center font-label-md text-[11px] text-on-surface-variant font-bold">${idx}</span>
+    <div class="flex-1 min-w-0 mx-sm">
+      <div id="tc-view-${tc.id}" class="flex items-start gap-xs">
+        <p class="flex-1 text-[14px] leading-snug text-on-surface" id="tc-text-${tc.id}">${escHtml(tc.noi_dung)}</p>
+        <button onclick="startEdit(${tc.id})" title="Chỉnh sửa nội dung"
+          class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-surface-container-high rounded-lg text-on-surface-variant hover:text-primary">
+          <span class="msym material-symbols-outlined text-[16px]">edit</span>
+        </button>
+      </div>
+      <div id="tc-edit-${tc.id}" class="hidden">
+        <textarea id="tc-textarea-${tc.id}" class="w-full bg-surface-container-low rounded-lg px-sm py-xs text-[14px] leading-snug text-on-surface border-2 border-primary/30 focus:border-primary outline-none" rows="3">${escHtml(tc.noi_dung)}</textarea>
+        <div class="flex gap-xs mt-xs">
+          <button onclick="saveEdit(${tc.id})" class="px-md py-xs bg-primary text-white rounded-full text-[12px] font-bold hover:bg-primary-container transition-colors">Lưu</button>
+          <button onclick="cancelEdit(${tc.id})" class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[12px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
+        </div>
+      </div>
+      <div class="mt-xs flex items-center gap-xs">
+        <span class="inline-flex items-center gap-xs px-sm py-[2px] rounded-full bg-surface-container text-[11px] font-medium text-on-surface-variant">
+          <span class="msym material-symbols-outlined text-[13px]">domain</span>
+          <span id="tc-assign-count-${tc.id}">0</span> đơn vị
+        </span>
+        <button onclick="openAssign(${tc.id}, this)" title="Phân công đơn vị"
+          id="tc-assign-btn-${tc.id}"
+          class="inline-flex items-center gap-xs px-sm py-[3px] rounded-full border border-primary/40 bg-primary/5 hover:bg-primary hover:text-white hover:border-primary transition-all text-[11px] font-semibold text-primary">
+          <span class="msym material-symbols-outlined text-[13px]">edit_note</span>
+          Phân công
+        </button>
+      </div>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5" title="Bật/tắt tiêu chí">
+      <input type="checkbox" class="sr-only peer" checked onchange="toggleCriteria(${tc.id}, this)">
+      <div class="toggle-track w-11 h-6 rounded-full border border-outline-variant/30 bg-surface-container-high peer-checked:bg-secondary relative">
+        <div class="toggle-thumb absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow translate-x-5"></div>
+      </div>
+    </label>`;
+  list.appendChild(li);
+
+  // Update section counter
+  updateSectCount(lvId);
+
+  // Attach textarea resize listener
+  const ta = li.querySelector('textarea');
+  ta.addEventListener('input', () => autoResize(ta));
+}
+function updateSectCount(lvId) {
+  const list = document.getElementById('tc-list-' + lvId);
+  const n = list.querySelectorAll('li[data-tc-id]').length;
+  const el = document.getElementById('sect-count-' + lvId);
+  if (el) el.textContent = n + ' tiêu chí';
+}
+
+// ── Assignment drawer ─────────────────────────────────────────────────────
+let currentTcId = null;
+
+function openAssign(tcId, btnEl) {
+  currentTcId = tcId;
+  const tcText = document.getElementById('tc-text-' + tcId).textContent;
+  document.getElementById('drawer-tc-text').textContent = tcText;
+  document.getElementById('drawer-title').textContent = 'TC #' + tcId;
+
+  // Build drawer body grouped by don_vi
+  const assigned = getAssigned(tcId);
+  const bpByDv = {};
+  BO_PHAN.forEach(bp => {
+    (bpByDv[bp.don_vi_id] = bpByDv[bp.don_vi_id] || []).push(bp);
+  });
+
+  let html = '';
+  DON_VI.forEach(dv => {
+    const bps = bpByDv[dv.id] || [];
+    if (!bps.length) return;
+    html += `<div>
+      <p class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-sm">${escHtml(dv.ma)}</p>
+      <div class="space-y-xs">`;
+    bps.forEach(bp => {
+      const checked = assigned.has(bp.id) ? 'checked' : '';
+      html += `<label class="flex items-center gap-md px-md py-sm rounded-xl cursor-pointer hover:bg-surface-container-low transition-colors">
+        <input type="checkbox" ${checked} onchange="toggleAssign(${tcId}, ${bp.id}, this)"
+          class="w-4 h-4 rounded accent-primary cursor-pointer shrink-0" id="ap-${tcId}-${bp.id}">
+        <span class="text-[14px] text-on-surface">${escHtml(bp.ten)}</span>
+      </label>`;
+    });
+    html += `</div></div>`;
+  });
+
+  document.getElementById('drawer-body').innerHTML = html;
+
+  // Show overlay + drawer
+  const overlay = document.getElementById('assign-overlay');
+  const drawer  = document.getElementById('assign-drawer');
+  overlay.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    overlay.classList.add('overlay-open');
+    drawer.classList.add('drawer-open');
+  });
+}
+
+function closeAssign() {
+  const overlay = document.getElementById('assign-overlay');
+  const drawer  = document.getElementById('assign-drawer');
+  overlay.classList.remove('overlay-open');
+  drawer.classList.remove('drawer-open');
+  setTimeout(() => overlay.classList.add('hidden'), 200);
+  currentTcId = null;
+}
+
+function toggleAssign(tcId, bpId, checkbox) {
+  const prev = checkbox.checked;
+  fetch(`/api/audit/5s/tieu-chi/${tcId}/ap-dung/${bpId}`, { method: 'POST' })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(data => {
+      const set = getAssigned(tcId);
+      if (data.assigned) set.add(bpId); else set.delete(bpId);
+      checkbox.checked = data.assigned;
+      // Update count badge
+      const countEl = document.getElementById('tc-assign-count-' + tcId);
+      if (countEl) countEl.textContent = set.size;
+      showToast(data.assigned ? 'Đã thêm đơn vị' : 'Đã bỏ đơn vị');
+    })
+    .catch(() => { checkbox.checked = !prev; showToast('Lỗi, thử lại sau'); });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2000);
+}
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Close drawer on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAssign(); });
+
+// ── Tab navigation ────────────────────────────────────────────────────────
+function switchTab(loai) {
+  const is5S = loai === '5S';
+  // Blocks
+  document.getElementById('block-5S').classList.toggle('hidden', !is5S);
+  document.getElementById('block-TRUC_QUAN').classList.toggle('hidden', is5S);
+  // Tab active styles
+  styleTab('tab-5s',  is5S);
+  styleTab('tab-tv',  !is5S);
+  // Persist in URL hash so refresh keeps state
+  history.replaceState(null, '', '#' + loai);
+}
+function styleTab(id, active) {
+  const el = document.getElementById(id);
+  const count = el.querySelector('.tab-count');
+  if (active) {
+    el.classList.add('bg-primary', 'text-white', 'shadow-sm');
+    el.classList.remove('text-on-surface-variant', 'hover:bg-surface-container');
+    count.classList.add('bg-white/20');
+    count.classList.remove('bg-surface-container', 'text-on-surface-variant');
+    count.style.color = '';
+  } else {
+    el.classList.remove('bg-primary', 'text-white', 'shadow-sm');
+    el.classList.add('text-on-surface-variant', 'hover:bg-surface-container');
+    count.classList.remove('bg-white/20');
+    count.classList.add('bg-surface-container', 'text-on-surface-variant');
+  }
+}
+// Init: read hash or default to 5S
+const initTab = location.hash === '#TRUC_QUAN' ? 'TRUC_QUAN' : '5S';
+switchTab(initTab);
+</script>
+</body>
+</html>

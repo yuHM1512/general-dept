@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kết quả kiểm tra – {{ bo_phan.don_vi_ten }} {{ bo_phan.ten }}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{extend:{
+    colors:{
+      "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+      "on-primary-container":"#82afe9","surface":"#F9F9FA",
+      "surface-container-lowest":"#FFFFFF","surface-container-low":"#f3f3f8",
+      "surface-container":"#ededf2","surface-container-high":"#EBEBEB",
+      "outline-variant":"#C1C7D2","outline":"#727780",
+      "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+      "secondary":"#1b6d24","on-secondary":"#ffffff",
+      "secondary-container":"#a0f499","on-secondary-container":"#207128",
+      "tertiary":"#00312a","tertiary-fixed-dim":"#7AD7C6",
+      "error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6",
+      "background":"#f9f9fe",
+    },
+    spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+    borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"],"display-md":["Manrope"]},
+    fontSize:{
+      "body-md":   ["16px",{"lineHeight":"24px","fontWeight":"400"}],
+      "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+      "display-md":["45px",{"lineHeight":"52px","fontWeight":"600"}],
+      "label-md":  ["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+    },
+  }},
+}
+</script>
+<style>
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .reveal{animation:fadeUp .6s cubic-bezier(.16,1,.3,1) forwards}
+  .reveal-1{animation-delay:.08s;opacity:0}
+  .reveal-2{animation-delay:.18s;opacity:0}
+  .reveal-3{animation-delay:.28s;opacity:0}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen pb-28">
+
+<!-- Header -->
+<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center justify-between">
+  <div class="flex items-center gap-md">
+    <a href="/internal-audit/5s" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95">home</a>
+    <h1 class="text-[18px] font-headline-md font-bold text-primary tracking-tight">Kết quả đánh giá</h1>
+  </div>
+  {% if user %}
+  <div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center border border-outline-variant/20">
+    <span class="material-symbols-outlined text-primary text-[20px]">account_circle</span>
+  </div>
+  {% endif %}
+</header>
+
+<main class="max-w-4xl mx-auto px-4 md:px-margin pt-xl">
+
+  <!-- Hero section -->
+  <section class="grid grid-cols-1 md:grid-cols-12 gap-xl mb-xxl reveal">
+    <!-- Left: context + verdict -->
+    <div class="md:col-span-5 flex flex-col justify-center">
+      <p class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-sm">{{ bo_phan.don_vi_ten }} • {{ bo_phan.ten }}</p>
+      <h2 class="font-display-md text-[36px] md:text-display-md text-primary mb-sm leading-tight">Kết quả</h2>
+      <p class="text-on-surface-variant font-body-md mb-lg">Kiểm tra nội bộ 5S &amp; Trực quan.</p>
+
+      <!-- Verdict badge -->
+      {% if ket_luan_color == 'success' %}
+      <div class="inline-flex items-center gap-sm px-lg py-sm bg-secondary-container text-on-secondary-container rounded-full self-start font-label-md text-[13px] font-bold">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">check_circle</span>
+        {{ phieu.ket_luan }}
+      </div>
+      {% elif ket_luan_color == 'primary' %}
+      <div class="inline-flex items-center gap-sm px-lg py-sm bg-primary/10 text-primary rounded-full self-start font-label-md text-[13px] font-bold">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">thumb_up</span>
+        {{ phieu.ket_luan }}
+      </div>
+      {% elif ket_luan_color == 'warning' %}
+      <div class="inline-flex items-center gap-sm px-lg py-sm bg-[#fff3cd] text-[#856404] rounded-full self-start font-label-md text-[13px] font-bold">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">warning</span>
+        {{ phieu.ket_luan }}
+      </div>
+      {% else %}
+      <div class="inline-flex items-center gap-sm px-lg py-sm bg-error-container text-error rounded-full self-start font-label-md text-[13px] font-bold">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">cancel</span>
+        {{ phieu.ket_luan }}
+      </div>
+      {% endif %}
+
+      {% if phieu.ngay %}
+      <p class="mt-md font-label-md text-label-md text-on-surface-variant">Ngày kiểm tra: <strong class="text-on-surface">{{ phieu.ngay }}</strong></p>
+      {% endif %}
+      {% if phieu.nguoi_kiem_tra %}
+      <p class="mt-xs font-label-md text-label-md text-on-surface-variant">Người kiểm tra: <strong class="text-on-surface">{{ phieu.nguoi_kiem_tra }}</strong></p>
+      {% endif %}
+    </div>
+
+    <!-- Right: donut gauge -->
+    <div class="md:col-span-7 flex justify-center items-center relative reveal reveal-1">
+      <div class="relative w-56 h-56 md:w-72 md:h-72 flex items-center justify-center"
+           style="border-radius:50%;background: radial-gradient(circle closest-side,#f9f9fe 0%,#f9f9fe 72%,transparent 72% 100%),
+                             conic-gradient(#005A9C 0%,#005A9C {{ phieu.ty_le_pct }}%,#ededf2 {{ phieu.ty_le_pct }}% 100%);
+                  box-shadow: 40px 40px 80px rgba(26,28,29,.06)">
+        <div class="text-center">
+          <span class="font-display-md text-[48px] md:text-[56px] text-primary block leading-none font-bold">{{ phieu.ty_le_pct }}%</span>
+          <span class="text-on-surface-variant font-label-md text-label-md uppercase tracking-widest">Điểm tổng</span>
+          <p class="text-on-surface font-body-md font-semibold mt-xs">{{ phieu.so_diem }} / {{ phieu.tong_diem }}</p>
+        </div>
+      </div>
+      <div class="absolute -z-10 w-full h-full opacity-20 blur-3xl bg-primary-container/20 pointer-events-none" style="border-radius:50%"></div>
+    </div>
+  </section>
+
+  <!-- Section breakdown table -->
+  <section class="bg-surface-container-lowest rounded-xl p-lg shadow-sm reveal reveal-2 overflow-hidden mb-xl">
+    <div class="flex justify-between items-end mb-xl">
+      <h3 class="font-headline-md text-[20px] text-primary font-bold">Chi tiết các hạng mục</h3>
+      <span class="text-on-surface-variant font-label-md text-label-md">{{ now_year }}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse min-w-[360px]">
+        <thead>
+          <tr class="text-left text-on-surface-variant font-label-md text-label-md border-b border-outline-variant/20">
+            <th class="py-md px-sm font-medium">Lĩnh vực</th>
+            <th class="py-md px-sm font-medium text-center">Điểm</th>
+            <th class="py-md px-sm font-medium text-center">Tối đa</th>
+            <th class="py-md px-sm font-medium text-right">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sect in sections %}
+          {% set pct = (sect.ty_le * 100) | round(1) %}
+          <tr class="hover:bg-surface-container-high transition-colors {% if loop.index is odd %}bg-surface-container-low/30{% else %}bg-surface-container-lowest{% endif %}">
+            <td class="py-lg px-sm">
+              <div class="flex items-center gap-sm">
+                <span class="inline-block w-2 h-2 rounded-full {% if sect.loai == '5S' %}bg-primary{% else %}bg-tertiary{% endif %}"></span>
+                <span class="font-body-md text-primary font-semibold">{{ sect.ten }}</span>
+              </div>
+            </td>
+            <td class="py-lg px-sm text-center font-body-md">{{ sect.so_diem }}</td>
+            <td class="py-lg px-sm text-center font-body-md text-on-surface-variant">{{ sect.tong_diem }}</td>
+            <td class="py-lg px-sm text-right font-bold font-body-md
+              {% if pct >= 90 %}text-secondary
+              {% elif pct >= 75 %}text-primary-container
+              {% elif pct >= 50 %}text-[#856404]
+              {% else %}text-error{% endif %}">
+              {{ pct }}%
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="py-lg text-center text-on-surface-variant font-body-md">Không có dữ liệu</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Scoring legend -->
+  <section class="bg-surface-container-lowest rounded-xl p-lg shadow-sm reveal reveal-2 mb-xl">
+    <h4 class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-md">Thang xếp loại</h4>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-sm">
+      <div class="bg-secondary-container/50 rounded-xl p-sm text-center">
+        <p class="font-bold text-on-secondary-container font-body-md">Tốt</p>
+        <p class="font-label-md text-label-md text-on-surface-variant">&gt; 90%</p>
+      </div>
+      <div class="bg-primary/10 rounded-xl p-sm text-center">
+        <p class="font-bold text-primary font-body-md">Đạt</p>
+        <p class="font-label-md text-label-md text-on-surface-variant">75 – 90%</p>
+      </div>
+      <div class="bg-[#fff3cd] rounded-xl p-sm text-center">
+        <p class="font-bold text-[#856404] font-body-md">Cần cải thiện</p>
+        <p class="font-label-md text-label-md text-on-surface-variant">50 – 75%</p>
+      </div>
+      <div class="bg-error-container rounded-xl p-sm text-center">
+        <p class="font-bold text-error font-body-md">Không đạt</p>
+        <p class="font-label-md text-label-md text-on-surface-variant">&lt; 50%</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Action buttons -->
+  <div class="flex flex-col sm:flex-row gap-md justify-center reveal reveal-3 pb-8">
+    <button onclick="window.print()"
+            class="flex items-center justify-center gap-sm px-xxl py-md bg-gradient-to-r from-primary to-primary-container text-white rounded-full font-bold font-body-md shadow-lg active:scale-95 transition-all">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">print</span>
+      In phiếu
+    </button>
+    <a href="/internal-audit/5s/new"
+       class="flex items-center justify-center gap-sm px-xxl py-md border-2 border-primary/20 text-primary rounded-full font-bold font-body-md hover:bg-surface-container-high active:scale-95 transition-all">
+      <span class="material-symbols-outlined">add_circle</span>
+      Đánh giá mới
+    </a>
+  </div>
+
+</main>
+
+<!-- Bottom nav (mobile) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[1.5rem] bg-surface-container flex justify-around items-center h-20 px-4 pb-safe shadow-[0px_-4px_40px_rgba(26,28,29,.06)] md:hidden">
+  <a href="/internal-audit/5s" class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-colors">
+    <span class="material-symbols-outlined">checklist</span>
+    <span class="font-label-md text-label-md">Kiểm tra</span>
+  </a>
+  <a href="/" class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-colors">
+    <span class="material-symbols-outlined">home</span>
+    <span class="font-label-md text-label-md">Trang chủ</span>
+  </a>
+</nav>
+
+</body>
+</html>

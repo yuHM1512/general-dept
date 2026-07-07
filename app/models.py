@@ -10,6 +10,8 @@ from sqlmodel import Field, SQLModel
 
 
 class PayrollRow(SQLModel, table=True):
+    __tablename__ = "rcp_payrollrow"
+
     id: int | None = Field(default=None, primary_key=True)
 
     year: int = Field(index=True)
@@ -46,6 +48,7 @@ class GeneralEmployee(SQLModel, table=True):
     chuc_vu: str = Field(default="")
     don_vi: str = Field(default="")
     bo_phan: str = Field(default="")
+    role: str = Field(default="user", max_length=20)
     station: list = Field(
         default_factory=list,
         sa_column=Column(JSONB, nullable=False, server_default=text("'[]'::jsonb")),
@@ -53,6 +56,8 @@ class GeneralEmployee(SQLModel, table=True):
 
 
 class IngestJob(SQLModel, table=True):
+    __tablename__ = "rcp_ingestjob"
+
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
     status: str = Field(default="pending", index=True)  # pending|running|completed|failed
@@ -70,7 +75,7 @@ class IngestJob(SQLModel, table=True):
 
 
 class HangingLine(SQLModel, table=True):
-    __tablename__ = "hanging_line"
+    __tablename__ = "rcp_hanging_line"
 
     id: int | None = Field(default=None, primary_key=True)
     don_vi: str = Field(index=True)

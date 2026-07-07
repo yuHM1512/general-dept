@@ -61,7 +61,7 @@
         try {
           const formData = new FormData();
           formData.append("ma_nv", code);
-          const endpoint = "/rcp/login?next=" + encodeURIComponent("{{ next_url }}");
+          const endpoint = "/login?next=" + encodeURIComponent("{{ next_url }}");
           const res = await fetch(endpoint, { method: "POST", body: formData });
           if (res.redirected) {
             window.location.href = res.url;
