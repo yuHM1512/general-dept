@@ -169,43 +169,58 @@ tailwind.config = {
             </div>
           </button>
           <div class="accordion-content" id="cnt-{{ section.id }}">
-            <div class="px-lg pb-lg space-y-md pt-md">
+            <div class="pb-lg pt-sm space-y-xs">
               {% for bien in section.biens %}
-              <!-- Biển card -->
-              <div class="border border-outline-variant/20 rounded-xl overflow-hidden">
-                <!-- Biển header -->
-                <div class="bg-tertiary/8 border-b border-outline-variant/15 px-lg py-md">
-                  <p class="font-bold text-[14px] text-tertiary leading-snug">{{ bien.ten_goi }}</p>
-                  <p class="text-[12px] text-on-surface-variant mt-xs leading-relaxed">{{ bien.mo_ta }}</p>
-                  {% if bien.kich_thuoc %}
-                  <span class="inline-flex items-center gap-xs mt-sm text-[11px] font-semibold text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full">
-                    <span class="material-symbols-outlined text-[13px]">straighten</span>
-                    {{ bien.kich_thuoc }}
-                  </span>
-                  {% endif %}
-                </div>
-                <!-- 5 criteria for this biển -->
-                <div class="divide-y divide-outline-variant/10">
-                  {% for tc in bien.criteria %}
-                  <div class="px-lg py-md flex flex-col md:flex-row md:items-start justify-between gap-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
-                    <div class="flex-1">
-                      <p class="font-body-md text-on-surface leading-relaxed text-[14px]">{{ tc.noi_dung }}</p>
-                      <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
-                        class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none font-body-md text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
-                    </div>
-                    <div class="flex items-center gap-sm flex-shrink-0">
-                      <button type="button" onclick="toggleNote({{ tc.id }})" class="note-icon material-symbols-outlined text-outline hover:text-primary transition-colors p-1 text-[22px]" title="Ghi chú">sticky_note_2</button>
-                      <input type="hidden" name="score_{{ tc.id }}" id="score_{{ tc.id }}" value="">
-                      <div class="score-group flex bg-surface-container-low p-1 rounded-full border border-outline-variant/20 gap-1">
-                        {% for sv in [0, 1, 2] %}
-                        <button type="button" class="score-btn sc-unset px-4 py-1.5 rounded-full font-bold text-label-md text-[13px] transition-all active:scale-95"
-                                data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},{{ sv }})">{{ sv }}</button>
-                        {% endfor %}
+              <!-- Biển accordion -->
+              <div class="bien-item border border-outline-variant/20 rounded-xl overflow-hidden" id="bien-acc-{{ bien.id }}">
+
+                <!-- Compact header — click to expand -->
+                <button type="button"
+                  class="bien-hdr w-full flex items-center justify-between px-lg py-[11px] text-left transition-colors bg-surface-container-lowest hover:bg-tertiary/5"
+                  onclick="toggleBien('bien-acc-{{ bien.id }}')">
+                  <div class="flex items-center gap-sm min-w-0">
+                    <span id="bien-sp-{{ bien.id }}" class="shrink-0 min-w-[36px] text-center px-sm py-[2px] rounded-full bg-surface-container font-label-md text-[11px] font-bold text-on-surface-variant">0/5</span>
+                    <span class="font-semibold text-[13px] text-on-surface truncate">{{ bien.ten_goi }}</span>
+                  </div>
+                  <span class="material-symbols-outlined bien-chevron shrink-0 text-outline text-[20px] transition-transform duration-200">expand_more</span>
+                </button>
+
+                <!-- Expandable body: mô tả + kích thước + 5 criteria -->
+                <div class="bien-body hidden">
+                  <!-- Mô tả -->
+                  <div class="px-lg pt-sm pb-md border-t border-outline-variant/10 bg-tertiary/[0.04]">
+                    <p class="text-[12px] text-on-surface-variant leading-relaxed">{{ bien.mo_ta }}</p>
+                    {% if bien.kich_thuoc %}
+                    <span class="inline-flex items-center gap-xs mt-xs text-[11px] font-semibold text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full">
+                      <span class="material-symbols-outlined text-[13px]">straighten</span>
+                      {{ bien.kich_thuoc }}
+                    </span>
+                    {% endif %}
+                  </div>
+                  <!-- 5 criteria -->
+                  <div class="divide-y divide-outline-variant/10">
+                    {% for tc in bien.criteria %}
+                    <div class="px-lg py-md flex flex-col md:flex-row md:items-start justify-between gap-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
+                      <div class="flex-1">
+                        <p class="text-on-surface leading-relaxed text-[14px]">{{ tc.noi_dung }}</p>
+                        <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
+                          class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+                      </div>
+                      <div class="flex items-center gap-sm flex-shrink-0">
+                        <button type="button" onclick="toggleNote({{ tc.id }})" class="note-icon material-symbols-outlined text-outline hover:text-primary transition-colors p-1 text-[22px]" title="Ghi chú">sticky_note_2</button>
+                        <input type="hidden" name="score_{{ tc.id }}" id="score_{{ tc.id }}" value="">
+                        <div class="score-group flex bg-surface-container-low p-1 rounded-full border border-outline-variant/20 gap-1">
+                          {% for sv in [0, 1, 2] %}
+                          <button type="button" class="score-btn sc-unset px-4 py-1.5 rounded-full font-bold text-label-md text-[13px] transition-all active:scale-95"
+                                  data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},{{ sv }})">{{ sv }}</button>
+                          {% endfor %}
+                        </div>
                       </div>
                     </div>
+                    {% endfor %}
                   </div>
-                  {% endfor %}
                 </div>
+
               </div>
               {% endfor %}
             </div>
@@ -241,6 +256,46 @@ tailwind.config = {
 <script>
 const TOTAL = {{ total_criteria }};
 
+// Biển accordion (nested inside section accordion)
+function toggleBien(id) {
+  const item = document.getElementById(id);
+  const body = item.querySelector('.bien-body');
+  const chevron = item.querySelector('.bien-chevron');
+  const isOpen = !body.classList.contains('hidden');
+  if (isOpen) {
+    body.classList.add('hidden');
+    chevron.style.transform = '';
+    item.querySelector('.bien-hdr').classList.remove('bg-tertiary/5');
+  } else {
+    body.classList.remove('hidden');
+    chevron.style.transform = 'rotate(180deg)';
+    item.querySelector('.bien-hdr').classList.add('bg-tertiary/5');
+  }
+}
+
+function updateBienProgress(tcId) {
+  // Walk up to find the bien-item container
+  const row = document.querySelector('[data-tc="' + tcId + '"]');
+  if (!row) return;
+  const bienItem = row.closest('.bien-item');
+  if (!bienItem) return;
+  const bienId = bienItem.id.replace('bien-acc-', '');
+  const rows = bienItem.querySelectorAll('[data-tc]');
+  let done = 0;
+  rows.forEach(r => {
+    const inp = document.getElementById('score_' + r.dataset.tc);
+    if (inp && inp.value !== '') done++;
+  });
+  const sp = document.getElementById('bien-sp-' + bienId);
+  if (sp) {
+    sp.textContent = done + '/' + rows.length;
+    sp.classList.toggle('bg-secondary', done === rows.length);
+    sp.classList.toggle('text-white', done === rows.length);
+    sp.classList.toggle('bg-surface-container', done < rows.length);
+    sp.classList.toggle('text-on-surface-variant', done < rows.length);
+  }
+}
+
 function toggleAcc(id) {
   const item = document.getElementById(id);
   const content = item.querySelector('.accordion-content');
@@ -266,6 +321,7 @@ function selectScore(btn, tcId, score) {
   btn.classList.add('sc-' + score);
   document.getElementById('score_' + tcId).value = score;
   updateSectionProgress(btn.closest('[data-sect]').dataset.sect);
+  updateBienProgress(tcId);
   updateLiveScore();
 }
 
