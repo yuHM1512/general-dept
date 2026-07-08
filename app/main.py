@@ -25,7 +25,7 @@ from app.ingest import ingest_workbook_with_progress
 from app.models import GeneralEmployee, HangingLine, IngestJob, PayrollRow
 from app.audit_models import (
     AuditDonVi, AuditBoPhan, AuditLinhVuc, AuditBien, AuditTieuChi, AuditApDung,
-    AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem,
+    AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem, AuditHdkp,
 )
 from app.schemas import (
     IngestJobResponse,
@@ -567,11 +567,16 @@ def five_s_admin(
     all_phieus = session.exec(select(AuditPhieuKiemTra)).all()
     tong_phieu = len(all_phieus)
     diem_tb = round(sum(p.ty_le or 0 for p in all_phieus) / tong_phieu * 100, 1) if tong_phieu else 0.0
-    can_ci = sum(1 for p in all_phieus if p.ket_luan in ("Cần cải thiện", "Không đạt"))
+    dat_count = sum(1 for p in all_phieus if p.ket_luan in ("Tốt", "Đạt"))
+    can_ci = sum(1 for p in all_phieus if p.ket_luan == "Cần cải thiện")
+    khong_dat = sum(1 for p in all_phieus if p.ket_luan == "Không đạt")
 
     q = select(AuditPhieuKiemTra).order_by(AuditPhieuKiemTra.created_at.desc())
     if ket_luan:
-        q = q.where(AuditPhieuKiemTra.ket_luan == ket_luan)
+        if ket_luan == "Đạt":
+            q = q.where(AuditPhieuKiemTra.ket_luan.in_(["Tốt", "Đạt"]))
+        else:
+            q = q.where(AuditPhieuKiemTra.ket_luan == ket_luan)
     phieus = session.exec(q).all()
 
     if don_vi_id:
@@ -630,7 +635,9 @@ def five_s_admin(
             "stats": {
                 "tong_phieu": tong_phieu,
                 "diem_tb": diem_tb,
+                "dat": dat_count,
                 "can_cai_thien": can_ci,
+                "khong_dat": khong_dat,
             },
             "rows": rows,
             "don_vi_list": [{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list],
@@ -638,6 +645,184 @@ def five_s_admin(
             "pagination": {"page": page, "total_pages": total_pages, "total_rows": total_rows},
         },
     )
+
+
+_LOAI_LABEL = {"5S": "5S", "TRUC_QUAN": "Trực quan", "DAY_DU": "Đầy đủ"}
+
+@app.get("/internal-audit/5s/hdkp", response_class=HTMLResponse)
+def five_s_hdkp(
+    request: Request,
+    session: Session = Depends(get_session),
+    don_vi_id: str = "",
+    bo_phan_id: str = "",
+    tinh_trang: str = "",
+) -> HTMLResponse:
+    create_db_and_tables()
+    user = _current_user(request)
+    if not user:
+        return RedirectResponse(url="/login?next=/internal-audit/5s/hdkp", status_code=303)
+
+    from sqlalchemy import text as _text
+
+    where_clauses = ["cd.diem = 0"]
+    params: dict = {}
+    if bo_phan_id:
+        where_clauses.append("bp.id = :bo_phan_id")
+        params["bo_phan_id"] = int(bo_phan_id)
+    elif don_vi_id:
+        where_clauses.append("dv.id = :don_vi_id")
+        params["don_vi_id"] = int(don_vi_id)
+    if tinh_trang:
+        if tinh_trang == "Chưa tiếp nhận":
+            where_clauses.append("(h.tinh_trang IS NULL OR h.tinh_trang = 'Chưa tiếp nhận')")
+        else:
+            where_clauses.append("h.tinh_trang = :tinh_trang")
+            params["tinh_trang"] = tinh_trang
+
+    where_sql = " AND ".join(where_clauses)
+    rows = session.execute(_text(f"""
+        SELECT
+            cd.id                                               AS chi_tiet_diem_id,
+            cd.phieu_id,
+            COALESCE(p.completed_at, p.created_at)::date       AS phieu_ngay,
+            bp.ten                                              AS bo_phan_ten,
+            dv.ten                                              AS don_vi_ten,
+            dv.ma                                               AS don_vi_ma,
+            dv.id                                               AS don_vi_id,
+            lv.loai                                             AS loai,
+            tc.noi_dung                                         AS tieu_chi_noi_dung,
+            b.ten_goi                                           AS bien_ten,
+            h.id                                                AS hdkp_id,
+            COALESCE(h.hanh_dong_kp, '')                        AS hanh_dong_kp,
+            COALESCE(h.nguoi_thuc_hien, '')                     AS nguoi_thuc_hien,
+            h.thoi_han,
+            COALESCE(h.tinh_trang, 'Chưa tiếp nhận')            AS tinh_trang
+        FROM audit_5s_chi_tiet_diem  cd
+        JOIN audit_5s_phieu_kiem_tra p  ON p.id  = cd.phieu_id
+        JOIN audit_5s_bo_phan        bp ON bp.id = p.bo_phan_id
+        JOIN audit_5s_don_vi         dv ON dv.id = bp.don_vi_id
+        JOIN audit_5s_tieu_chi       tc ON tc.id = cd.tieu_chi_id
+        JOIN audit_5s_linh_vuc       lv ON lv.id = tc.linh_vuc_id
+        LEFT JOIN audit_5s_bien      b  ON b.id  = tc.bien_id
+        LEFT JOIN audit_5s_hdkp      h  ON h.chi_tiet_diem_id = cd.id
+        WHERE {where_sql}
+        ORDER BY phieu_ngay DESC, bp.ten, cd.id
+    """), params).mappings().fetchall()
+
+    items = []
+    for r in rows:
+        items.append({
+            "id":                 r["chi_tiet_diem_id"],
+            "phieu_id":           r["phieu_id"],
+            "phieu_ngay":         r["phieu_ngay"].strftime("%d/%m/%Y") if r["phieu_ngay"] else "",
+            "bo_phan_ten":        r["bo_phan_ten"],
+            "don_vi_ten":         r["don_vi_ten"],
+            "don_vi_ma":          r["don_vi_ma"],
+            "loai":               r["loai"],
+            "loai_label":         _LOAI_LABEL.get(r["loai"], r["loai"]),
+            "tieu_chi_noi_dung":  r["tieu_chi_noi_dung"],
+            "bien_ten":           r["bien_ten"] or "",
+            "hanh_dong_kp":       r["hanh_dong_kp"],
+            "nguoi_thuc_hien":    r["nguoi_thuc_hien"],
+            "thoi_han":           r["thoi_han"].isoformat() if r["thoi_han"] else "",
+            "tinh_trang":         r["tinh_trang"],
+        })
+
+    # Stats (over full unfiltered set for sidebar counts)
+    all_rows = session.execute(_text("""
+        SELECT COALESCE(h.tinh_trang, 'Chưa tiếp nhận') AS ts
+        FROM audit_5s_chi_tiet_diem cd
+        LEFT JOIN audit_5s_hdkp h ON h.chi_tiet_diem_id = cd.id
+        WHERE cd.diem = 0
+    """)).mappings().fetchall()
+    chua = sum(1 for r in all_rows if r["ts"] == "Chưa tiếp nhận")
+    dang  = sum(1 for r in all_rows if r["ts"] == "Đang thực hiện")
+    xong  = sum(1 for r in all_rows if r["ts"] == "Hoàn thành")
+    total = len(all_rows)
+    pct   = round(xong / total * 100) if total else 0
+
+    don_vi_list = session.exec(select(AuditDonVi).order_by(AuditDonVi.ma)).all()
+    bo_phan_list = (
+        session.exec(
+            select(AuditBoPhan)
+            .where(AuditBoPhan.don_vi_id == int(don_vi_id))
+            .order_by(AuditBoPhan.ten)
+        ).all()
+        if don_vi_id else []
+    )
+    all_bp = session.exec(select(AuditBoPhan).order_by(AuditBoPhan.ten)).all()
+    don_vi_with_bp = [
+        {
+            "id": dv.id,
+            "ma": dv.ma,
+            "bo_phan": [{"id": bp.id, "ten": bp.ten} for bp in all_bp if bp.don_vi_id == dv.id],
+        }
+        for dv in don_vi_list
+    ]
+
+    return templates.TemplateResponse("5s_hdkp.html", {
+        "request":        request,
+        "user":           user,
+        "items":          items,
+        "stats":          {"chua_xu_ly": chua, "dang_xu_ly": dang, "hoan_thanh": xong, "hoan_thanh_pct": pct},
+        "don_vi_list":    don_vi_list,
+        "don_vi_with_bp": don_vi_with_bp,
+        "bo_phan_list": bo_phan_list,
+        "filter":       {"don_vi_id": don_vi_id, "bo_phan_id": bo_phan_id, "tinh_trang": tinh_trang},
+    })
+
+
+@app.patch("/api/audit/5s/hdkp")
+def upsert_hdkp(payload: dict, session: Session = Depends(get_session)):
+    """Upsert HĐKP record for a zero-score criterion. key = chi_tiet_diem_id."""
+    from sqlalchemy import text as _text
+    from datetime import date as _date
+
+    cid = int(payload.get("chi_tiet_diem_id", 0))
+    if not cid:
+        raise HTTPException(status_code=422, detail="chi_tiet_diem_id required")
+
+    # Resolve phieu_id + tieu_chi_id for the new row
+    ref = session.execute(
+        _text("SELECT phieu_id, tieu_chi_id FROM audit_5s_chi_tiet_diem WHERE id = :id"),
+        {"id": cid},
+    ).mappings().fetchone()
+    if not ref:
+        raise HTTPException(status_code=404, detail="chi_tiet_diem not found")
+
+    thoi_han_val = payload.get("thoi_han") or None
+    if thoi_han_val:
+        try:
+            thoi_han_val = _date.fromisoformat(thoi_han_val)
+        except ValueError:
+            thoi_han_val = None
+
+    session.execute(_text("""
+        INSERT INTO audit_5s_hdkp
+            (chi_tiet_diem_id, phieu_id, tieu_chi_id,
+             hanh_dong_kp, nguoi_thuc_hien, thoi_han, tinh_trang,
+             created_at, updated_at)
+        VALUES
+            (:cid, :pid, :tid,
+             :hd, :ntt, :thn, :tt,
+             NOW(), NOW())
+        ON CONFLICT (chi_tiet_diem_id) DO UPDATE SET
+            hanh_dong_kp    = COALESCE(NULLIF(:hd,  ''), audit_5s_hdkp.hanh_dong_kp),
+            nguoi_thuc_hien = COALESCE(NULLIF(:ntt, ''), audit_5s_hdkp.nguoi_thuc_hien),
+            thoi_han        = CASE WHEN :thn IS NOT NULL THEN :thn ELSE audit_5s_hdkp.thoi_han END,
+            tinh_trang      = COALESCE(NULLIF(:tt,  ''), audit_5s_hdkp.tinh_trang),
+            updated_at      = NOW()
+    """), {
+        "cid": cid,
+        "pid": ref["phieu_id"],
+        "tid": ref["tieu_chi_id"],
+        "hd":  payload.get("hanh_dong_kp", ""),
+        "ntt": payload.get("nguoi_thuc_hien", ""),
+        "thn": thoi_han_val,
+        "tt":  payload.get("tinh_trang", ""),
+    })
+    session.commit()
+    return {"ok": True}
 
 
 @app.get("/internal-audit/5s/new", response_class=HTMLResponse)
@@ -838,6 +1023,91 @@ def toggle_ap_dung(
         assigned = True
     session.commit()
     return {"tieu_chi_id": tc_id, "bo_phan_id": bp_id, "assigned": assigned}
+
+
+@app.put("/api/audit/5s/bien/{bien_id}")
+async def update_bien(
+    bien_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403)
+    data = await request.json()
+    ten_goi = (data.get("ten_goi") or "").strip()
+    mo_ta = (data.get("mo_ta") or "").strip()
+    kich_thuoc = (data.get("kich_thuoc") or "").strip()
+    if not ten_goi:
+        raise HTTPException(status_code=400, detail="Tên gọi không được để trống")
+    bien = session.get(AuditBien, bien_id)
+    if not bien:
+        raise HTTPException(status_code=404)
+    bien.ten_goi = ten_goi
+    bien.mo_ta = mo_ta
+    bien.kich_thuoc = kich_thuoc
+    session.add(bien)
+    session.commit()
+    return {"id": bien_id, "ten_goi": bien.ten_goi, "mo_ta": bien.mo_ta, "kich_thuoc": bien.kich_thuoc}
+
+
+@app.post("/api/audit/5s/linh-vuc/{lv_id}/bien")
+async def add_bien(
+    lv_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403)
+    data = await request.json()
+    ten_goi = (data.get("ten_goi") or "").strip()
+    mo_ta = (data.get("mo_ta") or "").strip()
+    kich_thuoc = (data.get("kich_thuoc") or "").strip()
+    if not ten_goi:
+        raise HTTPException(status_code=400, detail="Tên gọi không được để trống")
+    lv = session.get(AuditLinhVuc, lv_id)
+    if not lv:
+        raise HTTPException(status_code=404)
+    last_bien = session.exec(
+        select(AuditBien)
+        .where(AuditBien.linh_vuc_id == lv_id)
+        .order_by(AuditBien.so_thu_tu.desc())
+    ).first()
+    next_stt = (last_bien.so_thu_tu + 1) if last_bien else 1
+    bien = AuditBien(linh_vuc_id=lv_id, ten_goi=ten_goi, mo_ta=mo_ta, kich_thuoc=kich_thuoc, so_thu_tu=next_stt)
+    session.add(bien)
+    session.flush()
+    last_tc = session.exec(
+        select(AuditTieuChi)
+        .where(AuditTieuChi.linh_vuc_id == lv_id)
+        .order_by(AuditTieuChi.so_thu_tu.desc())
+    ).first()
+    next_tc_stt = (last_tc.so_thu_tu + 1) if last_tc else 1
+    default_criteria = [
+        "a. Biển được đặt/treo đúng vị trí quy định",
+        "b. Biển còn nguyên vẹn, không rách/bạc màu/mờ nội dung",
+        "c. Nội dung trên biển phù hợp với thực tế khu vực",
+        "d. Biển có thể nhìn thấy rõ từ khoảng cách quy định",
+        "e. Màu sắc/hình dạng đúng theo tiêu chuẩn nhận diện",
+    ]
+    for i, noi_dung in enumerate(default_criteria):
+        tc = AuditTieuChi(
+            linh_vuc_id=lv_id, bien_id=bien.id,
+            so_thu_tu=next_tc_stt + i, noi_dung=noi_dung, active=True,
+        )
+        session.add(tc)
+    session.commit()
+    session.refresh(bien)
+    tcs = session.exec(
+        select(AuditTieuChi).where(AuditTieuChi.bien_id == bien.id)
+        .order_by(AuditTieuChi.so_thu_tu)
+    ).all()
+    return {
+        "id": bien.id,
+        "ten_goi": bien.ten_goi,
+        "mo_ta": bien.mo_ta,
+        "kich_thuoc": bien.kich_thuoc,
+        "criteria": [{"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung} for tc in tcs],
+    }
 
 
 @app.get("/api/audit/bo-phan")
@@ -1145,22 +1415,31 @@ def audit_result(
     if phieu.loai in ("TRUC_QUAN", "DAY_DU"):
         loai_filter.append("TRUC_QUAN")
 
+    all_bien_map = {b.id: b for b in session.exec(select(AuditBien)).all()}
+
     sections_result = []
     for lv in session.exec(
         select(AuditLinhVuc)
         .where(AuditLinhVuc.loai.in_(loai_filter))
         .order_by(AuditLinhVuc.loai, AuditLinhVuc.thu_tu)
     ).all():
-        tc_ids = [
-            tc.id for tc in session.exec(
-                select(AuditTieuChi).where(AuditTieuChi.linh_vuc_id == lv.id)
-            ).all()
-            if tc.id in diem_by_tc
-        ]
-        if not tc_ids:
+        all_tc_lv = session.exec(
+            select(AuditTieuChi).where(AuditTieuChi.linh_vuc_id == lv.id)
+        ).all()
+        scored_tc = [tc for tc in all_tc_lv if tc.id in diem_by_tc]
+        if not scored_tc:
             continue
+        tc_ids = [tc.id for tc in scored_tc]
         sect_so_diem = sum(diem_by_tc.get(tc_id, 0) for tc_id in tc_ids)
         sect_tong = len(tc_ids) * 2
+        zero_items = []
+        for tc in scored_tc:
+            if diem_by_tc.get(tc.id, 0) == 0:
+                bien_ten = ""
+                if tc.bien_id:
+                    b = all_bien_map.get(tc.bien_id)
+                    bien_ten = b.ten_goi if b else ""
+                zero_items.append({"noi_dung": tc.noi_dung, "bien_ten": bien_ten})
         sections_result.append({
             "ma": lv.ma,
             "ten": lv.ten,
@@ -1168,6 +1447,7 @@ def audit_result(
             "so_diem": sect_so_diem,
             "tong_diem": sect_tong,
             "ty_le": round(sect_so_diem / sect_tong, 4) if sect_tong else 0.0,
+            "zero_items": zero_items,
         })
 
     ty_le_pct = round((phieu.ty_le or 0.0) * 100, 1)

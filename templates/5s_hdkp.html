@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>HĐKP – 5S &amp; Trực quan</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{extend:{
+    colors:{
+      "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+      "on-primary-container":"#82afe9","surface":"#F9F9FA",
+      "surface-container-lowest":"#FFFFFF","surface-container-low":"#f3f3f8",
+      "surface-container":"#ededf2","surface-container-high":"#EBEBEB",
+      "outline-variant":"#C1C7D2","outline":"#727780",
+      "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+      "secondary":"#1b6d24","on-secondary":"#ffffff",
+      "secondary-container":"#a0f499","on-secondary-container":"#207128",
+      "tertiary":"#00312a","error":"#ba1a1a","error-container":"#ffdad6",
+      "background":"#f9f9fe",
+    },
+    spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+    borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
+    fontSize:{
+      "body-md":   ["16px",{"lineHeight":"24px","fontWeight":"400"}],
+      "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+      "label-md":  ["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+    },
+  }},
+}
+</script>
+<style>
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+  .no-scrollbar::-webkit-scrollbar{display:none}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .reveal{animation:fadeUp .4s cubic-bezier(.16,1,.3,1) forwards}
+  select{appearance:none;-webkit-appearance:none}
+  .row-zebra:nth-child(even){background-color:#f3f3f8}
+  .inline-input{
+    background:transparent;border:0;border-bottom:1px solid #C1C7D2;
+    outline:none;width:100%;padding:2px 0;font-size:10px;color:#1A1C1D;
+    transition:border-color .15s;
+  }
+  .inline-input:focus{border-color:#002c50;}
+  .inline-input::placeholder{color:#9ba3ad;font-size:10px;}
+  input[type="date"].inline-input{font-size:10px;min-width:0;}
+  .status-select{
+    border:none;outline:none;font-size:9px;font-weight:700;
+    letter-spacing:.4px;text-transform:uppercase;
+    padding:3px 8px;border-radius:0.75rem;cursor:pointer;
+    appearance:none;-webkit-appearance:none;text-align:center;
+  }
+  .status-select option{background:#ffffff !important;color:#1A1C1D !important;font-weight:600;letter-spacing:0;text-transform:none;}
+  /* Sidebar collapse */
+  #main-sidebar{transition:width .22s cubic-bezier(.4,0,.2,1);overflow:hidden}
+  #main-sidebar.collapsed{width:3.5rem !important}
+  #main-sidebar.collapsed .sb-hide{display:none !important}
+  #main-sidebar.collapsed nav a{justify-content:center;padding:0.5rem;gap:0}
+  #main-sidebar.collapsed .sb-header{justify-content:center;padding:0.5rem}
+  /* Table fixed layout */
+  .hdkp-table{table-layout:fixed;width:100%}
+  .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+
+<!-- Header -->
+<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center justify-between gap-md">
+  <div class="flex items-center gap-md min-w-0">
+    <a href="/internal-audit" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150 shrink-0">arrow_back</a>
+    <div class="min-w-0">
+      <p class="font-label-md text-label-md text-on-surface-variant truncate">Đánh giá nội bộ</p>
+      <h1 class="text-[18px] md:text-[22px] font-headline-md font-bold text-primary tracking-tight leading-tight">Kiểm tra 5S &amp; Trực quan</h1>
+    </div>
+  </div>
+  {% if user and user.role == 'admin' %}
+  <a href="/internal-audit/5s/settings"
+     class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-high rounded-full transition-colors hidden md:flex items-center justify-center">settings</a>
+  {% endif %}
+</header>
+
+<!-- Body: module sidebar + content -->
+<div class="flex">
+
+  <!-- Module sidebar (desktop only) -->
+  <aside id="main-sidebar" class="hidden md:flex flex-col w-56 shrink-0 bg-surface-container-lowest border-r border-outline-variant/20 sticky top-[69px] overflow-y-auto" style="height:calc(100vh - 69px)">
+    <!-- Sidebar header + toggle -->
+    <div class="sb-header flex items-center justify-between px-lg py-md border-b border-outline-variant/20">
+      <div class="sb-hide">
+        <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant mb-xs">Đánh giá nội bộ</p>
+        <p class="font-headline-md font-bold text-[15px] text-primary leading-snug">5S &amp; Trực quan</p>
+      </div>
+      <button onclick="toggleSidebar()" title="Thu/mở menu"
+        class="shrink-0 w-7 h-7 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors">
+        <span class="material-symbols-outlined text-[18px] text-on-surface-variant" id="sidebar-toggle-icon">chevron_left</span>
+      </button>
+    </div>
+    <nav class="p-sm flex flex-col gap-xs mt-sm">
+      <a href="/internal-audit/5s"
+        class="flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] font-medium transition-colors text-on-surface-variant hover:bg-surface-container"
+        title="Kết quả">
+        <span class="material-symbols-outlined text-[20px] shrink-0">fact_check</span>
+        <span class="sb-hide">Kết quả</span>
+      </a>
+      <a href="/internal-audit/5s/hdkp"
+        class="flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] font-bold transition-colors bg-primary/10 text-primary"
+        title="HĐKP">
+        <span class="material-symbols-outlined text-[20px] shrink-0" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">assignment_late</span>
+        <span class="sb-hide">HĐKP</span>
+      </a>
+    </nav>
+    <div class="flex-1"></div>
+    <!-- Mini stats at sidebar bottom -->
+    <div class="sb-hide p-md border-t border-outline-variant/20 space-y-xs">
+      <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant mb-sm">Tình trạng</p>
+      <div class="flex items-center justify-between px-sm py-xs rounded-xl bg-surface-container">
+        <span class="font-label-md text-[11px] text-on-surface-variant">Chưa tiếp nhận</span>
+        <span class="font-bold text-[13px]" style="color:#CE2525">{{ stats.chua_xu_ly | default(0) }}</span>
+      </div>
+      <div class="flex items-center justify-between px-sm py-xs rounded-xl bg-surface-container">
+        <span class="font-label-md text-[11px] text-on-surface-variant">Đang thực hiện</span>
+        <span class="font-bold text-[13px]" style="color:#FF8C00">{{ stats.dang_xu_ly | default(0) }}</span>
+      </div>
+      <div class="flex items-center justify-between px-sm py-xs rounded-xl bg-surface-container">
+        <span class="font-label-md text-[11px] text-on-surface-variant">Hoàn thành</span>
+        <span class="font-bold text-[13px]" style="color:#00AA55">{{ stats.hoan_thanh | default(0) }}</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Content area -->
+  <div class="flex-1 min-w-0">
+    <main class="px-4 md:px-lg pt-xl pb-28 max-w-6xl">
+
+      <!-- Page heading -->
+      <div class="mb-xl reveal">
+        <h2 class="font-headline-md text-[22px] md:text-[28px] font-bold text-primary">Hành động khắc phục</h2>
+        <p class="font-label-md text-label-md text-on-surface-variant mt-xs">Tổng hợp điểm 0 từ các lần đánh giá nội bộ — mỗi tiêu chí cần lập HĐKP</p>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-md mb-xl reveal">
+        <!-- Tỉ lệ hoàn thành -->
+        <div class="rounded-xl p-lg flex flex-col justify-between h-28 overflow-hidden relative md:col-span-1" style="background:#005A9C">
+          <div>
+            <p class="font-label-md text-[10px] uppercase tracking-widest text-white/70 mb-xs">Tỉ lệ hoàn thành</p>
+            <p class="font-headline-md text-[28px] font-bold text-white leading-none">{{ stats.hoan_thanh_pct | default(0) }}%</p>
+          </div>
+          <div class="w-full rounded-full h-1.5 mt-sm" style="background:rgba(255,255,255,.2)">
+            <div class="h-full rounded-full bg-white" style="width:{{ stats.hoan_thanh_pct | default(0) }}%"></div>
+          </div>
+        </div>
+        <!-- Chưa tiếp nhận -->
+        <div class="rounded-xl p-lg bg-surface-container-lowest h-28 flex flex-col justify-between border border-outline-variant/10 shadow-sm">
+          <p class="font-label-md text-[10px] uppercase tracking-widest" style="color:#CE2525">Chưa tiếp nhận</p>
+          <div>
+            <p class="font-headline-md text-[28px] font-bold leading-none text-error">{{ stats.chua_xu_ly | default(0) }}</p>
+            <p class="font-label-md text-[11px] text-on-surface-variant mt-xs flex items-center gap-xs">
+              <span class="material-symbols-outlined text-[14px] text-error">warning</span>
+              cần ưu tiên xử lý
+            </p>
+          </div>
+        </div>
+        <!-- Đang thực hiện -->
+        <div class="rounded-xl p-lg bg-surface-container-lowest h-28 flex flex-col justify-between border border-outline-variant/10 shadow-sm">
+          <p class="font-label-md text-[10px] uppercase tracking-widest" style="color:#FF8C00">Đang thực hiện</p>
+          <div>
+            <p class="font-headline-md text-[28px] font-bold leading-none" style="color:#FF8C00">{{ stats.dang_xu_ly | default(0) }}</p>
+            <p class="font-label-md text-[11px] text-on-surface-variant mt-xs flex items-center gap-xs">
+              <span class="material-symbols-outlined text-[14px]" style="color:#FF8C00">sync</span>
+              đang tiến hành
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="flex flex-wrap gap-sm items-center mb-lg reveal">
+        <form method="get" id="filter-form" class="flex flex-wrap gap-sm items-center flex-1">
+          <!-- Đơn vị filter (shows ma / short code) -->
+          <div class="relative">
+            <select name="don_vi_id" id="sel-don-vi"
+              onchange="document.getElementById('sel-bo-phan').value=''; this.form.submit()"
+              class="bg-surface-container-high border-none rounded-xl px-md py-sm pr-xl font-label-md text-[13px] text-on-surface focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer">
+              <option value="">Tất cả đơn vị</option>
+              {% for dv in don_vi_list | default([]) %}
+              <option value="{{ dv.id }}" {% if filter.don_vi_id == dv.id | string %}selected{% endif %}>{{ dv.ma }}</option>
+              {% endfor %}
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[18px]">expand_more</span>
+          </div>
+          <!-- Bộ phận filter (only shown when đơn vị selected) -->
+          {% if bo_phan_list | default([]) %}
+          <div class="relative">
+            <select name="bo_phan_id" id="sel-bo-phan" onchange="this.form.submit()"
+              class="bg-surface-container-high border-none rounded-xl px-md py-sm pr-xl font-label-md text-[13px] text-on-surface focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer">
+              <option value="">Tất cả bộ phận</option>
+              {% for bp in bo_phan_list %}
+              <option value="{{ bp.id }}" {% if filter.bo_phan_id == bp.id | string %}selected{% endif %}>{{ bp.ten }}</option>
+              {% endfor %}
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[18px]">expand_more</span>
+          </div>
+          {% else %}
+          <select id="sel-bo-phan" name="bo_phan_id" class="hidden"></select>
+          {% endif %}
+          <!-- Trạng thái filter -->
+          <div class="relative">
+            <select name="tinh_trang" onchange="this.form.submit()"
+              class="bg-surface-container-high border-none rounded-xl px-md py-sm pr-xl font-label-md text-[13px] text-on-surface focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer">
+              <option value="">Tất cả trạng thái</option>
+              <option value="Chưa tiếp nhận" {% if filter.tinh_trang == 'Chưa tiếp nhận' %}selected{% endif %}>Chưa tiếp nhận</option>
+              <option value="Đang thực hiện"  {% if filter.tinh_trang == 'Đang thực hiện' %}selected{% endif %}>Đang thực hiện</option>
+              <option value="Hoàn thành"  {% if filter.tinh_trang == 'Hoàn thành' %}selected{% endif %}>Hoàn thành</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[18px]">expand_more</span>
+          </div>
+          <!-- Clear filter link -->
+          {% if filter.don_vi_id or filter.bo_phan_id or filter.tinh_trang %}
+          <a href="/internal-audit/5s/hdkp" class="font-label-md text-[12px] text-on-surface-variant hover:text-primary flex items-center gap-xs transition-colors">
+            <span class="material-symbols-outlined text-[16px]">close</span>Xóa lọc
+          </a>
+          {% endif %}
+        </form>
+        <span class="font-label-md text-label-md text-on-surface-variant ml-auto">
+          {{ items | default([]) | length }} hành động
+        </span>
+      </div>
+
+      {% set items_list = items | default([]) %}
+
+      <!-- Desktop table -->
+      <div class="hidden md:block bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden mb-lg reveal">
+        <div class="overflow-x-auto no-scrollbar">
+          <table class="hdkp-table border-collapse">
+            <colgroup>
+              <col style="width:36px">
+              <col style="width:130px">
+              <col style="width:90px">
+              <col style="width:22%">
+              <col style="width:150px">
+              <col><!-- Hành động KP takes remaining -->
+              <col style="width:150px">
+              <col style="width:115px">
+            </colgroup>
+            <thead>
+              <tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md border-b border-outline-variant/20">
+                <th class="py-md px-sm text-center font-medium">#</th>
+                <th class="py-md px-sm text-left font-medium">Khu vực</th>
+                <th class="py-md px-sm text-center font-medium whitespace-nowrap">Lần ĐG</th>
+                <th class="py-md px-sm text-left font-medium">Tiêu chí</th>
+                <th class="py-md px-sm text-left font-medium">Người thực hiện</th>
+                <th class="py-md px-sm text-left font-medium">Hành động KP</th>
+                <th class="py-md px-sm text-center font-medium">Thời hạn</th>
+                <th class="py-md px-sm text-center font-medium">Tình trạng</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if items_list %}
+              {% for item in items_list %}
+              <tr class="row-zebra border-b border-outline-variant/10 hover:bg-surface-container-low/60 transition-colors" data-id="{{ item.id }}">
+                <td class="py-md px-sm text-center font-label-md text-label-md text-on-surface-variant opacity-60">{{ loop.index }}</td>
+                <td class="py-md px-sm">
+                  <p class="font-semibold text-[13px] text-on-surface line-clamp-2 leading-tight">{{ item.bo_phan_ten }}</p>
+                  <p class="font-label-md text-[11px] text-on-surface-variant mb-xs truncate" title="{{ item.don_vi_ten }}">{{ item.don_vi_ma }}</p>
+                  <span class="font-label-md text-[11px] font-bold py-xs rounded-full whitespace-nowrap inline-block"
+                    style="padding-left:10px;padding-right:10px;{% if item.loai == '5S' %}background:#005A9C;color:#fff{% elif item.loai == 'TRUC_QUAN' %}background:#00312a;color:#fff{% else %}background:#5B21B6;color:#fff{% endif %}">
+                    {{ item.loai_label }}
+                  </span>
+                </td>
+                <td class="py-md px-sm text-center font-label-md text-[12px] text-on-surface-variant whitespace-nowrap">{{ item.phieu_ngay }}</td>
+                <td class="py-md px-sm">
+                  <p class="text-[13px] text-on-surface leading-snug line-clamp-3">
+                    {% if item.bien_ten %}<span class="font-semibold" style="color:#00312a">{{ item.bien_ten }}</span> — {% endif %}{{ item.tieu_chi_noi_dung }}
+                  </p>
+                </td>
+                <!-- Người thực hiện: chip + Phân công button -->
+                <td class="py-md px-sm">
+                  <div class="flex flex-col gap-xs">
+                    {% if item.nguoi_thuc_hien %}
+                    <span class="assignment-chip font-label-md text-[11px] font-semibold px-sm py-xs rounded-full bg-primary/10 text-primary inline-flex items-center gap-xs w-max max-w-full">
+                      <span class="material-symbols-outlined text-[13px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">person</span>
+                      <span class="truncate max-w-[120px]">{{ item.nguoi_thuc_hien }}</span>
+                    </span>
+                    {% endif %}
+                    <button type="button"
+                      class="open-assign-btn flex items-center gap-xs font-label-md text-[11px] font-bold text-primary-container hover:text-primary transition-colors"
+                      data-id="{{ item.id }}"
+                      data-current="{{ item.nguoi_thuc_hien | default('') }}"
+                      data-self-dv="{{ item.don_vi_ma }}"
+                      data-self-bp="{{ item.bo_phan_ten }}">
+                      <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20">assignment_ind</span>
+                      {% if item.nguoi_thuc_hien %}Thay đổi{% else %}Phân công{% endif %}
+                    </button>
+                  </div>
+                </td>
+                <td class="py-md px-sm">
+                  <input class="inline-input w-full" type="text"
+                    placeholder="Nhập hành động..."
+                    value="{{ item.hanh_dong_kp | default('') }}"
+                    data-field="hanh_dong_kp" data-id="{{ item.id }}"/>
+                </td>
+                <td class="py-md px-sm text-center">
+                  <input class="inline-input text-center" type="date"
+                    value="{{ item.thoi_han | default('') }}"
+                    data-field="thoi_han" data-id="{{ item.id }}"/>
+                </td>
+                <td class="py-md px-sm text-center">
+                  <select class="status-select" data-id="{{ item.id }}"
+                    onchange="applyStatusColor(this)"
+                    style="{% if item.tinh_trang == 'Hoàn thành' %}background:#00FF7F;color:#1F2937{% elif item.tinh_trang == 'Đang thực hiện' %}background:#FF8C00;color:#ffffff{% else %}background:#CE2525;color:#ffffff{% endif %}">
+                    <option {% if item.tinh_trang == 'Chưa tiếp nhận' or not item.tinh_trang %}selected{% endif %}>Chưa tiếp nhận</option>
+                    <option {% if item.tinh_trang == 'Đang thực hiện' %}selected{% endif %}>Đang thực hiện</option>
+                    <option {% if item.tinh_trang == 'Hoàn thành' %}selected{% endif %}>Hoàn thành</option>
+                  </select>
+                </td>
+              </tr>
+              {% endfor %}
+              {% else %}
+              <tr>
+                <td colspan="8" class="py-xxl text-center">
+                  <span class="material-symbols-outlined text-[48px] block mb-md text-outline" style="font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 48">assignment_late</span>
+                  <p class="font-headline-md text-[18px] font-bold text-on-surface mb-xs">Chưa có điểm 0 nào</p>
+                  <p class="font-label-md text-label-md text-on-surface-variant">Mọi tiêu chí đều đạt điểm &ge; 1</p>
+                  <a href="/internal-audit/5s" class="inline-flex items-center gap-xs mt-lg font-label-md text-[13px] text-primary hover:underline">
+                    <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                    Về danh sách đánh giá
+                  </a>
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mobile: sticky summary + cards -->
+      <div class="md:hidden">
+        <!-- Sticky glass summary -->
+        <div class="sticky top-[65px] z-30 mb-lg rounded-xl p-md shadow-sm flex justify-between items-center reveal"
+          style="background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border:1px solid #C1C7D220">
+          <div>
+            <p class="font-label-md text-[11px] text-on-surface-variant">Tổng số</p>
+            <p class="font-headline-md font-bold text-primary text-[22px]">{{ items_list | length }}</p>
+          </div>
+          <div class="flex gap-lg">
+            <div class="text-center">
+              <p class="font-bold text-[18px]" style="color:#CE2525">{{ stats.chua_xu_ly | default(0) }}</p>
+              <p class="font-label-md text-[10px]" style="color:#CE2525">Chưa tiếp nhận</p>
+            </div>
+            <div class="text-center">
+              <p class="font-bold text-[18px]" style="color:#FF8C00">{{ stats.dang_xu_ly | default(0) }}</p>
+              <p class="font-label-md text-[10px]" style="color:#FF8C00">Đang thực hiện</p>
+            </div>
+            <div class="text-center">
+              <p class="font-bold text-[18px]" style="color:#00AA55">{{ stats.hoan_thanh | default(0) }}</p>
+              <p class="font-label-md text-[10px] text-on-surface-variant">Hoàn thành</p>
+            </div>
+          </div>
+        </div>
+
+        {% if items_list %}
+        <div class="space-y-md">
+          {% for item in items_list %}
+          <article class="bg-surface-container-lowest rounded-xl p-lg shadow-sm border border-outline-variant/10 reveal">
+            <!-- Card header -->
+            <div class="flex items-start gap-sm mb-md">
+              <span class="font-label-md text-[11px] font-bold py-xs rounded-full whitespace-nowrap shrink-0"
+                style="padding-left:10px;padding-right:10px;{% if item.loai == '5S' %}background:#005A9C;color:#fff{% elif item.loai == 'TRUC_QUAN' %}background:#00312a;color:#fff{% else %}background:#5B21B6;color:#fff{% endif %}">
+                {{ item.loai_label }}
+              </span>
+              <div class="min-w-0">
+                <p class="font-semibold text-[14px] text-on-surface leading-snug">{{ item.bo_phan_ten }}</p>
+                <p class="font-label-md text-[11px] text-on-surface-variant">{{ item.don_vi_ten }} · {{ item.phieu_ngay }}</p>
+              </div>
+            </div>
+            <!-- Criterion -->
+            <p class="text-[13px] text-on-surface leading-snug mb-md">
+              {% if item.bien_ten %}<span class="font-semibold" style="color:#00312a">{{ item.bien_ten }}</span> — {% endif %}{{ item.tieu_chi_noi_dung }}
+            </p>
+            <!-- Editable fields -->
+            <div class="space-y-sm mb-lg">
+              <div class="flex items-center gap-sm">
+                <span class="font-label-md text-[11px] text-on-surface-variant shrink-0 w-28">Hành động KP:</span>
+                <input class="inline-input flex-1" type="text"
+                  placeholder="Nhập hành động..."
+                  value="{{ item.hanh_dong_kp | default('') }}"
+                  data-field="hanh_dong_kp" data-id="{{ item.id }}"/>
+              </div>
+              <div class="flex items-center gap-sm">
+                <span class="font-label-md text-[11px] text-on-surface-variant shrink-0 w-28">Người thực hiện:</span>
+                <input class="inline-input flex-1" type="text"
+                  placeholder="Ai thực hiện?"
+                  value="{{ item.nguoi_thuc_hien | default('') }}"
+                  data-field="nguoi_thuc_hien" data-id="{{ item.id }}"/>
+              </div>
+              <div class="flex items-center gap-sm">
+                <span class="font-label-md text-[11px] text-on-surface-variant shrink-0 w-28">Thời hạn:</span>
+                <input class="inline-input flex-1" type="date"
+                  value="{{ item.thoi_han | default('') }}"
+                  data-field="thoi_han" data-id="{{ item.id }}"/>
+              </div>
+            </div>
+            <!-- Status full-width strip -->
+            <select class="status-select w-full py-sm text-center rounded-xl" data-id="{{ item.id }}"
+              onchange="applyStatusColor(this)"
+              style="{% if item.tinh_trang == 'Hoàn thành' %}background:#00FF7F;color:#1F2937{% elif item.tinh_trang == 'Đang thực hiện' %}background:#FF8C00;color:#ffffff{% else %}background:#CE2525;color:#ffffff{% endif %}">
+              <option {% if item.tinh_trang == 'Chưa tiếp nhận' or not item.tinh_trang %}selected{% endif %}>Chưa tiếp nhận</option>
+              <option {% if item.tinh_trang == 'Đang thực hiện' %}selected{% endif %}>Đang thực hiện</option>
+              <option {% if item.tinh_trang == 'Hoàn thành' %}selected{% endif %}>Hoàn thành</option>
+            </select>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <!-- Mobile empty state -->
+        <div class="flex flex-col items-center justify-center py-xxl text-center reveal">
+          <span class="material-symbols-outlined text-[56px] text-outline mb-lg" style="font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 48">assignment_late</span>
+          <p class="font-headline-md text-[18px] font-bold text-on-surface mb-xs">Chưa có điểm 0 nào</p>
+          <p class="font-label-md text-label-md text-on-surface-variant">Mọi tiêu chí đều đạt điểm &ge; 1</p>
+        </div>
+        {% endif %}
+      </div>
+
+    </main>
+  </div><!-- /content area -->
+</div><!-- /body flex -->
+
+<!-- ── Phân công modal ─────────────────────────────────────── -->
+<div id="assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(26,28,29,.45);backdrop-filter:blur(4px)">
+  <div class="bg-surface-container-lowest rounded-xl shadow-xl w-full max-w-sm p-lg relative" style="animation:fadeUp .25s cubic-bezier(.16,1,.3,1)">
+    <!-- Header -->
+    <div class="flex items-center gap-sm mb-lg">
+      <span class="material-symbols-outlined text-primary text-[22px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">assignment_ind</span>
+      <h3 class="font-headline-md text-[18px] font-bold text-primary flex-1">Phân công thực hiện</h3>
+      <button onclick="closeAssignModal()" class="material-symbols-outlined text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors">close</button>
+    </div>
+    <!-- Quick self-assign shortcut -->
+    <div id="modal-self-block" class="mb-md rounded-xl bg-surface-container p-sm flex items-center gap-sm">
+      <span class="material-symbols-outlined text-[20px] shrink-0" style="color:#005A9C;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">apartment</span>
+      <div class="flex-1 min-w-0">
+        <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant">Giao cho chính bộ phận này</p>
+        <p class="font-semibold text-[13px] text-on-surface truncate" id="modal-self-label"></p>
+      </div>
+      <button onclick="confirmSelfAssign()"
+        class="shrink-0 flex items-center gap-xs px-md py-xs rounded-full font-label-md text-[12px] font-bold text-white active:scale-95 transition-all"
+        style="background:#005A9C">
+        <span class="material-symbols-outlined text-[14px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">arrow_circle_right</span>
+        Giao
+      </button>
+    </div>
+    <!-- Divider -->
+    <div class="flex items-center gap-sm mb-md">
+      <div class="flex-1 border-t border-outline-variant/30"></div>
+      <span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-widest whitespace-nowrap">hoặc phân công thủ công</span>
+      <div class="flex-1 border-t border-outline-variant/30"></div>
+    </div>
+    <!-- Đơn vị -->
+    <div class="mb-md">
+      <label class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Đơn vị</label>
+      <div class="relative">
+        <select id="modal-don-vi" onchange="onModalDvChange(this)"
+          class="w-full bg-surface-container border-none rounded-xl px-md py-sm pr-xl font-body-md text-[14px] text-on-surface focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer">
+          <option value="">— Chọn đơn vị —</option>
+          {% for dv in don_vi_list | default([]) %}
+          <option value="{{ dv.id }}" data-ma="{{ dv.ma }}">{{ dv.ma }}</option>
+          {% endfor %}
+        </select>
+        <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[18px]">expand_more</span>
+      </div>
+    </div>
+    <!-- Bộ phận -->
+    <div class="mb-xl">
+      <label class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Bộ phận</label>
+      <div class="relative">
+        <select id="modal-bo-phan" disabled
+          class="w-full bg-surface-container border-none rounded-xl px-md py-sm pr-xl font-body-md text-[14px] text-on-surface focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer disabled:opacity-40">
+          <option value="">— Chọn bộ phận —</option>
+        </select>
+        <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[18px]">expand_more</span>
+      </div>
+    </div>
+    <!-- Preview chip -->
+    <div id="modal-preview" class="hidden mb-lg px-md py-sm rounded-full bg-primary/10 font-label-md text-[12px] font-semibold text-primary flex items-center gap-xs">
+      <span class="material-symbols-outlined text-[14px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">person</span>
+      <span id="modal-preview-text"></span>
+    </div>
+    <!-- Actions -->
+    <div class="flex gap-sm justify-end">
+      <button onclick="closeAssignModal()"
+        class="px-lg py-sm rounded-full font-label-md text-[13px] font-bold text-on-surface-variant hover:bg-surface-container transition-colors">
+        Hủy
+      </button>
+      <button id="modal-confirm-btn" onclick="confirmAssign()" disabled
+        class="flex items-center gap-xs px-lg py-sm rounded-full font-label-md text-[13px] font-bold bg-primary text-white shadow hover:bg-primary-container active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none">
+        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">assignment_ind</span>
+        Phân công
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile FAB -->
+<a href="/internal-audit/5s/new"
+   class="fixed bottom-6 right-6 md:hidden w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all z-50">
+  <span class="material-symbols-outlined text-[24px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">add</span>
+</a>
+
+<script>
+// ── Org data for assignment modal ────────────────────────────
+const ORG = {{ don_vi_with_bp | default([]) | tojson }};
+
+// ── Assignment modal state ────────────────────────────────────
+let _assignRowId = null;
+let _selfValue   = '';
+
+function openAssignModal(btn) {
+  _assignRowId = +btn.dataset.id;
+  const current = btn.dataset.current || '';
+  _selfValue    = `${btn.dataset.selfDv} – ${btn.dataset.selfBp}`;
+
+  // Populate self-assign shortcut
+  document.getElementById('modal-self-label').textContent = _selfValue;
+
+  // Pre-fill manual dropdowns if current has format "DV – BP"
+  const [dvMa, bpTen] = current.split(' – ').map(s => s?.trim());
+  const dvSel  = document.getElementById('modal-don-vi');
+  const bpSel  = document.getElementById('modal-bo-phan');
+
+  dvSel.value = '';
+  bpSel.innerHTML = '<option value="">— Chọn bộ phận —</option>';
+  bpSel.disabled = true;
+  document.getElementById('modal-preview').classList.add('hidden');
+  document.getElementById('modal-confirm-btn').disabled = true;
+
+  if (dvMa) {
+    const dvOpt = [...dvSel.options].find(o => o.dataset.ma === dvMa);
+    if (dvOpt) {
+      dvSel.value = dvOpt.value;
+      populateBp(dvSel);
+      if (bpTen) {
+        setTimeout(() => {
+          const bpOpt = [...bpSel.options].find(o => o.textContent.trim() === bpTen);
+          if (bpOpt) { bpSel.value = bpOpt.value; onModalBpChange(); }
+        }, 0);
+      }
+    }
+  }
+
+  const modal = document.getElementById('assign-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function confirmSelfAssign() { _doAssign(_selfValue); }
+
+function closeAssignModal() {
+  const modal = document.getElementById('assign-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  _assignRowId = null;
+}
+
+function populateBp(dvSel) {
+  const dvId = +dvSel.value;
+  const bpSel = document.getElementById('modal-bo-phan');
+  bpSel.innerHTML = '<option value="">— Chọn bộ phận —</option>';
+  if (!dvId) { bpSel.disabled = true; return; }
+  const dv = ORG.find(d => d.id === dvId);
+  if (dv) dv.bo_phan.forEach(bp => {
+    const o = document.createElement('option');
+    o.value = bp.id; o.textContent = bp.ten; bpSel.appendChild(o);
+  });
+  bpSel.disabled = false;
+  onModalBpChange();
+}
+
+function onModalDvChange(sel) { populateBp(sel); }
+
+function onModalBpChange() {
+  const dvSel  = document.getElementById('modal-don-vi');
+  const bpSel  = document.getElementById('modal-bo-phan');
+  const dvMa   = dvSel.options[dvSel.selectedIndex]?.dataset.ma || '';
+  const bpTen  = bpSel.options[bpSel.selectedIndex]?.textContent.trim() || '';
+  const ok     = dvMa && bpSel.value;
+  document.getElementById('modal-confirm-btn').disabled = !ok;
+  const preview = document.getElementById('modal-preview');
+  if (ok) {
+    document.getElementById('modal-preview-text').textContent = `${dvMa} – ${bpTen}`;
+    preview.classList.remove('hidden');
+  } else {
+    preview.classList.add('hidden');
+  }
+}
+
+async function _doAssign(value) {
+  await _patchHdkp({chi_tiet_diem_id: _assignRowId, nguoi_thuc_hien: value});
+  // Update row chip without reload
+  const row = document.querySelector(`tr[data-id="${_assignRowId}"]`);
+  if (row) {
+    const cell = row.querySelector('.open-assign-btn')?.closest('td');
+    if (cell) {
+      let chip = cell.querySelector('.assignment-chip');
+      if (!chip) {
+        chip = document.createElement('span');
+        chip.className = 'assignment-chip font-label-md text-[11px] font-semibold px-sm py-xs rounded-full bg-primary/10 text-primary inline-flex items-center gap-xs w-max max-w-full';
+        chip.innerHTML = '<span class="material-symbols-outlined text-[13px]" style="font-variation-settings:\'FILL\' 1,\'wght\' 400,\'GRAD\' 0,\'opsz\' 20">person</span><span class="truncate max-w-[120px]"></span>';
+        cell.querySelector('.flex').prepend(chip);
+      }
+      chip.querySelector('span:last-child').textContent = value;
+      const btn = cell.querySelector('.open-assign-btn');
+      btn.dataset.current = value;
+      btn.dataset.selfDv = btn.dataset.selfDv; // unchanged
+      const labelSpan = [...btn.childNodes].find(n => n.nodeType === 3);
+      if (labelSpan) btn.removeChild(labelSpan);
+      btn.insertAdjacentText('beforeend', 'Thay đổi');
+    }
+  }
+  closeAssignModal();
+}
+
+async function confirmAssign() {
+  const dvSel = document.getElementById('modal-don-vi');
+  const bpSel = document.getElementById('modal-bo-phan');
+  const dvMa  = dvSel.options[dvSel.selectedIndex]?.dataset.ma || '';
+  const bpTen = bpSel.options[bpSel.selectedIndex]?.textContent.trim() || '';
+  _doAssign(`${dvMa} – ${bpTen}`);
+}
+
+// Close modal on backdrop click
+document.getElementById('assign-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeAssignModal();
+});
+document.getElementById('modal-bo-phan').addEventListener('change', onModalBpChange);
+
+// Wire up all Phân công buttons
+document.querySelectorAll('.open-assign-btn').forEach(btn => {
+  btn.addEventListener('click', () => openAssignModal(btn));
+});
+
+// ── Status colors ─────────────────────────────────────────────
+const STATUS_COLORS = {
+  'Chưa tiếp nhận': {bg:'#CE2525', color:'#ffffff'},
+  'Đang thực hiện':  {bg:'#FF8C00', color:'#ffffff'},
+  'Hoàn thành':      {bg:'#00FF7F', color:'#1F2937'},
+};
+
+// ── Save helpers ──────────────────────────────────────────────
+const _timers = {};
+
+async function _patchHdkp(payload) {
+  try {
+    await fetch('/api/audit/5s/hdkp', {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+  } catch(e) { console.warn('HĐKP save failed', e); }
+}
+
+function scheduleFieldSave(el) {
+  const id    = +el.dataset.id;
+  const field = el.dataset.field;
+  const key   = `${id}_${field}`;
+  clearTimeout(_timers[key]);
+  _timers[key] = setTimeout(() => _patchHdkp({chi_tiet_diem_id: id, [field]: el.value}), 700);
+}
+
+// ── Status badge ──────────────────────────────────────────────
+function applyStatusColor(sel) {
+  const c = STATUS_COLORS[sel.value] || STATUS_COLORS['Chưa tiếp nhận'];
+  sel.style.background = c.bg;
+  sel.style.color = c.color;
+  _patchHdkp({chi_tiet_diem_id: +sel.dataset.id, tinh_trang: sel.value});
+}
+
+// ── Init: wire up inputs + row highlight ──────────────────────
+document.querySelectorAll('.inline-input').forEach(inp => {
+  inp.addEventListener('input',  () => scheduleFieldSave(inp));
+  inp.addEventListener('change', () => scheduleFieldSave(inp));   // date picker
+  inp.addEventListener('focus',  () => inp.closest('tr,article')?.classList.add('bg-surface-container-low'));
+  inp.addEventListener('blur',   () => inp.closest('tr,article')?.classList.remove('bg-surface-container-low'));
+});
+
+// ── Sidebar collapse ──────────────────────────────────────────
+function toggleSidebar() {
+  const aside = document.getElementById('main-sidebar');
+  const icon  = document.getElementById('sidebar-toggle-icon');
+  const collapsed = aside.classList.toggle('collapsed');
+  icon.textContent = collapsed ? 'chevron_right' : 'chevron_left';
+  localStorage.setItem('sb-hdkp-collapsed', collapsed ? '1' : '');
+}
+(function initSidebar() {
+  if (localStorage.getItem('sb-hdkp-collapsed') === '1') {
+    document.getElementById('main-sidebar').classList.add('collapsed');
+    document.getElementById('sidebar-toggle-icon').textContent = 'chevron_right';
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -46,7 +46,7 @@ tailwind.config = {
   .reveal{animation:fadeUp .4s cubic-bezier(.16,1,.3,1) forwards}
 </style>
 </head>
-<body class="bg-background text-on-surface font-body-md min-h-screen pb-24">
+<body class="bg-background text-on-surface font-body-md min-h-screen">
 
 <!-- Header -->
 <header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center justify-between gap-md">
@@ -70,21 +70,82 @@ tailwind.config = {
   </div>
 </header>
 
-<main class="max-w-5xl mx-auto px-4 md:px-margin pt-xl">
+<!-- Body: module sidebar + content -->
+<div class="flex">
+
+  <!-- Module sidebar (desktop only) -->
+  <aside class="hidden md:flex flex-col w-56 shrink-0 bg-surface-container-lowest border-r border-outline-variant/20 sticky top-[69px] overflow-y-auto" style="height:calc(100vh - 69px)">
+    <!-- Module label -->
+    <div class="px-lg py-md border-b border-outline-variant/20">
+      <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant mb-xs">Đánh giá nội bộ</p>
+      <p class="font-headline-md font-bold text-[15px] text-primary leading-snug">5S &amp; Trực quan</p>
+    </div>
+    <!-- Nav tabs -->
+    <nav class="p-sm flex flex-col gap-xs mt-sm">
+      <a href="/internal-audit/5s"
+        class="flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] font-bold transition-colors bg-primary/10 text-primary">
+        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">fact_check</span>
+        Kết quả
+      </a>
+      <a href="/internal-audit/5s/hdkp"
+        class="flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] font-medium transition-colors text-on-surface-variant hover:bg-surface-container">
+        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">assignment_late</span>
+        HĐKP
+      </a>
+    </nav>
+    <!-- Spacer -->
+    <div class="flex-1"></div>
+    <!-- Xếp loại legend at bottom -->
+    <div class="p-md border-t border-outline-variant/20">
+      <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant text-center mb-sm">Xếp loại</p>
+      <div class="flex flex-col gap-xs">
+        <div class="rounded-xl py-md px-sm flex flex-col items-center gap-xs text-center" style="background:#00FF7F">
+          <span class="material-symbols-outlined text-[22px]" style="color:#1F2937;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">check_circle</span>
+          <p class="font-bold text-[12px] leading-tight" style="color:#1F2937">Đạt</p>
+          <p class="text-[11px]" style="color:#1F2937">&ge; 75%</p>
+        </div>
+        <div class="rounded-xl py-md px-sm flex flex-col items-center gap-xs text-center" style="background:#FF8C00">
+          <span class="material-symbols-outlined text-[22px] text-white" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">warning</span>
+          <p class="font-bold text-[12px] text-white leading-tight">Cần cải thiện</p>
+          <p class="text-[11px] text-white">50 – 75%</p>
+        </div>
+        <div class="rounded-xl py-md px-sm flex flex-col items-center gap-xs text-center" style="background:#CE2525">
+          <span class="material-symbols-outlined text-[22px] text-white" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">cancel</span>
+          <p class="font-bold text-[12px] text-white leading-tight">Không đạt</p>
+          <p class="text-[11px] text-white">&lt; 50%</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Content area -->
+  <div class="flex-1 min-w-0">
+<main class="px-4 md:px-lg pt-xl pb-24 max-w-5xl">
 
   <!-- Stat cards -->
-  <div class="grid grid-cols-3 gap-md md:gap-lg mb-xl reveal">
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-md md:gap-lg mb-xl reveal">
     <div class="bg-surface-container-lowest rounded-xl p-md md:p-lg shadow-sm border border-outline-variant/10">
       <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-sm">Tổng phiếu</p>
-      <p class="font-headline-md font-bold text-primary text-[28px] md:text-[36px] leading-none">{{ stats.tong_phieu }}</p>
+      <p class="font-headline-md font-bold text-primary text-[28px] md:text-[32px] leading-none">{{ stats.tong_phieu }}</p>
     </div>
     <div class="bg-surface-container-lowest rounded-xl p-md md:p-lg shadow-sm border border-outline-variant/10">
       <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-sm">Điểm TB</p>
-      <p class="font-headline-md font-bold text-primary-container text-[28px] md:text-[36px] leading-none">{{ stats.diem_tb }}%</p>
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none"
+        style="color:{% if stats.diem_tb >= 75 %}#00AA55{% elif stats.diem_tb >= 50 %}#FF8C00{% else %}#CE2525{% endif %}">
+        {{ stats.diem_tb }}%
+      </p>
     </div>
-    <div class="bg-surface-container-lowest rounded-xl p-md md:p-lg shadow-sm border border-outline-variant/10">
-      <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-sm">Cần cải thiện</p>
-      <p class="font-headline-md font-bold text-[#e8a000] text-[28px] md:text-[36px] leading-none">{{ stats.can_cai_thien }}</p>
+    <div class="rounded-xl p-md md:p-lg shadow-sm" style="background:#f0fff8;border:1px solid #00FF7F50">
+      <p class="font-label-md text-label-md uppercase tracking-widest mb-sm" style="color:#00994d">Đạt</p>
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none" style="color:#00994d">{{ stats.dat }}</p>
+    </div>
+    <div class="rounded-xl p-md md:p-lg shadow-sm" style="background:#fff8f0;border:1px solid #FF8C0050">
+      <p class="font-label-md text-label-md uppercase tracking-widest mb-sm" style="color:#FF8C00">Cần cải thiện</p>
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none" style="color:#FF8C00">{{ stats.can_cai_thien }}</p>
+    </div>
+    <div class="rounded-xl p-md md:p-lg shadow-sm" style="background:#fff0f0;border:1px solid #CE252550">
+      <p class="font-label-md text-label-md uppercase tracking-widest mb-sm" style="color:#CE2525">Không đạt</p>
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none" style="color:#CE2525">{{ stats.khong_dat }}</p>
     </div>
   </div>
 
@@ -93,13 +154,25 @@ tailwind.config = {
     <form method="GET" action="/internal-audit/5s" class="flex flex-wrap gap-sm items-center">
       <!-- Pill tabs for ket_luan -->
       <div class="flex bg-surface-container-low rounded-full p-0.5 border border-outline-variant/20 gap-0.5 flex-wrap">
-        {% set kl_options = [("", "Tất cả"), ("Tốt", "Tốt"), ("Đạt", "Đạt"), ("Cần cải thiện", "Cần cải thiện"), ("Không đạt", "Không đạt")] %}
-        {% for val, label in kl_options %}
-        <button type="submit" name="ket_luan" value="{{ val }}"
-                class="px-md py-xs rounded-full font-label-md text-[12px] font-medium transition-all {{ 'pill-active' if filter.ket_luan == val else 'pill-inactive' }}">
-          {{ label }}
+        <button type="submit" name="ket_luan" value=""
+          class="px-md py-xs rounded-full font-label-md text-[12px] font-medium transition-all {{ 'pill-active' if filter.ket_luan == '' else 'pill-inactive' }}">
+          Tất cả
         </button>
-        {% endfor %}
+        <button type="submit" name="ket_luan" value="Đạt"
+          class="px-md py-xs rounded-full font-label-md text-[12px] font-bold transition-all {% if filter.ket_luan == 'Đạt' %}ring-2 ring-offset-1 ring-[#00CC66]{% endif %}"
+          style="background:#00FF7F;color:#1F2937">
+          Đạt (&gt; 75%)
+        </button>
+        <button type="submit" name="ket_luan" value="Cần cải thiện"
+          class="px-md py-xs rounded-full font-label-md text-[12px] font-bold transition-all {% if filter.ket_luan == 'Cần cải thiện' %}ring-2 ring-offset-1 ring-[#FF8C00]{% endif %}"
+          style="background:#FF8C00;color:#ffffff">
+          Cần cải thiện
+        </button>
+        <button type="submit" name="ket_luan" value="Không đạt"
+          class="px-md py-xs rounded-full font-label-md text-[12px] font-bold transition-all {% if filter.ket_luan == 'Không đạt' %}ring-2 ring-offset-1 ring-[#CE2525]{% endif %}"
+          style="background:#CE2525;color:#ffffff">
+          Không đạt
+        </button>
       </div>
 
       <!-- Don vi dropdown -->
@@ -133,52 +206,43 @@ tailwind.config = {
       <table class="w-full border-collapse min-w-[640px]">
         <thead>
           <tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md border-b border-outline-variant/20">
-            <th class="py-md px-lg text-left font-medium">#</th>
-            <th class="py-md px-lg text-left font-medium">Khu vực</th>
-            <th class="py-md px-lg text-left font-medium">Loại</th>
-            <th class="py-md px-lg text-center font-medium">Điểm %</th>
-            <th class="py-md px-lg text-center font-medium">Kết quả</th>
-            <th class="py-md px-lg text-center font-medium">Ngày</th>
-            <th class="py-md px-lg text-center font-medium">Xem</th>
+            <th class="py-md px-sm text-left font-medium w-8">#</th>
+            <th class="py-md px-md text-left font-medium">Khu vực</th>
+            <th class="py-md px-sm text-center font-medium">Loại</th>
+            <th class="py-md px-sm text-center font-medium">Điểm %</th>
+            <th class="py-md px-sm text-center font-medium">Kết quả</th>
+            <th class="py-md px-sm text-center font-medium">Ngày</th>
+            <th class="py-md px-sm text-center font-medium w-8">Xem</th>
           </tr>
         </thead>
         <tbody>
           {% for row in rows %}
           <tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50 transition-colors group">
-            <td class="py-md px-lg font-label-md text-label-md text-on-surface-variant">{{ row.id }}</td>
-            <td class="py-md px-lg">
+            <td class="py-md px-sm font-label-md text-label-md text-on-surface-variant text-center">{{ row.id }}</td>
+            <td class="py-md px-md">
               <p class="font-body-md font-semibold text-on-surface">{{ row.bo_phan_ten }}</p>
               <p class="font-label-md text-label-md text-on-surface-variant">{{ row.don_vi_ten }}</p>
             </td>
-            <td class="py-md px-lg">
-              <span class="font-label-md text-label-md px-md py-xs rounded-full
-                {% if row.loai == '5S' %}bg-primary/10 text-primary
-                {% elif row.loai == 'TRUC_QUAN' %}bg-tertiary/10 text-tertiary
-                {% else %}bg-surface-container text-on-surface-variant{% endif %}">
+            <td class="py-md px-sm text-center">
+              <span class="font-label-md text-[12px] font-bold py-xs rounded-full whitespace-nowrap inline-block"
+                style="min-width:88px;{% if row.loai == '5S' %}background:#005A9C;color:#ffffff{% elif row.loai == 'TRUC_QUAN' %}background:#00312a;color:#ffffff{% else %}background:#5B21B6;color:#ffffff{% endif %}">
                 {{ row.loai_label }}
               </span>
             </td>
-            <td class="py-md px-lg text-center">
-              <span class="font-headline-md font-bold text-[18px]
-                {% if row.ty_le_pct >= 90 %}text-secondary
-                {% elif row.ty_le_pct >= 75 %}text-primary-container
-                {% elif row.ty_le_pct >= 50 %}text-[#e8a000]
-                {% else %}text-error{% endif %}">
+            <td class="py-md px-sm text-center">
+              <span class="font-headline-md font-bold text-[18px]"
+                style="color:{% if row.ty_le_pct >= 75 %}#00AA55{% elif row.ty_le_pct >= 50 %}#FF8C00{% else %}#CE2525{% endif %}">
                 {{ row.ty_le_pct }}%
               </span>
             </td>
-            <td class="py-md px-lg text-center">
-              <span class="font-label-md text-[12px] font-bold px-md py-xs rounded-full inline-block
-                {% if row.ket_luan == 'Tốt' %}bg-secondary-container text-on-secondary-container
-                {% elif row.ket_luan == 'Đạt' %}bg-primary/10 text-primary
-                {% elif row.ket_luan == 'Cần cải thiện' %}bg-[#fff3cd] text-[#856404]
-                {% elif row.ket_luan == 'Không đạt' %}bg-error-container text-error
-                {% else %}bg-surface-container text-on-surface-variant{% endif %}">
-                {{ row.ket_luan }}
+            <td class="py-md px-sm text-center">
+              <span class="font-label-md text-[12px] font-bold py-xs rounded-full whitespace-nowrap inline-block"
+                style="min-width:120px;{% if row.ket_luan in ('Tốt', 'Đạt') %}background:#00FF7F;color:#1F2937{% elif row.ket_luan == 'Cần cải thiện' %}background:#FF8C00;color:#ffffff{% elif row.ket_luan == 'Không đạt' %}background:#CE2525;color:#ffffff{% else %}background:#ededf2;color:#42474f{% endif %}">
+                {% if row.ket_luan in ('Tốt', 'Đạt') %}Đạt{% else %}{{ row.ket_luan }}{% endif %}
               </span>
             </td>
-            <td class="py-md px-lg text-center font-label-md text-label-md text-on-surface-variant">{{ row.ngay }}</td>
-            <td class="py-md px-lg text-center">
+            <td class="py-md px-sm text-center font-label-md text-label-md text-on-surface-variant">{{ row.ngay }}</td>
+            <td class="py-md px-sm text-center">
               <a href="/internal-audit/result/{{ row.id }}"
                  class="material-symbols-outlined text-outline hover:text-primary transition-colors text-[20px]"
                  style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
@@ -203,24 +267,17 @@ tailwind.config = {
     {% for row in rows %}
     <div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/10 relative">
       <!-- Score badge top-right -->
-      <span class="absolute top-md right-md font-headline-md font-bold text-[18px]
-        {% if row.ty_le_pct >= 90 %}text-secondary
-        {% elif row.ty_le_pct >= 75 %}text-primary-container
-        {% elif row.ty_le_pct >= 50 %}text-[#e8a000]
-        {% else %}text-error{% endif %}">
+      <span class="absolute top-md right-md font-headline-md font-bold text-[18px]"
+        style="color:{% if row.ty_le_pct >= 75 %}#00AA55{% elif row.ty_le_pct >= 50 %}#FF8C00{% else %}#CE2525{% endif %}">
         {{ row.ty_le_pct }}%
       </span>
       <p class="font-label-md text-label-md text-on-surface-variant mb-xs">{{ row.ngay }} &bull; #{{ row.id }}</p>
       <p class="font-body-md font-bold text-on-surface pr-16">{{ row.bo_phan_ten }}</p>
       <p class="font-label-md text-label-md text-on-surface-variant">{{ row.don_vi_ten }}</p>
       <div class="mt-sm flex items-center gap-sm">
-        <span class="font-label-md text-[11px] font-bold px-sm py-xs rounded-full
-          {% if row.ket_luan == 'Tốt' %}bg-secondary-container text-on-secondary-container
-          {% elif row.ket_luan == 'Đạt' %}bg-primary/10 text-primary
-          {% elif row.ket_luan == 'Cần cải thiện' %}bg-[#fff3cd] text-[#856404]
-          {% elif row.ket_luan == 'Không đạt' %}bg-error-container text-error
-          {% else %}bg-surface-container text-on-surface-variant{% endif %}">
-          {{ row.ket_luan }}
+        <span class="font-label-md text-[11px] font-bold px-sm py-xs rounded-full"
+          style="{% if row.ket_luan in ('Tốt', 'Đạt') %}background:#00FF7F;color:#1F2937{% elif row.ket_luan == 'Cần cải thiện' %}background:#FF8C00;color:#ffffff{% elif row.ket_luan == 'Không đạt' %}background:#CE2525;color:#ffffff{% else %}background:#ededf2;color:#42474f{% endif %}">
+          {% if row.ket_luan in ('Tốt', 'Đạt') %}Đạt{% else %}{{ row.ket_luan }}{% endif %}
         </span>
         <span class="font-label-md text-[11px] px-sm py-xs rounded-full bg-surface-container text-on-surface-variant">
           {{ row.loai_label }}
@@ -261,6 +318,8 @@ tailwind.config = {
   {% endif %}
 
 </main>
+  </div><!-- /content area -->
+</div><!-- /body flex -->
 
 <!-- Mobile FAB -->
 <a href="/internal-audit/5s/new"

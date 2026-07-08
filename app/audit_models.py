@@ -89,3 +89,17 @@ class AuditChiTietDiem(SQLModel, table=True):
     tieu_chi_id: int = Field(foreign_key="audit_5s_tieu_chi.id")
     diem: int   # 0, 1, or 2
     ghi_chu: Optional[str] = None
+
+
+class AuditHdkp(SQLModel, table=True):
+    __tablename__ = "audit_5s_hdkp"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    chi_tiet_diem_id: int = Field(foreign_key="audit_5s_chi_tiet_diem.id", unique=True, index=True)
+    phieu_id: int = Field(foreign_key="audit_5s_phieu_kiem_tra.id", index=True)
+    tieu_chi_id: int = Field(foreign_key="audit_5s_tieu_chi.id")
+    hanh_dong_kp: str = Field(default="")
+    nguoi_thuc_hien: str = Field(default="")
+    thoi_han: Optional[date] = None
+    tinh_trang: str = Field(default="Chưa tiếp nhận", max_length=20)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
