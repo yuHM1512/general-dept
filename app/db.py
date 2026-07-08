@@ -4,7 +4,7 @@ from sqlalchemy import inspect, text
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.settings import settings
-from app.services import classify_group
+from app.services import classify_group, normalize_department
 import app.audit_models as _audit_models  # noqa: F401 – registers audit tables in SQLModel.metadata
 
 engine = create_engine(
@@ -105,12 +105,17 @@ def _apply_light_migrations() -> None:
             ).mappings()
             updates = []
             for row in rows:
-                group_name = classify_group(row["department"] or "", row["job_title"] or "")
-                if (row["group_name"] or "") != group_name:
-                    updates.append({"id": row["id"], "group_name": group_name})
+                department = normalize_department(row["department"] or "")
+                group_name = classify_group(department, row["job_title"] or "")
+                if (row["department"] or "") != department or (row["group_name"] or "") != group_name:
+                    updates.append({"id": row["id"], "department": department, "group_name": group_name})
             if updates:
                 conn.execute(
-                    text("UPDATE rcp_payrollrow SET group_name = :group_name WHERE id = :id"),
+                    text(
+                        "UPDATE rcp_payrollrow "
+                        "SET department = :department, group_name = :group_name "
+                        "WHERE id = :id"
+                    ),
                     updates,
                 )
 
@@ -120,6 +125,29 @@ def _apply_light_migrations() -> None:
                 conn.execute(text("ALTER TABLE rcp_hanging_line ADD COLUMN ngay_ap_dung DATE NOT NULL DEFAULT CURRENT_DATE"))
             if "created_at" not in cols:
                 conn.execute(text("ALTER TABLE rcp_hanging_line ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT NOW()"))
+
+            hanging_rows = conn.execute(
+                text("SELECT id, don_vi, department FROM rcp_hanging_line ORDER BY id")
+            ).mappings()
+            seen_hanging = set()
+            hanging_delete_ids = []
+            hanging_updates = []
+            for row in hanging_rows:
+                department = normalize_department(row["department"] or "")
+                key = ((row["don_vi"] or "").strip(), department)
+                if key in seen_hanging:
+                    hanging_delete_ids.append({"id": row["id"]})
+                    continue
+                seen_hanging.add(key)
+                if (row["department"] or "") != department:
+                    hanging_updates.append({"id": row["id"], "department": department})
+            if hanging_delete_ids:
+                conn.execute(text("DELETE FROM rcp_hanging_line WHERE id = :id"), hanging_delete_ids)
+            if hanging_updates:
+                conn.execute(
+                    text("UPDATE rcp_hanging_line SET department = :department WHERE id = :id"),
+                    hanging_updates,
+                )
             conn.execute(
                 text(
                     "CREATE UNIQUE INDEX IF NOT EXISTS ux_hanging_line_don_vi_department "

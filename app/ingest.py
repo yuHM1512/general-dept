@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import Session
 
 from app.models import PayrollRow
-from app.services import classify_group, normalize_header, to_int_money
+from app.services import classify_group, normalize_department, normalize_header, to_int_money
 
 
 class IngestCounters:
@@ -137,7 +137,7 @@ def ingest_workbook_with_progress(
             continue
 
         ttbp = _get(c["TTBP"]) or ""
-        department = _get(c["DEPARTMENT"]) or ""
+        department = normalize_department(_get(c["DEPARTMENT"]))
         full_name = _get(c["FULL_NAME"]) or ""
         job_title = _get(c["JOB_TITLE"]) or ""
         co_so = "Duy Trung" if str(ttbp).strip() == "DT" else "Mẹ Nhu"
@@ -170,7 +170,7 @@ def ingest_workbook_with_progress(
                 "ttbp": str(ttbp).strip(),
                 "don_vi": str(don_vi).strip(),
                 "co_so": co_so,
-                "department": str(department).strip(),
+                "department": department,
                 "manv": manv_str,
                 "full_name": str(full_name).strip(),
                 "job_title": str(job_title).strip(),

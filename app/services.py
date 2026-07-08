@@ -31,6 +31,19 @@ def _normalize_text_key(text: str) -> str:
     return re.sub(r"\s+", " ", normalized).strip()
 
 
+DEPARTMENT_CANONICAL_BY_KEY = {
+    "bao tri": "Bảo trì",
+    "quan ly": "Quản lý",
+    "to hoan thanh": "Tổ Hoàn thành",
+}
+
+
+def normalize_department(department: object) -> str:
+    text = _strip_to_none(department) or ""
+    text = re.sub(r"\s+", " ", text).strip()
+    return DEPARTMENT_CANONICAL_BY_KEY.get(_normalize_text_key(text), text)
+
+
 def to_int_money(value: object) -> int:
     if value is None:
         return 0
@@ -58,8 +71,7 @@ def classify_group(department: str, job_title: str) -> str:
     if department_key in {"cat", "to cat"}:
         return "Cắt/Tổ Cắt"
 
-    title_key = _normalize_text_key(job_title)
-    if "ve sinh cong nghiep" in title_key or "ve sinh vien" in title_key:
+    if department_key == "vscn":
         return "Vệ sinh công nghiệp"
 
     return "Khác"
