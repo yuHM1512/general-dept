@@ -33,6 +33,34 @@
           <div id="uploadStatus" class="text-sm text-on-surface-variant"></div>
         </form>
 
+        <form id="targetSalaryForm" class="space-y-4 rounded-xl bg-surface-container-low p-5">
+          <div>
+            <div class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Mục tiêu RCP</div>
+            <div class="mt-2 text-sm text-on-surface-variant">
+              Mục tiêu hiện tại: <span id="currentTargetSalaryText" class="font-bold text-on-surface">{{ target_salary_vnd_fmt }}</span> VND
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+            <div class="md:col-span-7">
+              <label class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Số mục tiêu mới</label>
+              <input
+                id="targetSalaryInput"
+                type="text"
+                inputmode="numeric"
+                value="{{ target_salary_vnd }}"
+                class="mt-2 w-full rounded-md bg-surface-container-high border-0 focus:ring-2 focus:ring-primary/40"
+                placeholder="VD: 5600000"
+              />
+            </div>
+            <div class="md:col-span-5">
+              <button type="submit" class="w-full py-3 rounded-md font-bold text-primary bg-surface hover:bg-surface-container-high transition-all">
+                Cập nhật mục tiêu
+              </button>
+            </div>
+          </div>
+          <div id="targetSalaryStatus" class="text-sm text-on-surface-variant"></div>
+        </form>
+
         <button
           id="openHangingModalBtn"
           type="button"
@@ -308,6 +336,64 @@
   document.getElementById("loadBtn").addEventListener("click", () => loadTable(true));
   document.getElementById("prevBtn").addEventListener("click", () => { current.offset = Math.max(0, current.offset - current.limit); loadTable(false); });
   document.getElementById("nextBtn").addEventListener("click", () => { current.offset += current.limit; loadTable(false); });
+
+  function parseTargetSalary(value) {
+    const normalized = String(value || "").replace(/[.,\s]/g, "");
+    const parsed = Number.parseInt(normalized, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function setTargetSalaryDisplay(value) {
+    const formatted = fmtVnd(value);
+    document.getElementById("currentTargetSalaryText").textContent = formatted;
+    const header = document.getElementById("targetSalaryHeader");
+    if (header) header.textContent = formatted;
+    document.getElementById("targetSalaryInput").value = String(value);
+  }
+
+  async function loadTargetSalary() {
+    const status = document.getElementById("targetSalaryStatus");
+    try {
+      const res = await fetch("/api/rcp/target-salary");
+      const data = await res.json();
+      if (!res.ok) {
+        status.textContent = `Không tải được mục tiêu: ${JSON.stringify(data)}`;
+        return;
+      }
+      setTargetSalaryDisplay(data.target_salary_vnd);
+    } catch (err) {
+      status.textContent = `Network error: ${err?.message || err}`;
+    }
+  }
+
+  document.getElementById("targetSalaryForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const status = document.getElementById("targetSalaryStatus");
+    const value = parseTargetSalary(document.getElementById("targetSalaryInput").value);
+    if (!value || value <= 0) {
+      status.textContent = "Vui lòng nhập mục tiêu hợp lệ.";
+      return;
+    }
+    status.textContent = "Đang cập nhật...";
+    try {
+      const res = await fetch("/api/rcp/target-salary", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_salary_vnd: value }),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        status.textContent = `Error: ${text}`;
+        return;
+      }
+      const data = JSON.parse(text);
+      setTargetSalaryDisplay(data.target_salary_vnd);
+      status.textContent = `Đã cập nhật mục tiêu thành ${data.target_salary_vnd_fmt} VND.`;
+    } catch (err) {
+      status.textContent = `Network error: ${err?.message || err}`;
+    }
+  });
+
   document.getElementById("deleteMonthBtn").addEventListener("click", async () => {
     const status = document.getElementById("tableStatus");
     const meta = document.getElementById("tableMeta");
@@ -564,5 +650,6 @@
   });
 
   fetchMonths();
+  loadTargetSalary();
 </script>
 {% endblock %}

@@ -377,6 +377,7 @@ def data_page(request: Request) -> HTMLResponse:
             "request": request,
             "app_name": settings.app_name,
             "target_salary_vnd_fmt": _fmt_vnd(settings.target_salary_vnd),
+            "target_salary_vnd": settings.target_salary_vnd,
             "now_year": datetime.utcnow().year,
             "active_nav": "rcp_data",
             "user": _current_user(request),
