@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFi
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func
+from sqlalchemy import delete, func
 from sqlalchemy import exists
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlmodel import Session, select
@@ -2416,6 +2416,37 @@ def payroll_rows(
         for r in rows
     ]
     return PayrollListResponse(year=year, month=month, total=int(total or 0), limit=limit, offset=offset, rows=out)
+
+
+@app.delete("/api/payroll/month")
+def delete_payroll_month(
+    request: Request,
+    year: int = Query(..., ge=2000, le=2100),
+    month: int = Query(..., ge=1, le=12),
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Only admin can delete payroll data")
+    create_db_and_tables()
+    _ensure_no_active_ingest(session)
+
+    total = session.exec(
+        select(func.count()).select_from(PayrollRow).where(
+            PayrollRow.year == year,
+            PayrollRow.month == month,
+        )
+    ).one()
+    deleted = int(total or 0)
+    if deleted:
+        session.exec(
+            delete(PayrollRow).where(
+                PayrollRow.year == year,
+                PayrollRow.month == month,
+            )
+        )
+        session.commit()
+
+    return {"ok": True, "year": year, "month": month, "deleted": deleted}
 
 
 @app.get("/api/debug/db")

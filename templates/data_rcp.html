@@ -94,6 +94,16 @@
           <div id="tableStatus"></div>
         </div>
 
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-xl bg-error-container/40 px-5 py-4">
+          <div>
+            <div class="text-sm font-bold text-error">Xóa dữ liệu tháng đang chọn</div>
+            <div class="text-xs text-on-surface-variant">Dùng khi cần xóa sạch một tháng rồi upload lại file của tháng đó.</div>
+          </div>
+          <button id="deleteMonthBtn" type="button" class="px-4 py-2 rounded-md font-bold text-error bg-surface hover:bg-error-container transition">
+            Xóa tháng
+          </button>
+        </div>
+
         <div class="overflow-hidden rounded-xl">
           <div class="bg-surface-container-low px-6 py-3 text-xs font-semibold tracking-widest text-on-surface-variant uppercase">
             Payroll rows
@@ -298,6 +308,38 @@
   document.getElementById("loadBtn").addEventListener("click", () => loadTable(true));
   document.getElementById("prevBtn").addEventListener("click", () => { current.offset = Math.max(0, current.offset - current.limit); loadTable(false); });
   document.getElementById("nextBtn").addEventListener("click", () => { current.offset += current.limit; loadTable(false); });
+  document.getElementById("deleteMonthBtn").addEventListener("click", async () => {
+    const status = document.getElementById("tableStatus");
+    const meta = document.getElementById("tableMeta");
+    const body = document.getElementById("tableBody");
+    const filters = getFilters();
+    if (!filters) {
+      status.textContent = "Vui lòng chọn Năm/Tháng trước khi xóa.";
+      return;
+    }
+    const label = `${filters.year}/${filters.month}`;
+    if (!confirm(`Xóa tất cả dữ liệu payroll tháng ${label}? Thao tác này không thể hoàn tác.`)) {
+      return;
+    }
+    status.textContent = "Đang xóa...";
+    const params = new URLSearchParams({ year: String(filters.year), month: String(filters.month) });
+    try {
+      const res = await fetch(`/api/payroll/month?${params.toString()}`, { method: "DELETE" });
+      const text = await res.text();
+      if (!res.ok) {
+        status.textContent = res.status === 409 ? "Đang ingest. Vui lòng chờ xong." : `Error: ${text}`;
+        return;
+      }
+      const data = JSON.parse(text);
+      status.textContent = `Đã xóa ${fmtInt(data.deleted || 0)} dòng của tháng ${label}.`;
+      meta.textContent = "Chưa load dữ liệu.";
+      body.innerHTML = "";
+      current.offset = 0;
+      await fetchMonths();
+    } catch (err) {
+      status.textContent = `Network error: ${err?.message || err}`;
+    }
+  });
 
   document.getElementById("uploadForm").addEventListener("submit", async (e) => {
     e.preventDefault();

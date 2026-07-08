@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ethical Audit - Đánh giá nội bộ 5S</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#e2e2e7",
+                    "primary-container": "#005A9C",
+                    "tertiary-fixed-dim": "#7AD7C6",
+                    "on-surface-variant": "#42474f",
+                    "on-surface": "#1A1C1D",
+                    "surface-container-lowest": "#FFFFFF",
+                    "on-tertiary-fixed-variant": "#0c5047",
+                    "surface-dim": "#d9dadf",
+                    "surface-container-low": "#f3f3f8",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#207128",
+                    "error-container": "#ffdad6",
+                    "outline": "#727780",
+                    "secondary-fixed-dim": "#87d982",
+                    "on-error-container": "#93000a",
+                    "inverse-primary": "#a1c9ff",
+                    "on-primary-container": "#82afe9",
+                    "on-secondary-fixed": "#002204",
+                    "surface-tint": "#2f6195",
+                    "on-tertiary-fixed": "#00201b",
+                    "outline-variant": "#C1C7D2",
+                    "tertiary": "#00312a",
+                    "inverse-surface": "#2e3034",
+                    "on-tertiary-container": "#7cb7ab",
+                    "secondary-fixed": "#a3f69c",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed": "#001c37",
+                    "on-background": "#1a1c1f",
+                    "background": "#f9f9fe",
+                    "on-secondary-fixed-variant": "#005312",
+                    "secondary-container": "#a0f499",
+                    "primary-fixed": "#d2e4ff",
+                    "tertiary-container": "#004940",
+                    "primary-fixed-dim": "#a1c9ff",
+                    "on-error": "#ffffff",
+                    "surface": "#F9F9FA",
+                    "tertiary-fixed": "#b2eee1",
+                    "on-primary-fixed-variant": "#0e487c",
+                    "surface-container-high": "#EBEBEB",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#ededf2",
+                    "surface-container-highest": "#e2e2e7",
+                    "inverse-on-surface": "#f0f0f5",
+                    "on-secondary": "#ffffff",
+                    "secondary": "#1b6d24",
+                    "surface-bright": "#f9f9fe",
+                    "primary": "#002c50"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xxl": "3rem",
+                    "margin": "2rem",
+                    "sm": "0.5rem",
+                    "lg": "1.5rem",
+                    "xl": "2rem",
+                    "xs": "0.25rem",
+                    "gutter": "1.5rem",
+                    "md": "1rem"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "display-lg-mobile": ["Manrope"],
+                    "headline-lg": ["Manrope"],
+                    "headline-md": ["Manrope"],
+                    "display-md": ["Manrope"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "500"}],
+                    "display-md": ["45px", {"lineHeight": "52px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg": ["56px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .gradient-primary {
+        background: linear-gradient(135deg, #002c50 0%, #005A9C 100%);
+      }
+      body {
+        background-color: #f9f9fe;
+        color: #1a1c1f;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-md text-body-md antialiased overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="w-full sticky top-0 z-40 bg-background flex items-center justify-between px-margin py-md">
+<div class="flex items-center gap-md">
+<button aria-label="Menu" class="material-symbols-outlined text-primary hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150">
+                menu
+            </button>
+<h1 class="font-headline-md text-headline-md text-primary font-bold tracking-tight">Ethical Audit</h1>
+</div>
+<div class="flex items-center gap-sm">
+<span class="hidden md:block font-label-md text-on-surface-variant mr-2">Vietnamese Garment Factory</span>
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional circular logo for a modern Vietnamese garment manufacturing facility, featuring minimalist industrial elements and clean typography. The aesthetic is corporate and high-end, utilizing a palette of deep navy blues and crisp whites. Soft studio lighting highlights the texture of premium fabrics within the logo design, reflecting social responsibility and architectural integrity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtj8-XECoukkt-OUgL4H2dy1Ot5Iv0uH8X5DGx_2na4N-tExSEEok29mbdBEl2SHrS0udmYVsIukQ-FhoqDlgvvKwT243TrByuk6F0EeAQa3f3TW2_7KnNB8KRt5R2CmkABLQYInQI438gva_QcKguPN37LG0-QjZXXGd8aLgfSSiAVIJ3GRJ1BICrrcDeiUWxUekDxEbEH_u0LSQTFrDmZ7QooJKhWj-Cp5eNmh6vux--SNUBJLp-"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="min-h-[calc(100vh-144px)] flex flex-col items-center justify-center px-margin py-xxl relative overflow-hidden">
+<!-- Subtle Animated Background -->
+
+<div class="max-w-xl w-full space-y-xl z-10">
+<!-- Header Section -->
+<div class="text-center md:text-left space-y-sm">
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary leading-tight">
+                    Đánh giá nội bộ <span class="text-primary-container">5S &amp; Trực quan</span>
+</h2>
+<p class="text-on-surface-variant font-body-lg text-body-lg max-w-md">
+                    Hệ thống quản lý chất lượng và tiêu chuẩn môi trường làm việc chuyên nghiệp.
+                </p>
+</div>
+<!-- Form Card -->
+<div class="glass-card p-xl rounded-xl shadow-[0px_40px_40px_rgba(26,28,29,0.06)] border border-outline-variant/20 space-y-lg">
+<!-- Field: Don vi -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant px-sm">Đơn vị</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-high border-none rounded-lg py-4 px-md font-body-md text-primary focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-lowest transition-all">
+<option value="">Chọn đơn vị đánh giá</option>
+<option value="xnsx">Xưởng Sản Xuất (XNSX)</option>
+<option value="pkdxnk">Phòng Kinh Doanh XNK</option>
+<option value="kho">Kho Thành Phẩm</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">
+                            expand_more
+                        </span>
+</div>
+</div>
+<!-- Field: Bo phan -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant px-sm">Bộ phận / Khu vực</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-high border-none rounded-lg py-4 px-md font-body-md text-primary focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-lowest transition-all">
+<option value="">Chọn khu vực cụ thể</option>
+<option value="may1">Chuyền may 01</option>
+<option value="may2">Chuyền may 02</option>
+<option value="cat">Tổ cắt</option>
+<option value="hoanthien">Tổ hoàn thiện</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">
+                            expand_more
+                        </span>
+</div>
+</div>
+<!-- Field: Loai Checklist (Pill Tabs) -->
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant px-sm">Loại checklist</label>
+<div class="flex p-1 bg-surface-container-high rounded-full w-fit">
+<button class="px-8 py-2 rounded-full font-label-md text-label-md transition-all duration-200 bg-primary-container text-white shadow-sm" id="tab-5s" onclick="setActiveTab('5s')">
+                            5S
+                        </button>
+<button class="px-8 py-2 rounded-full font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:text-primary" id="tab-visual" onclick="setActiveTab('visual')">
+                            Trực quan
+                        </button>
+</div>
+</div>
+<!-- Primary CTA -->
+<button class="w-full gradient-primary text-white py-4 px-lg rounded-xl font-headline-md text-headline-md-mobile flex items-center justify-center gap-md hover:shadow-lg active:scale-95 transition-all group mt-xl">
+                    Bắt đầu đánh giá
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">
+                        arrow_forward
+                    </span>
+</button>
+</div>
+<!-- Contextual Note -->
+<div class="flex items-start gap-md p-md bg-surface-container-low rounded-lg">
+<span class="material-symbols-outlined text-secondary-fixed-variant">info</span>
+<p class="font-label-md text-label-md text-on-surface-variant leading-relaxed">
+                    Dữ liệu đánh giá sẽ được đồng bộ trực tiếp với hệ thống báo cáo CSR quý 3. Đảm bảo hình ảnh minh chứng rõ nét.
+                </p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-full bg-surface-container shadow-[0px_-4px_40px_rgba(26,28,29,0.06)] flex justify-around items-center h-20 px-4 pb-safe">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-label-md text-label-md">Audit</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-md text-label-md">History</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<script>
+        function setActiveTab(type) {
+            const btn5s = document.getElementById('tab-5s');
+            const btnVisual = document.getElementById('tab-visual');
+            
+            if (type === '5s') {
+                btn5s.className = "px-8 py-2 rounded-full font-label-md text-label-md transition-all duration-200 bg-primary-container text-white shadow-sm";
+                btnVisual.className = "px-8 py-2 rounded-full font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:text-primary";
+            } else {
+                btnVisual.className = "px-8 py-2 rounded-full font-label-md text-label-md transition-all duration-200 bg-primary-container text-white shadow-sm";
+                btn5s.className = "px-8 py-2 rounded-full font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:text-primary";
+            }
+        }
+    </script>
+</body></html>

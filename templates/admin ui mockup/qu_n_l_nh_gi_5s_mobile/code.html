@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>5S Audit — Admin Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#00312a",
+                    "tertiary-container": "#004940",
+                    "on-tertiary-container": "#7cb7ab",
+                    "surface-container-low": "#F3F3F4",
+                    "on-primary-container": "#82afe9",
+                    "secondary-container": "#a0f499",
+                    "surface-tint": "#2f6195",
+                    "inverse-on-surface": "#f0f0f5",
+                    "on-surface": "#1a1c1f",
+                    "inverse-primary": "#a1c9ff",
+                    "on-secondary-fixed": "#002204",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#87d982",
+                    "on-tertiary-fixed": "#00201b",
+                    "primary-container": "#005A9C",
+                    "surface-bright": "#f9f9fe",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#F9F9FA",
+                    "on-tertiary-fixed-variant": "#0c5047",
+                    "surface-variant": "#e2e2e7",
+                    "tertiary-fixed-dim": "#7AD7C6",
+                    "primary-fixed-dim": "#a1c9ff",
+                    "error": "#ba1a1a",
+                    "background": "#f9f9fe",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#002c50",
+                    "surface-dim": "#d9dadf",
+                    "secondary-fixed": "#a3f69c",
+                    "on-surface-variant": "#42474f",
+                    "tertiary-fixed": "#b2eee1",
+                    "on-secondary-container": "#207128",
+                    "on-primary-fixed": "#001c37",
+                    "inverse-surface": "#2e3034",
+                    "on-error": "#ffffff",
+                    "surface-container": "#ededf2",
+                    "surface-container-high": "#EBEBEB",
+                    "on-error-container": "#93000a",
+                    "secondary": "#1b6d24",
+                    "primary-fixed": "#d2e4ff",
+                    "on-secondary-fixed-variant": "#005312",
+                    "surface-container-highest": "#e2e2e7",
+                    "on-background": "#1a1c1f",
+                    "outline-variant": "#c2c7d1",
+                    "on-primary-fixed-variant": "#0e487c",
+                    "outline": "#727780"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xxl": "3rem",
+                    "md": "1rem",
+                    "xl": "2rem",
+                    "lg": "1.5rem",
+                    "sm": "0.5rem",
+                    "margin": "2rem",
+                    "gutter": "1.5rem",
+                    "xs": "0.25rem"
+            },
+            "fontFamily": {
+                    "display-md": ["Manrope"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Manrope"],
+                    "display-lg": ["Manrope"],
+                    "body-md": ["Inter"],
+                    "display-lg-mobile": ["Manrope"],
+                    "headline-lg": ["Manrope"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "display-md": ["45px", {"lineHeight": "52px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "500"}],
+                    "display-lg": ["56px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F9F9FE;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-header {
+            backdrop-filter: blur(8px);
+            background: rgba(249, 249, 254, 0.9);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-40 glass-header px-md py-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<button class="p-xs hover:bg-surface-container-high rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase">DASHBOARD / 5S</span>
+<h1 class="font-headline-md text-headline-md text-primary leading-tight">Quản lý đánh giá 5S</h1>
+</div>
+</div>
+<button class="p-xs hover:bg-surface-container-high rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary">settings</span>
+</button>
+</div>
+</header>
+<main class="pb-xxl">
+<!-- Summary Stats (Horizontal Scroll) -->
+<section class="mt-lg">
+<div class="flex overflow-x-auto gap-md px-md hide-scrollbar pb-sm">
+<!-- Card 1 -->
+<div class="min-w-[240px] flex-shrink-0 p-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-xs border border-outline-variant/10">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary bg-primary-fixed p-xs rounded-lg">fact_check</span>
+<span class="font-label-md text-label-md text-secondary">+12% vs MT</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant mt-sm">Tổng đánh giá</span>
+<span class="font-display-md text-display-md text-primary">128</span>
+</div>
+<!-- Card 2 -->
+<div class="min-w-[240px] flex-shrink-0 p-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-xs border border-outline-variant/10">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary bg-secondary-fixed p-xs rounded-lg">trending_up</span>
+<span class="font-label-md text-label-md text-secondary">Ổn định</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant mt-sm">Điểm trung bình</span>
+<span class="font-display-md text-display-md text-primary">84.5<span class="text-headline-md">%</span></span>
+</div>
+<!-- Card 3 -->
+<div class="min-w-[240px] flex-shrink-0 p-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-xs border border-outline-variant/10">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error bg-error-container p-xs rounded-lg">warning</span>
+<span class="font-label-md text-label-md text-error">8 Mục</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant mt-sm">Cần cải tiến</span>
+<span class="font-display-md text-display-md text-primary">05</span>
+</div>
+</div>
+</section>
+<!-- Filter Bar -->
+<section class="mt-lg px-md">
+<div class="flex flex-col gap-sm">
+<div class="flex gap-sm">
+<div class="relative flex-1">
+<select class="w-full h-11 bg-surface-container-high rounded-lg px-md text-body-md appearance-none border-none focus:ring-2 focus:ring-primary/20">
+<option>Tất cả Khu vực</option>
+<option>Kho A1</option>
+<option>Xưởng SX 2</option>
+<option>Văn phòng</option>
+</select>
+<span class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+<button class="h-11 px-md bg-surface-container-high rounded-lg flex items-center gap-xs text-on-surface-variant active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+</div>
+<!-- Status Pills -->
+<div class="flex gap-xs overflow-x-auto hide-scrollbar py-xs">
+<button class="px-md py-xs rounded-full bg-primary text-on-primary text-label-md whitespace-nowrap">Tất cả</button>
+<button class="px-md py-xs rounded-full bg-surface-container-highest text-on-surface-variant text-label-md whitespace-nowrap">Đã hoàn thành</button>
+<button class="px-md py-xs rounded-full bg-surface-container-highest text-on-surface-variant text-label-md whitespace-nowrap">Đang chờ</button>
+<button class="px-md py-xs rounded-full bg-surface-container-highest text-on-surface-variant text-label-md whitespace-nowrap">Quá hạn</button>
+</div>
+</div>
+</section>
+<!-- Audit History List -->
+<section class="mt-xl px-md">
+<div class="flex items-baseline justify-between mb-md">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary">Lịch sử đánh giá</h2>
+<span class="font-label-md text-label-md text-on-surface-variant">Tháng 10, 2023</span>
+</div>
+<div class="flex flex-col gap-md">
+<!-- Item 1 -->
+<div class="group bg-surface-container-lowest p-md rounded-xl shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">24/10/2023 • #AD-9012</p>
+<h3 class="font-body-lg text-body-lg font-semibold text-primary">Kiểm tra định kỳ Kho A1</h3>
+</div>
+<span class="px-sm py-xs bg-secondary-container text-on-secondary-container text-label-md rounded font-bold">92%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional headshot of a female auditor with a confident expression, wearing a minimalist navy blue uniform, set against a soft grey architectural background with clean lines. Professional lighting highlighting the high-end industrial design aesthetic of the platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_zIl3nkqE-uxGwKbNuNQ8J5r9fCK6ncy5C5bDqkskgoZi-JP7UPcxmkTUoads210dTxTHcxVCIe8-KaggMp9DgqJNoz3IQQBD9i2BCInkJqXxkoV2PbfYwnmkDNdH8UN-NHSKhRo2p3-5D1Zb9yx-G_mMmmD4PAO9A_dEU4jy7FKo3L57cs4Iy861yt-BQixDMjtVg3TkP8Zq9EbLJ9WjrvdZh-CfjcDolH-SgwaMLl4Zj4Q-hPfQ"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Trần Minh Hiếu</span>
+</div>
+<div class="flex gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant">visibility</span>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="group bg-surface-container-low p-md rounded-xl hover:shadow-md transition-all active:scale-[0.98]">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">22/10/2023 • #AD-8945</p>
+<h3 class="font-body-lg text-body-lg font-semibold text-primary">Xưởng Sản Xuất 2 - Zone B</h3>
+</div>
+<span class="px-sm py-xs bg-error-container text-on-error-container text-label-md rounded font-bold">68%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a male safety inspector in a modern industrial setting, focusing on reliability and integrity. The style is clean, editorial photography with a focus on structural whitespace and soft, professional ambient lighting that matches the primary blue color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvG8qZp48fPKGuRAdN0Cyjz6ozi30UJMPUEiyjC43s_gvHFE_0W9W3j6oGIsqepf1EgwX-9dC1WE4n2shuZoY4Ipdh4tTkWXHQg2sOclQANAPKx6UVSGtHdi5CPO0tk7R77axPpEY2bx_UjMzXvA7gT_hCMMfQ-FxcnFSTsG1cNbDcdsnimgf_KfklUMbIzOKOV4dkAmzxPV6NoNdKAQHgUMTJ2UZzAHvCYLMxlazlni1Awr_gEIYb"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Lê Quốc Tuấn</span>
+</div>
+<div class="flex gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant">edit_note</span>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+</div>
+<div class="mt-sm p-xs bg-error-container/20 rounded flex items-center gap-xs">
+<span class="material-symbols-outlined text-error text-sm">info</span>
+<span class="text-[10px] text-error font-medium">Cần khắc phục ngay: Sàng lọc vật tư dư thừa</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="group bg-surface-container-lowest p-md rounded-xl shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">19/10/2023 • #AD-8812</p>
+<h3 class="font-body-lg text-body-lg font-semibold text-primary">Khối Văn phòng - Tầng 4</h3>
+</div>
+<span class="px-sm py-xs bg-surface-container-highest text-on-surface-variant text-label-md rounded font-bold">85%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Portrait of a female executive in a high-end corporate office, embodying ethical architecture and social responsibility. The aesthetic is minimalist with a sophisticated color palette of pristine whites and deep navy tones, illuminated by bright, clean light-mode studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_tlUFlreEOkcySc3vii0z-0VsuVJsVxrsr9maqEx8jGw6zEVNs1FxqJeOdrsVezbQhWXbgIw8TrJ-kbRkOffbrmHD9ovbYgpaNSlwW-vuqvJuTEy6BZKIBsLO_TNWFLFfCmMRiFSlEHj19cQDXi8LoQVWksF8lO_c6X54xhixssBm_BsZ7DsLQAokQcx5hICgqhVzGP4PEo0uuf-N9XXldogkOZqMrO61mRMs7xRD0hUZ_maca1lL"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Nguyễn Thu Hà</span>
+</div>
+<div class="flex gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant">visibility</span>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-xl py-md border border-dashed border-outline-variant rounded-xl text-on-surface-variant font-label-md flex items-center justify-center gap-sm active:bg-surface-container-low transition-colors">
+                Xem tất cả lịch sử
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</section>
+</main>
+<!-- Floating Bottom Bar -->
+<div class="fixed bottom-0 left-0 right-0 p-md glass-header">
+<button class="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline-md rounded-full flex items-center justify-center gap-sm shadow-lg active:scale-[0.97] transition-all">
+<span class="material-symbols-outlined">add</span>
+            + Đánh giá mới
+        </button>
+</div>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    </script>
+</body></html>

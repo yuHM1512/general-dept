@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cài đặt tiêu chí - AuditGuard Elite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=inter:wght@100..900&amp;family=manrope:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#00312a",
+                    "tertiary-container": "#004940",
+                    "on-tertiary-container": "#7cb7ab",
+                    "surface-container-low": "#F3F3F4",
+                    "on-primary-container": "#82afe9",
+                    "secondary-container": "#a0f499",
+                    "surface-tint": "#2f6195",
+                    "inverse-on-surface": "#f0f0f5",
+                    "on-surface": "#1a1c1f",
+                    "inverse-primary": "#a1c9ff",
+                    "on-secondary-fixed": "#002204",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#87d982",
+                    "on-tertiary-fixed": "#00201b",
+                    "primary-container": "#005A9C",
+                    "surface-bright": "#f9f9fe",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#F9F9FA",
+                    "on-tertiary-fixed-variant": "#0c5047",
+                    "surface-variant": "#e2e2e7",
+                    "tertiary-fixed-dim": "#7AD7C6",
+                    "primary-fixed-dim": "#a1c9ff",
+                    "error": "#ba1a1a",
+                    "background": "#f9f9fe",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#002c50",
+                    "surface-dim": "#d9dadf",
+                    "secondary-fixed": "#a3f69c",
+                    "on-surface-variant": "#42474f",
+                    "tertiary-fixed": "#b2eee1",
+                    "on-secondary-container": "#207128",
+                    "on-primary-fixed": "#001c37",
+                    "inverse-surface": "#2e3034",
+                    "on-error": "#ffffff",
+                    "surface-container": "#ededf2",
+                    "surface-container-high": "#EBEBEB",
+                    "on-error-container": "#93000a",
+                    "secondary": "#1b6d24",
+                    "primary-fixed": "#d2e4ff",
+                    "on-secondary-fixed-variant": "#005312",
+                    "surface-container-highest": "#e2e2e7",
+                    "on-background": "#1a1c1f",
+                    "outline-variant": "#c2c7d1",
+                    "on-primary-fixed-variant": "#0e487c",
+                    "outline": "#727780"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xxl": "3rem",
+                    "md": "1rem",
+                    "xl": "2rem",
+                    "lg": "1.5rem",
+                    "sm": "0.5rem",
+                    "margin": "2rem",
+                    "gutter": "1.5rem",
+                    "xs": "0.25rem"
+            },
+            "fontFamily": {
+                    "display-md": ["manrope"],
+                    "label-md": ["inter"],
+                    "headline-md": ["manrope"],
+                    "display-lg": ["manrope"],
+                    "body-md": ["inter"],
+                    "display-lg-mobile": ["manrope"],
+                    "headline-lg": ["manrope"],
+                    "body-lg": ["inter"]
+            },
+            "fontSize": {
+                    "display-md": ["45px", {"lineHeight": "52px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "500"}],
+                    "display-lg": ["56px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+        
+        /* Custom Switch Styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #E2E2E7;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #002c50; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Hidden scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="bg-surface sticky top-0 z-50 flex justify-between items-center px-margin py-md w-full">
+<div class="flex items-center gap-md">
+<button class="active:scale-95 transition-transform" onclick="window.history.back()">
+<span class="material-symbols-outlined text-primary text-headline-md">arrow_back</span>
+</button>
+<h1 class="font-display-md text-headline-md font-bold text-primary">Cài đặt tiêu chí</h1>
+</div>
+<nav class="hidden md:flex gap-lg items-center">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Analytics</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1" href="#">Criteria</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Settings</a>
+<div class="ml-xl flex gap-md items-center">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">help_outline</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A clean, professional headshot of a corporate administrator in a modern office environment. The lighting is soft and natural, emphasizing a high-integrity, authoritative yet approachable persona. The image follows a minimalist aesthetic with a neutral color palette of grays and blues." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwTU56Kydi58xXokiDRYP34-ZezZdFqtousYOfb3H4SPcJ5fVhb8--Q51Wa0biBvchgsen1U9gYob2ej9SSrZXfjIqWQ6E4OWH0ZmKbyg5IOMOjkdeynXbkCWj3Q6JavLbclyHqp12nP7NeZURuivU0Ue4VEg3w5CXsuBWEyx-bH_rnCcfHH9gZZIxu1iZz6G72rZC3XtIX-svYhpEUYeH4KgDJ7_re3_RLD7kEVBdWqPU5QbPi01R"/>
+</div>
+</div>
+</nav>
+</header>
+<main class="max-w-5xl mx-auto px-margin py-xl flex gap-xl">
+<!-- Left Sidebar (Internal Navigation) -->
+<aside class="hidden lg:block w-64 flex-shrink-0">
+<div class="sticky top-24 space-y-sm">
+<div class="p-md rounded-lg bg-secondary-container text-on-secondary-container flex items-center gap-md">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+<span class="font-label-md text-label-md">Criteria Config</span>
+</div>
+<div class="p-md rounded-lg hover:bg-surface-container-high text-on-surface-variant flex items-center gap-md transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-label-md text-label-md">Version History</span>
+</div>
+<div class="p-md rounded-lg hover:bg-surface-container-high text-on-surface-variant flex items-center gap-md transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-md text-label-md">Assignment</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<div class="flex-1 space-y-xl">
+<!-- Hero Description -->
+<section class="mb-xxl">
+<p class="text-on-surface-variant font-body-lg max-w-2xl leading-relaxed">
+                    Thiết lập và quản lý hệ thống tiêu chí đánh giá 5S. Đảm bảo tính nhất quán và minh bạch trong mọi hoạt động kiểm chuẩn của doanh nghiệp.
+                </p>
+</section>
+<!-- Criterion Sections -->
+<div class="space-y-xl">
+<!-- Section S1 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden">
+<div class="bg-primary px-lg py-md flex justify-between items-center">
+<div class="flex items-center gap-md">
+<span class="text-on-primary font-display-md text-headline-md font-bold">S1 – Sàng lọc</span>
+</div>
+<button class="text-on-primary/80 hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+<div class="divide-y-0">
+<!-- Row 1 -->
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Phân loại các vật dụng cần thiết và không cần thiết tại nơi làm việc.</span>
+<label class="switch ml-lg">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+<!-- Row 2 -->
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200 bg-surface">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Loại bỏ các tài liệu rác và file kỹ thuật số đã lỗi thời hàng tuần.</span>
+<label class="switch ml-lg">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+<!-- Row 3 -->
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Khu vực lưu trữ tạm thời cho vật dụng chờ thanh lý được đánh dấu rõ ràng.</span>
+<label class="switch ml-lg">
+<input type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+</div>
+<div class="p-lg bg-surface-container-lowest border-t-0">
+<button class="text-primary font-bold flex items-center gap-sm hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">add</span>
+                            Thêm tiêu chí
+                        </button>
+</div>
+</div>
+<!-- Section S2 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden">
+<div class="bg-primary px-lg py-md flex justify-between items-center">
+<div class="flex items-center gap-md">
+<span class="text-on-primary font-display-md text-headline-md font-bold">S2 – Sắp xếp</span>
+</div>
+<button class="text-on-primary/80 hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+<div class="divide-y-0">
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Vị trí của dụng cụ được dán nhãn định danh và có giới hạn số lượng.</span>
+<label class="switch ml-lg">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200 bg-surface">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Sơ đồ vị trí làm việc được cập nhật tại cửa ra vào.</span>
+<label class="switch ml-lg">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+</div>
+<div class="p-lg bg-surface-container-lowest">
+<button class="text-primary font-bold flex items-center gap-sm hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">add</span>
+                            Thêm tiêu chí
+                        </button>
+</div>
+</div>
+<!-- Section S3 -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden">
+<div class="bg-primary px-lg py-md flex justify-between items-center">
+<div class="flex items-center gap-md">
+<span class="text-on-primary font-display-md text-headline-md font-bold">S3 – Sạch sẽ</span>
+</div>
+<button class="text-on-primary/80 hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+<div class="divide-y-0">
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Sàn nhà và gầm bàn không có bụi bẩn, mạng nhện hay vết ố.</span>
+<label class="switch ml-lg">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200 bg-surface">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Thiết bị điện tử (màn hình, case) được lau chùi định kỳ 2 lần/tuần.</span>
+<label class="switch ml-lg">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+</div>
+<div class="p-lg bg-surface-container-lowest">
+<button class="text-primary font-bold flex items-center gap-sm hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">add</span>
+                            Thêm tiêu chí
+                        </button>
+</div>
+</div>
+<!-- Section Trực quan -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden">
+<div class="bg-primary px-lg py-md flex justify-between items-center">
+<div class="flex items-center gap-md">
+<span class="text-on-primary font-display-md text-headline-md font-bold">Trực quan</span>
+</div>
+<button class="text-on-primary/80 hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+<div class="divide-y-0">
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Hệ thống biển báo cảnh báo an toàn được đặt tại vị trí dễ quan sát.</span>
+<label class="switch ml-lg">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+<div class="group flex items-center p-lg hover:bg-surface-container-low transition-colors duration-200 bg-surface">
+<span class="material-symbols-outlined drag-handle text-outline-variant mr-lg opacity-40 group-hover:opacity-100">drag_indicator</span>
+<span class="flex-1 text-on-surface font-body-md">Bảng tin 5S hiển thị kết quả đánh giá của tháng gần nhất.</span>
+<label class="switch ml-lg">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+</div>
+<div class="p-lg bg-surface-container-lowest">
+<button class="text-primary font-bold flex items-center gap-sm hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">add</span>
+                            Thêm tiêu chí
+                        </button>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="flex justify-end gap-md pt-xl">
+<button class="px-xl py-md font-bold text-primary hover:bg-surface-container-high transition-colors rounded-lg">Hủy bỏ</button>
+<button class="px-xl py-md font-bold bg-gradient-to-r from-primary to-primary-container text-white rounded-lg shadow-lg active:scale-95 transition-all">Lưu thay đổi</button>
+</div>
+</div>
+</main>
+<!-- Decorative glass element -->
+<div class="fixed bottom-0 right-0 w-64 h-64 pointer-events-none -z-10 opacity-20">
+
+</div>
+<script>
+        // Micro-interactions for switches
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const row = e.target.closest('.group');
+                if (e.target.checked) {
+                    row.style.opacity = '1';
+                } else {
+                    row.style.opacity = '0.6';
+                }
+            });
+        });
+
+        // Basic drag-and-drop placeholder logic (visual only)
+        document.querySelectorAll('.drag-handle').forEach(handle => {
+            handle.addEventListener('mousedown', () => {
+                handle.closest('.group').classList.add('ring-2', 'ring-primary', 'ring-inset');
+            });
+            window.addEventListener('mouseup', () => {
+                document.querySelectorAll('.group').forEach(el => el.classList.remove('ring-2', 'ring-primary', 'ring-inset'));
+            });
+        });
+    </script>
+</body></html>

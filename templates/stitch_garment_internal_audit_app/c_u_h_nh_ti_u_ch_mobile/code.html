@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "tertiary": "#00312a",
+                "tertiary-container": "#004940",
+                "on-tertiary-container": "#7cb7ab",
+                "surface-container-low": "#F3F3F4",
+                "on-primary-container": "#82afe9",
+                "secondary-container": "#a0f499",
+                "surface-tint": "#2f6195",
+                "inverse-on-surface": "#f0f0f5",
+                "on-surface": "#1a1c1f",
+                "inverse-primary": "#a1c9ff",
+                "on-secondary-fixed": "#002204",
+                "error-container": "#ffdad6",
+                "on-primary": "#ffffff",
+                "secondary-fixed-dim": "#87d982",
+                "on-tertiary-fixed": "#00201b",
+                "primary-container": "#005A9C",
+                "surface-bright": "#f9f9fe",
+                "on-tertiary": "#ffffff",
+                "surface": "#F9F9FA",
+                "on-tertiary-fixed-variant": "#0c5047",
+                "surface-variant": "#e2e2e7",
+                "tertiary-fixed-dim": "#7AD7C6",
+                "primary-fixed-dim": "#a1c9ff",
+                "error": "#ba1a1a",
+                "background": "#f9f9fe",
+                "on-secondary": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "primary": "#002c50",
+                "surface-dim": "#d9dadf",
+                "secondary-fixed": "#a3f69c",
+                "on-surface-variant": "#42474f",
+                "tertiary-fixed": "#b2eee1",
+                "on-secondary-container": "#207128",
+                "on-primary-fixed": "#001c37",
+                "inverse-surface": "#2e3034",
+                "on-error": "#ffffff",
+                "surface-container": "#ededf2",
+                "surface-container-high": "#EBEBEB",
+                "on-error-container": "#93000a",
+                "secondary": "#1b6d24",
+                "primary-fixed": "#d2e4ff",
+                "on-secondary-fixed-variant": "#005312",
+                "surface-container-highest": "#e2e2e7",
+                "on-background": "#1a1c1f",
+                "outline-variant": "#c2c7d1",
+                "on-primary-fixed-variant": "#0e487c",
+                "outline": "#727780"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "spacing": {
+                "xxl": "3rem",
+                "md": "1rem",
+                "xl": "2rem",
+                "lg": "1.5rem",
+                "sm": "0.5rem",
+                "margin": "2rem",
+                "gutter": "1.5rem",
+                "xs": "0.25rem"
+            },
+            "fontFamily": {
+                "display-md": ["manrope"],
+                "label-md": ["inter"],
+                "headline-md": ["manrope"],
+                "display-lg": ["manrope"],
+                "body-md": ["inter"],
+                "display-lg-mobile": ["manrope"],
+                "headline-lg": ["manrope"],
+                "body-lg": ["inter"]
+            },
+            "fontSize": {
+                "display-md": ["45px", {"lineHeight": "52px", "fontWeight": "600"}],
+                "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "500"}],
+                "display-lg": ["56px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "display-lg-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #f9f9fe;
+            color: #1a1c1f;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .drag-handle {
+            cursor: grab;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .toggle-dot {
+            transition: all 0.3s ease-in-out;
+        }
+        input:checked ~ .toggle-bg {
+            background-color: #002c50;
+        }
+        input:checked ~ .toggle-dot {
+            transform: translateX(100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md pb-24">
+<!-- Top App Bar -->
+<header class="bg-surface-bright sticky top-0 z-40 w-full flex justify-between items-center px-lg py-md shadow-sm">
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary active:scale-95 duration-150 p-sm rounded-full hover:bg-surface-container-high">arrow_back</button>
+<h1 class="font-headline-md text-headline-md text-primary">Cài đặt tiêu chí</h1>
+</div>
+<button class="text-primary font-label-md text-label-md px-md py-sm bg-primary-fixed rounded-full active:scale-95 duration-150">Lưu lại</button>
+</header>
+<main class="max-w-md mx-auto px-md py-lg">
+<!-- Header Section with Asymmetry -->
+<section class="mb-xxl">
+<div class="flex flex-col gap-sm">
+<span class="text-primary font-label-md text-label-md tracking-widest">CẤU HÌNH KIỂM TOÁN</span>
+<h2 class="font-display-md text-display-md text-primary leading-tight">Thiết lập bộ khung tiêu chuẩn.</h2>
+<p class="text-on-surface-variant mt-sm">Quản lý và sắp xếp các nhóm tiêu chí đánh giá cho hệ thống Ethical Architect.</p>
+</div>
+</section>
+<!-- Criteria Groups -->
+<div class="flex flex-col gap-lg">
+<!-- Group 1: Integrity & Ethics -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden shadow-sm">
+<div class="bg-primary px-lg py-md flex justify-between items-center">
+<span class="text-on-primary font-headline-md text-headline-md text-lg">Chính trực &amp; Đạo đức</span>
+<span class="material-symbols-outlined text-on-primary opacity-70">expand_more</span>
+</div>
+<div class="p-sm flex flex-col gap-sm">
+<!-- Criteria Row 1 -->
+<div class="bg-surface-container-lowest p-md rounded-lg flex items-center gap-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined drag-handle text-outline-variant">drag_indicator</span>
+<div class="flex-1">
+<p class="font-bold text-on-surface">Minh bạch tài chính</p>
+<p class="text-xs text-on-surface-variant">Yêu cầu công khai dòng tiền dự án</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full peer toggle-bg"></div>
+<div class="absolute left-[2px] top-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 toggle-dot"></div>
+</label>
+</div>
+<!-- Criteria Row 2 -->
+<div class="bg-surface-container-lowest p-md rounded-lg flex items-center gap-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined drag-handle text-outline-variant">drag_indicator</span>
+<div class="flex-1">
+<p class="font-bold text-on-surface">Xung đột lợi ích</p>
+<p class="text-xs text-on-surface-variant">Báo cáo các mối quan hệ liên quan</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full peer toggle-bg"></div>
+<div class="absolute left-[2px] top-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 toggle-dot"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Group 2: Social Responsibility -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden shadow-sm">
+<div class="bg-primary px-lg py-md flex justify-between items-center">
+<span class="text-on-primary font-headline-md text-headline-md text-lg">Trách nhiệm xã hội</span>
+<span class="material-symbols-outlined text-on-primary opacity-70">expand_more</span>
+</div>
+<div class="p-sm flex flex-col gap-sm">
+<!-- Criteria Row 3 -->
+<div class="bg-surface-container-lowest p-md rounded-lg flex items-center gap-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined drag-handle text-outline-variant">drag_indicator</span>
+<div class="flex-1">
+<p class="font-bold text-on-surface">Quyền lao động</p>
+<p class="text-xs text-on-surface-variant">Tuân thủ giờ làm và an toàn lao động</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full peer toggle-bg"></div>
+<div class="absolute left-[2px] top-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 toggle-dot"></div>
+</label>
+</div>
+<!-- Criteria Row 4 -->
+<div class="bg-surface-container-lowest p-md rounded-lg flex items-center gap-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined drag-handle text-outline-variant">drag_indicator</span>
+<div class="flex-1">
+<p class="font-bold text-on-surface">Tác động cộng đồng</p>
+<p class="text-xs text-on-surface-variant">Đánh giá ảnh hưởng dân sinh lân cận</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full peer toggle-bg"></div>
+<div class="absolute left-[2px] top-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 toggle-dot"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Group 3: Environment -->
+<div class="bg-surface-container-low rounded-xl overflow-hidden shadow-sm">
+<div class="bg-primary px-lg py-md flex justify-between items-center">
+<span class="text-on-primary font-headline-md text-headline-md text-lg">Môi trường</span>
+<span class="material-symbols-outlined text-on-primary opacity-70">expand_more</span>
+</div>
+<div class="p-sm flex flex-col gap-sm">
+<!-- Criteria Row 5 -->
+<div class="bg-surface-container-lowest p-md rounded-lg flex items-center gap-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined drag-handle text-outline-variant">drag_indicator</span>
+<div class="flex-1">
+<p class="font-bold text-on-surface">Khí thải Carbon</p>
+<p class="text-xs text-on-surface-variant">Đo lường mức phát thải trực tiếp</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full peer toggle-bg"></div>
+<div class="absolute left-[2px] top-[2px] bg-white border-gray-300 border rounded-full h-5 w-5 toggle-dot"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Call to Action / Footer of Content -->
+<div class="mt-xxl flex flex-col gap-md">
+<button class="w-full py-md bg-surface-container-high text-primary rounded-xl font-bold flex items-center justify-center gap-sm active:scale-95 duration-150">
+<span class="material-symbols-outlined">add</span>
+                Thêm nhóm tiêu chí mới
+            </button>
+<p class="text-center text-xs text-on-surface-variant italic">Mọi thay đổi sẽ được ghi nhật ký hoạt động kiểm toán.</p>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile Destination) -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface-container-lowest shadow-md flex justify-around items-center h-16 px-md">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors px-lg py-xs" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors px-lg py-xs" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-label-md text-label-md">Audits</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-lg py-xs" href="#">
+<span class="material-symbols-outlined">tune</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors px-lg py-xs" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</nav>
+<script>
+        // Simple drag feedback
+        const handles = document.querySelectorAll('.drag-handle');
+        handles.forEach(handle => {
+            handle.addEventListener('touchstart', () => {
+                handle.parentElement.classList.add('scale-[1.02]', 'shadow-lg', 'z-10');
+            });
+            handle.addEventListener('touchend', () => {
+                handle.parentElement.classList.remove('scale-[1.02]', 'shadow-lg', 'z-10');
+            });
+        });
+
+        // Toggle state persistence simulation
+        const toggles = document.querySelectorAll('input[type="checkbox"]');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const parent = e.target.closest('.bg-surface-container-lowest');
+                if (e.target.checked) {
+                    parent.style.opacity = '1';
+                } else {
+                    parent.style.opacity = '0.6';
+                }
+            });
+        });
+    </script>
+</body></html>

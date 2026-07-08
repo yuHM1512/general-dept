@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e2e2e7",
+                        "primary-container": "#005A9C",
+                        "tertiary-fixed-dim": "#7AD7C6",
+                        "on-surface-variant": "#42474f",
+                        "on-surface": "#1A1C1D",
+                        "surface-container-lowest": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#0c5047",
+                        "surface-dim": "#d9dadf",
+                        "surface-container-low": "#f3f3f8",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#207128",
+                        "error-container": "#ffdad6",
+                        "outline": "#727780",
+                        "secondary-fixed-dim": "#87d982",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#a1c9ff",
+                        "on-primary-container": "#82afe9",
+                        "on-secondary-fixed": "#002204",
+                        "surface-tint": "#2f6195",
+                        "on-tertiary-fixed": "#00201b",
+                        "outline-variant": "#C1C7D2",
+                        "tertiary": "#00312a",
+                        "inverse-surface": "#2e3034",
+                        "on-tertiary-container": "#7cb7ab",
+                        "secondary-fixed": "#a3f69c",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001c37",
+                        "on-background": "#1a1c1f",
+                        "background": "#f9f9fe",
+                        "on-secondary-fixed-variant": "#005312",
+                        "secondary-container": "#a0f499",
+                        "primary-fixed": "#d2e4ff",
+                        "tertiary-container": "#004940",
+                        "primary-fixed-dim": "#a1c9ff",
+                        "on-error": "#ffffff",
+                        "surface": "#F9F9FA",
+                        "tertiary-fixed": "#b2eee1",
+                        "on-primary-fixed-variant": "#0e487c",
+                        "surface-container-high": "#EBEBEB",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#ededf2",
+                        "surface-container-highest": "#e2e2e7",
+                        "inverse-on-surface": "#f0f0f5",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#1b6d24",
+                        "surface-bright": "#f9f9fe",
+                        "primary": "#002c50"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xxl": "3rem",
+                        "margin": "2rem",
+                        "sm": "0.5rem",
+                        "lg": "1.5rem",
+                        "xl": "2rem",
+                        "xs": "0.25rem",
+                        "gutter": "1.5rem",
+                        "md": "1rem"
+                    },
+                    "fontFamily": {
+                        "body-md": ["inter"],
+                        "display-lg-mobile": ["manrope"],
+                        "headline-lg": ["manrope"],
+                        "headline-md": ["manrope"],
+                        "display-md": ["manrope"],
+                        "label-md": ["inter"],
+                        "body-lg": ["inter"],
+                        "display-lg": ["manrope"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "500"}],
+                        "display-md": ["45px", {"lineHeight": "52px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["56px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .progress-bar-transition {
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-active .accordion-content {
+            max-height: 2000px;
+        }
+        .accordion-active .chevron-icon {
+            transform: rotate(180deg);
+        }
+        /* Custom scrollbar for subtle feel */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #C1C7D2;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Survey Progress Bar (Global Architectural Element) -->
+<div class="fixed top-0 left-0 w-full h-1 bg-tertiary-fixed-dim z-[60]">
+<div class="h-full bg-tertiary progress-bar-transition" style="width: 53.8%;"></div>
+</div>
+<!-- Sticky Header Shell -->
+<header class="w-full sticky top-1 z-40 bg-background/95 backdrop-blur-md flex flex-col px-margin py-md shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-sm">
+<button class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</button>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Unit 04 • Garment Dept</span>
+<h1 class="font-headline-md text-[20px] md:text-headline-md font-bold text-primary tracking-tight">Ethical Audit Checklist</h1>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden md:flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface-variant">Tiến độ</span>
+<span class="font-body-md font-semibold text-primary">7 / 13 tiêu chí</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center border border-outline-variant/20">
+<span class="material-symbols-outlined text-primary">account_circle</span>
+</div>
+</div>
+</div>
+<!-- Mobile Progress Text -->
+<div class="md:hidden flex justify-between items-center px-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">7 / 13 tiêu chí hoàn thành</span>
+<span class="font-label-md text-label-md text-primary font-bold">54%</span>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-4 md:px-margin py-lg pb-40">
+<!-- Section: 5S -->
+<div class="mb-lg">
+<h2 class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-md px-2">Khu vực 5S</h2>
+<div class="space-y-md">
+<!-- Accordion Item 1 -->
+<div class="accordion-item bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm transition-all duration-300">
+<button class="w-full flex items-center justify-between p-lg text-left hover:bg-surface-container-low transition-colors" onclick="toggleAccordion(this)">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary-container">filter_alt</span>
+<span class="font-body-lg font-semibold text-on-surface">S1 – Sàng lọc</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="font-label-md text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">3/3</span>
+<span class="material-symbols-outlined chevron-icon transition-transform duration-300">expand_more</span>
+</div>
+</button>
+<div class="accordion-content">
+<div class="px-lg pb-lg space-y-lg divide-y divide-outline-variant/10">
+<!-- Criterion Item -->
+<div class="pt-lg flex flex-col md:flex-row md:items-center justify-between gap-md group">
+<div class="flex-1">
+<p class="font-body-md text-on-surface">Loại bỏ các vật dụng không cần thiết tại khu vực làm việc (rác, thiết bị hỏng).</p>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors cursor-pointer p-1" title="Thêm ghi chú">sticky_note_2</button>
+<div class="flex bg-surface-container-low p-1 rounded-full border border-outline-variant/10">
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant">0</button>
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant">1</button>
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-secondary text-on-secondary shadow-md">2</button>
+</div>
+</div>
+</div>
+<!-- Criterion Item -->
+<div class="pt-lg flex flex-col md:flex-row md:items-center justify-between gap-md group">
+<div class="flex-1">
+<p class="font-body-md text-on-surface">Khu vực lưu trữ tạm thời được phân loại rõ ràng theo tình trạng sử dụng.</p>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors cursor-pointer p-1" title="Thêm ghi chú">sticky_note_2</button>
+<div class="flex bg-surface-container-low p-1 rounded-full border border-outline-variant/10">
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant">0</button>
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-secondary-container text-on-secondary-container shadow-sm border border-secondary/20">1</button>
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant">2</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Accordion Item 2 -->
+<div class="accordion-item accordion-active bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm transition-all duration-300 border-l-4 border-primary">
+<button class="w-full flex items-center justify-between p-lg text-left hover:bg-surface-container-low transition-colors" onclick="toggleAccordion(this)">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary-container">grid_view</span>
+<span class="font-body-lg font-semibold text-on-surface">S2 – Sắp xếp</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="font-label-md text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">1/4</span>
+<span class="material-symbols-outlined chevron-icon transition-transform duration-300">expand_more</span>
+</div>
+</button>
+<div class="accordion-content" style="max-height: 2000px;">
+<div class="px-lg pb-lg space-y-lg divide-y divide-outline-variant/10">
+<!-- Criterion Item -->
+<div class="pt-lg flex flex-col md:flex-row md:items-center justify-between gap-md group">
+<div class="flex-1">
+<p class="font-body-md text-on-surface">Công cụ, dụng cụ có vị trí cố định, dễ thấy, dễ lấy, dễ trả lại.</p>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary transition-colors cursor-pointer p-1" style="font-variation-settings: 'FILL' 1;" title="Đã có ghi chú">sticky_note_2</button>
+<div class="flex bg-surface-container-low p-1 rounded-full border border-outline-variant/10">
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-error text-on-error shadow-md">0</button>
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant">1</button>
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant">2</button>
+</div>
+</div>
+</div>
+<!-- Criterion Item (Empty State Example) -->
+<div class="pt-lg flex flex-col md:flex-row md:items-center justify-between gap-md group">
+<div class="flex-1">
+<p class="font-body-md text-on-surface">Dán nhãn định danh cho tất cả các tủ kệ và ngăn chứa đồ.</p>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors cursor-pointer p-1" title="Thêm ghi chú">sticky_note_2</button>
+<div class="flex bg-surface-container-low p-1 rounded-full border border-outline-variant/10">
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-dim">0</button>
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-dim">1</button>
+<button class="px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-dim">2</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Accordion Item 3 -->
+<div class="accordion-item bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm transition-all duration-300">
+<button class="w-full flex items-center justify-between p-lg text-left hover:bg-surface-container-low transition-colors" onclick="toggleAccordion(this)">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary-container">cleaning_services</span>
+<span class="font-body-lg font-semibold text-on-surface">S3 – Sạch sẽ</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="font-label-md text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">0/3</span>
+<span class="material-symbols-outlined chevron-icon transition-transform duration-300">expand_more</span>
+</div>
+</button>
+<div class="accordion-content">
+<div class="p-lg">
+<p class="text-on-surface-variant font-label-md text-center italic">Đang tải tiêu chí...</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section: Trực quan -->
+<div class="mb-lg">
+<h2 class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-md px-2">Quản trị Trực quan</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Visual Cards (Mini Accordions) -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-transparent hover:border-primary-container/20 transition-all cursor-pointer group">
+<div class="flex items-center justify-between mb-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary">verified</span>
+<h3 class="font-body-md font-bold text-on-surface">HTQLCL</h3>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">open_in_new</span>
+</div>
+<p class="text-label-md text-on-surface-variant">Tiêu chuẩn Hệ thống Quản lý Chất lượng tại xưởng.</p>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-transparent hover:border-primary-container/20 transition-all cursor-pointer group">
+<div class="flex items-center justify-between mb-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary">health_and_safety</span>
+<h3 class="font-body-md font-bold text-on-surface">ATVSLĐ-PCCC</h3>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">open_in_new</span>
+</div>
+<p class="text-label-md text-on-surface-variant">An toàn vệ sinh lao động &amp; Phòng cháy chữa cháy.</p>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-transparent hover:border-primary-container/20 transition-all cursor-pointer group">
+<div class="flex items-center justify-between mb-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary">groups</span>
+<h3 class="font-body-md font-bold text-on-surface">NQLĐ</h3>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">open_in_new</span>
+</div>
+<p class="text-label-md text-on-surface-variant">Nội quy lao động và văn hóa ứng xử doanh nghiệp.</p>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-transparent hover:border-primary-container/20 transition-all cursor-pointer group">
+<div class="flex items-center justify-between mb-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary">60fps_select</span>
+<h3 class="font-body-md font-bold text-on-surface">6S Expansion</h3>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">open_in_new</span>
+</div>
+<p class="text-label-md text-on-surface-variant">Nâng cấp tiêu chuẩn Safety (An toàn) vào 5S.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Bottom Bar -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-container/90 backdrop-blur-xl border-t border-outline-variant/10 px-margin py-md z-50 flex items-center justify-between shadow-[0px_-8px_24px_rgba(0,0,0,0.04)]">
+<div class="flex flex-col">
+<span class="font-label-md text-on-surface-variant">Tổng điểm hiện tại</span>
+<div class="flex items-baseline gap-xs">
+<span class="font-display-md text-[24px] font-bold text-primary">18</span>
+<span class="text-on-surface-variant font-body-md">/ 26</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="hidden md:flex px-6 py-2 rounded-full font-semibold text-primary hover:bg-surface-container-high transition-colors">Lưu nháp</button>
+<button class="flex items-center gap-sm bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-4 rounded-full font-bold shadow-lg shadow-primary-container/20 active:scale-95 transition-all group">
+                Hoàn tất
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+        function toggleAccordion(button) {
+            const item = button.parentElement;
+            const content = button.nextElementSibling;
+            
+            // Toggle active class
+            const isActive = item.classList.contains('accordion-active');
+            
+            // Optional: Close others (Uncomment for exclusive behavior)
+            /* 
+            document.querySelectorAll('.accordion-item').forEach(otherItem => {
+                otherItem.classList.remove('accordion-active');
+                otherItem.querySelector('.accordion-content').style.maxHeight = null;
+            });
+            */
+
+            if (isActive) {
+                item.classList.remove('accordion-active');
+                content.style.maxHeight = null;
+            } else {
+                item.classList.add('accordion-active');
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+
+        // Handle score chip clicks
+        document.querySelectorAll('.flex.bg-surface-container-low button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const parent = this.parentElement;
+                const siblings = parent.querySelectorAll('button');
+                
+                // Reset siblings
+                siblings.forEach(s => {
+                    s.className = 'px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-dim';
+                    s.style.boxShadow = 'none';
+                });
+
+                // Apply active style based on value
+                const score = this.innerText;
+                if (score === '0') {
+                    this.className = 'px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-error text-on-error shadow-md';
+                } else if (score === '1') {
+                    this.className = 'px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-secondary-container text-on-secondary-container shadow-sm border border-secondary/20';
+                } else if (score === '2') {
+                    this.className = 'px-4 py-1.5 rounded-full font-bold text-label-md transition-all active:scale-95 bg-secondary text-on-secondary shadow-md';
+                }
+            });
+        });
+    </script>
+</body></html>

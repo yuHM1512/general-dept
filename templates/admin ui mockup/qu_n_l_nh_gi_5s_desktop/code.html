@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>5S Audit — Admin Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#00312a",
+                    "tertiary-container": "#004940",
+                    "on-tertiary-container": "#7cb7ab",
+                    "surface-container-low": "#F3F3F4",
+                    "on-primary-container": "#82afe9",
+                    "secondary-container": "#a0f499",
+                    "surface-tint": "#2f6195",
+                    "inverse-on-surface": "#f0f0f5",
+                    "on-surface": "#1a1c1f",
+                    "inverse-primary": "#a1c9ff",
+                    "on-secondary-fixed": "#002204",
+                    "error-container": "#ffdad6",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#87d982",
+                    "on-tertiary-fixed": "#00201b",
+                    "primary-container": "#005A9C",
+                    "surface-bright": "#f9f9fe",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#F9F9FA",
+                    "on-tertiary-fixed-variant": "#0c5047",
+                    "surface-variant": "#e2e2e7",
+                    "tertiary-fixed-dim": "#7AD7C6",
+                    "primary-fixed-dim": "#a1c9ff",
+                    "error": "#ba1a1a",
+                    "background": "#f9f9fe",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#002c50",
+                    "surface-dim": "#d9dadf",
+                    "secondary-fixed": "#a3f69c",
+                    "on-surface-variant": "#42474f",
+                    "tertiary-fixed": "#b2eee1",
+                    "on-secondary-container": "#207128",
+                    "on-primary-fixed": "#001c37",
+                    "inverse-surface": "#2e3034",
+                    "on-error": "#ffffff",
+                    "surface-container": "#ededf2",
+                    "surface-container-high": "#EBEBEB",
+                    "on-error-container": "#93000a",
+                    "secondary": "#1b6d24",
+                    "primary-fixed": "#d2e4ff",
+                    "on-secondary-fixed-variant": "#005312",
+                    "surface-container-highest": "#e2e2e7",
+                    "on-background": "#1a1c1f",
+                    "outline-variant": "#c2c7d1",
+                    "on-primary-fixed-variant": "#0e487c",
+                    "outline": "#727780"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xxl": "3rem",
+                    "md": "1rem",
+                    "xl": "2rem",
+                    "lg": "1.5rem",
+                    "sm": "0.5rem",
+                    "margin": "2rem",
+                    "gutter": "1.5rem",
+                    "xs": "0.25rem"
+            },
+            "fontFamily": {
+                    "display-md": ["Manrope"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Manrope"],
+                    "display-lg": ["Manrope"],
+                    "body-md": ["Inter"],
+                    "display-lg-mobile": ["Manrope"],
+                    "headline-lg": ["Manrope"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "display-md": ["45px", {"lineHeight": "52px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "500"}],
+                    "display-lg": ["56px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg-mobile": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      body { background-color: #F9F9FE; font-family: 'Inter', sans-serif; }
+      .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+      .primary-gradient { background: linear-gradient(135deg, #002c50 0%, #005A9C 100%); }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .ghost-border { outline: 2px solid rgba(0, 44, 80, 0.08); outline-offset: -2px; }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- TopAppBar Sticky Shell -->
+<header class="w-full sticky top-0 z-50 bg-surface/80 backdrop-blur-md">
+<div class="max-w-[960px] mx-auto flex justify-between items-center px-md py-md">
+<div class="flex items-center gap-md">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-high transition-all active:scale-95">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<nav class="flex items-center gap-xs text-on-surface-variant font-label-md text-label-md">
+<span>Đánh giá nội bộ</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span>5S &amp; Trực quan</span>
+</nav>
+<h1 class="font-display-md text-headline-md font-bold text-primary tracking-tight">Quản lý đánh giá 5S</h1>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="primary-gradient text-on-primary px-lg py-sm rounded-lg font-bold font-body-md shadow-lg shadow-primary/10 flex items-center gap-xs active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>Đánh giá mới</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-[960px] mx-auto px-md py-xl space-y-xxl">
+<!-- Summary Stats Section: Asymmetric Editorial Layout -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<div class="md:col-span-5 bg-surface-container-lowest p-xl rounded-xl shadow-[40px_40px_40px_-15px_rgba(26,28,29,0.06)] flex flex-col justify-between">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-sm">Tổng số phiếu</p>
+<h2 class="font-display-lg text-display-lg text-primary">24</h2>
+</div>
+<p class="text-body-md text-secondary font-medium flex items-center gap-xs mt-lg">
+<span class="material-symbols-outlined">trending_up</span>
+                    +12% so với tháng trước
+                </p>
+</div>
+<div class="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-lg">
+<div class="bg-tertiary text-on-tertiary p-xl rounded-xl flex flex-col justify-center">
+<p class="font-label-md text-label-md opacity-80 uppercase tracking-widest mb-xs">Điểm trung bình</p>
+<div class="flex items-baseline gap-xs">
+<span class="font-display-md text-display-md">78.4</span>
+<span class="font-headline-md text-headline-md opacity-70">%</span>
+</div>
+<div class="h-1 w-full bg-on-tertiary/20 rounded-full mt-md overflow-hidden">
+<div class="h-full bg-secondary-fixed-dim" style="width: 78.4%"></div>
+</div>
+</div>
+<div class="bg-surface-container-high p-xl rounded-xl flex flex-col justify-center">
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">Cần cải thiện</p>
+<div class="flex items-center gap-md">
+<span class="font-display-md text-display-md text-error">05</span>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-high bg-surface-dim flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a professional male quality assurance engineer wearing a clean white shirt, soft natural office lighting, blurred technical background, corporate modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXPh9iNJaHIVFsR_IzTgNxFFeu53v7q2uxjxJ3GOxCHLU-Kn-bRQubkXqkIEB2rpRWyJKRSo3ZzxdTmi5pByXXGo_OWGPY5azGNtSDNdHzF4W1e8OiN0CQqzwdMxYD8yiSNUanf8uujDT6CrPlOTT35XH7zoJAfrfyh6eARnX20rqFASgerQWTFYA2R9fuNbrJXbdsRscATyGV_JAmWcVEmYsIrmciLNeV9o1lWZuAza1QQBBvX9_O"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-high bg-surface-dim flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a female operations manager in a corporate setting, professional and focused, wearing a grey blazer, high-key lighting, minimalist luxury feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPI0JizlOHEU_ijnG39ItDwt80wLy4aHAvfGYxmojYME2-jGlu4BWPuySrSM4e0Ljpv7OsAVQkHwv1RlM132rffkGXHjZTpQ2jhrwwKJ-oETYca0CtfrZkmsY19xs-dbCdsmZkUyCNjaKGf7L90ElZQJK0UkhOdl-w6PLew83i7QmyL5YduBKh48WMppM4NXJ-htjGRHWMgd5mfbAlbf7WrFHJKFncpvr4nxxD6kmhxSWt38hu4wp_"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-high bg-surface-dim flex items-center justify-center text-[10px] font-bold text-on-surface-variant">+3</div>
+</div>
+</div>
+<p class="text-label-md text-on-surface-variant mt-sm">Đang chờ xử lý hành động</p>
+</div>
+</div>
+</section>
+<!-- Filter & Search Bar -->
+<section class="space-y-lg">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-md">
+<div class="flex items-center gap-sm overflow-x-auto no-scrollbar pb-xs">
+<button class="bg-primary text-on-primary px-lg py-sm rounded-full font-label-md text-label-md whitespace-nowrap">Tất cả</button>
+<button class="bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest px-lg py-sm rounded-full font-label-md text-label-md transition-all whitespace-nowrap">Tốt</button>
+<button class="bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest px-lg py-sm rounded-full font-label-md text-label-md transition-all whitespace-nowrap">Đạt</button>
+<button class="bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest px-lg py-sm rounded-full font-label-md text-label-md transition-all whitespace-nowrap">Cần cải thiện</button>
+<button class="bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest px-lg py-sm rounded-full font-label-md text-label-md transition-all whitespace-nowrap">Không đạt</button>
+</div>
+<div class="flex items-center gap-sm">
+<div class="relative">
+<select class="appearance-none bg-surface-container-high border-none rounded-lg py-sm pl-md pr-xl text-body-md text-on-surface font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer">
+<option>Tất cả đơn vị</option>
+<option>Sản xuất - Xưởng A</option>
+<option>Sản xuất - Xưởng B</option>
+<option>Khối văn phòng</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-container-high border-none rounded-lg py-sm pl-md pr-xl text-body-md text-on-surface font-medium focus:ring-2 focus:ring-primary/20 cursor-pointer">
+<option>Tháng này</option>
+<option>Tháng trước</option>
+<option>Quý 3/2023</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">calendar_today</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Audit History Table -->
+<section class="bg-surface-container-lowest rounded-xl shadow-[0px_8px_24px_rgba(0,0,0,0.04)] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-none">
+<tr>
+<th class="px-xl py-lg font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Đơn vị • Bộ phận</th>
+<th class="px-xl py-lg font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Loại</th>
+<th class="px-xl py-lg font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Điểm</th>
+<th class="px-xl py-lg font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Kết quả</th>
+<th class="px-xl py-lg font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-right">Hành động</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-xl py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">factory</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Xưởng Cơ khí - Lầu 1</p>
+<p class="text-label-md text-on-surface-variant">Audit định kỳ • 12/10/2023</p>
+</div>
+</div>
+</td>
+<td class="px-xl py-lg font-body-md text-on-surface">Toàn diện</td>
+<td class="px-xl py-lg">
+<span class="font-body-md font-bold text-primary">92.0%</span>
+</td>
+<td class="px-xl py-lg">
+<span class="bg-secondary-container text-on-secondary-container px-md py-xs rounded-full text-label-md font-bold">TỐT</span>
+</td>
+<td class="px-xl py-lg text-right">
+<div class="flex items-center justify-end gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-primary">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-error-container text-error">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 (Alternating shift) -->
+<tr class="bg-surface-container-low/30 hover:bg-surface-container-low transition-colors group">
+<td class="px-xl py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-tertiary/5 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">business_center</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Phòng Kế hoạch</p>
+<p class="text-label-md text-on-surface-variant">Audit đột xuất • 10/10/2023</p>
+</div>
+</div>
+</td>
+<td class="px-xl py-lg font-body-md text-on-surface">5S Văn phòng</td>
+<td class="px-xl py-lg">
+<span class="font-body-md font-bold text-primary">74.5%</span>
+</td>
+<td class="px-xl py-lg">
+<span class="bg-surface-container-highest text-on-surface-variant px-md py-xs rounded-full text-label-md font-bold">ĐẠT</span>
+</td>
+<td class="px-xl py-lg text-right">
+<div class="flex items-center justify-end gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-primary">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-error-container text-error">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-xl py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-error/5 flex items-center justify-center text-error">
+<span class="material-symbols-outlined">warehouse</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Kho Thành phẩm B</p>
+<p class="text-label-md text-on-surface-variant">Audit định kỳ • 08/10/2023</p>
+</div>
+</div>
+</td>
+<td class="px-xl py-lg font-body-md text-on-surface">Toàn diện</td>
+<td class="px-xl py-lg">
+<span class="font-body-md font-bold text-error">42.0%</span>
+</td>
+<td class="px-xl py-lg">
+<span class="bg-error-container text-on-error-container px-md py-xs rounded-full text-label-md font-bold">CẦN CẢI THIỆN</span>
+</td>
+<td class="px-xl py-lg text-right">
+<div class="flex items-center justify-end gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-primary">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-error-container text-error">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-low/30 hover:bg-surface-container-low transition-colors group">
+<td class="px-xl py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">inventory</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Khu vực Logistics</p>
+<p class="text-label-md text-on-surface-variant">Audit định kỳ • 05/10/2023</p>
+</div>
+</div>
+</td>
+<td class="px-xl py-lg font-body-md text-on-surface">5S Kho</td>
+<td class="px-xl py-lg">
+<span class="font-body-md font-bold text-primary">88.5%</span>
+</td>
+<td class="px-xl py-lg">
+<span class="bg-secondary-container text-on-secondary-container px-md py-xs rounded-full text-label-md font-bold">TỐT</span>
+</td>
+<td class="px-xl py-lg text-right">
+<div class="flex items-center justify-end gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-primary">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-error-container text-error">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-xl py-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">kitchen</span>
+</div>
+<div>
+<p class="font-body-md text-on-surface font-semibold">Canteen &amp; Bếp ăn</p>
+<p class="text-label-md text-on-surface-variant">Kiểm tra vệ sinh • 01/10/2023</p>
+</div>
+</div>
+</td>
+<td class="px-xl py-lg font-body-md text-on-surface">An toàn - Vệ sinh</td>
+<td class="px-xl py-lg">
+<span class="font-body-md font-bold text-primary">79.0%</span>
+</td>
+<td class="px-xl py-lg">
+<span class="bg-surface-container-highest text-on-surface-variant px-md py-xs rounded-full text-label-md font-bold">ĐẠT</span>
+</td>
+<td class="px-xl py-lg text-right">
+<div class="flex items-center justify-end gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-highest text-primary">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-error-container text-error">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-xl py-md bg-surface-container-low flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant">Hiển thị 5 / 24 kết quả</span>
+<div class="flex items-center gap-sm">
+<button class="p-xs rounded hover:bg-surface-container-high transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<span class="font-label-md text-label-md text-primary font-bold">Trang 1</span>
+<button class="p-xs rounded hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Aesthetic Editorial Footer Section -->
+<footer class="pt-xxl border-t-0 text-center opacity-40 select-none">
+<p class="font-display-md text-headline-md font-extrabold text-primary mb-xs">AuditGuard Elite</p>
+<p class="font-label-md text-label-md tracking-[0.2em] uppercase text-on-surface-variant">Hệ thống quản lý tuân thủ tiêu chuẩn quốc tế</p>
+</footer>
+</main>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.classList.add('scale-95'));
+            btn.addEventListener('mouseup', () => btn.classList.remove('scale-95'));
+            btn.addEventListener('mouseleave', () => btn.classList.remove('scale-95'));
+        });
+
+        // Pill active state toggle simulation
+        const statusPills = document.querySelectorAll('.no-scrollbar button');
+        statusPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                statusPills.forEach(p => {
+                    p.classList.replace('bg-primary', 'bg-surface-container-high');
+                    p.classList.replace('text-on-primary', 'text-on-surface-variant');
+                });
+                pill.classList.replace('bg-surface-container-high', 'bg-primary');
+                pill.classList.replace('text-on-surface-variant', 'text-on-primary');
+            });
+        });
+    </script>
+</body></html>
