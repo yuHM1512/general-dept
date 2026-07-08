@@ -193,21 +193,23 @@ tailwind.config = {
     </div>
 
     <!-- Biển list -->
-    <div class="divide-y divide-outline-variant/10">
+    <div class="divide-y divide-outline-variant/10" id="bien-list-{{ sect.id }}">
     {% for bien in sect.biens %}
-    <div class="px-lg pt-md pb-lg" id="bien-row-{{ bien.id }}">
+    <div class="px-lg pt-md pb-lg" id="bien-row-{{ bien.id }}"
+      data-ten-goi="{{ bien.ten_goi | e }}"
+      data-mo-ta="{{ bien.mo_ta | e }}"
+      data-kich-thuoc="{{ bien.kich_thuoc | e }}"
+      data-lv-id="{{ sect.id }}">
 
       <!-- Biển header -->
-      <div class="flex items-start justify-between gap-md mb-sm">
+      <div class="flex items-start gap-md mb-sm">
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-[14px] text-tertiary leading-snug">{{ bien.ten_goi }}</p>
-          <p class="text-[12px] text-on-surface-variant mt-xs leading-relaxed">{{ bien.mo_ta }}</p>
-          {% if bien.kich_thuoc %}
-          <span class="inline-flex items-center gap-xs mt-xs text-[11px] font-medium text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full">
+          <p class="font-bold text-[14px] text-tertiary leading-snug" id="bien-tg-{{ bien.id }}">{{ bien.ten_goi }}</p>
+          <p class="text-[12px] text-on-surface-variant mt-xs leading-relaxed" id="bien-mt-{{ bien.id }}">{{ bien.mo_ta }}</p>
+          <span id="bien-kt-{{ bien.id }}" class="inline-flex items-center gap-xs mt-xs text-[11px] font-medium text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full {% if not bien.kich_thuoc %}hidden{% endif %}">
             <span class="msym material-symbols-outlined text-[13px]">straighten</span>
-            {{ bien.kich_thuoc }}
+            <span id="bien-kt-text-{{ bien.id }}">{{ bien.kich_thuoc }}</span>
           </span>
-          {% endif %}
           <!-- Assignment at biển level (applies to all 5 criteria) -->
           <div class="mt-sm flex items-center gap-xs">
             <span class="inline-flex items-center gap-xs px-sm py-[2px] rounded-full bg-surface-container text-[11px] font-medium text-on-surface-variant">
@@ -222,6 +224,11 @@ tailwind.config = {
             </button>
           </div>
         </div>
+        <button onclick="openBienModal({{ bien.id }}, {{ sect.id }})"
+          class="shrink-0 p-1 rounded-lg text-on-surface-variant hover:text-tertiary hover:bg-surface-container transition-colors mt-0.5"
+          title="Chỉnh sửa biển">
+          <span class="msym material-symbols-outlined text-[18px]">edit</span>
+        </button>
       </div>
 
       <!-- 5 criteria (edit-in-place, no toggle/assign per criterion) -->
@@ -255,11 +262,64 @@ tailwind.config = {
     {% endfor %}
     </div>
 
+    <!-- Add bien button -->
+    <div class="px-lg py-sm border-t border-outline-variant/10">
+      <button onclick="openBienModal(null, {{ sect.id }})"
+        class="flex items-center gap-xs text-[13px] font-medium text-tertiary hover:text-tertiary/70 transition-colors py-xs">
+        <span class="msym material-symbols-outlined text-[18px]">add_circle</span>
+        Thêm biển
+      </button>
+    </div>
+
   </div>
   {% endfor %}
   </div>
 
 </main>
+
+<!-- Biển edit/add modal -->
+<div id="bien-modal-overlay"
+  class="fixed inset-0 bg-on-surface/40 z-50 hidden flex items-center justify-center p-4"
+  onclick="if(event.target===this)closeBienModal()">
+  <div class="bg-surface-container-lowest rounded-xl shadow-2xl w-full max-w-md p-lg" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-lg">
+      <h3 class="font-headline-md text-[18px] font-bold text-tertiary" id="bien-modal-title">Chỉnh sửa biển</h3>
+      <button onclick="closeBienModal()" class="p-1 hover:bg-surface-container rounded-lg transition-colors">
+        <span class="msym material-symbols-outlined text-on-surface-variant">close</span>
+      </button>
+    </div>
+    <div class="space-y-md">
+      <div>
+        <label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wide block mb-xs">Tên gọi *</label>
+        <input id="bien-modal-ten-goi" type="text"
+          class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] text-on-surface border-2 border-outline-variant/30 focus:border-tertiary outline-none"
+          placeholder="Ví dụ: Biển trạng thái hàng – BTP CHƯA HOÀN CHỈNH">
+      </div>
+      <div>
+        <label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wide block mb-xs">Mô tả</label>
+        <textarea id="bien-modal-mo-ta" rows="4"
+          class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] text-on-surface border-2 border-outline-variant/30 focus:border-tertiary outline-none"
+          placeholder="Nền xanh dương, chữ trắng. Dùng cho..."></textarea>
+      </div>
+      <div>
+        <label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wide block mb-xs">Kích thước</label>
+        <input id="bien-modal-kich-thuoc" type="text"
+          class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] text-on-surface border-2 border-outline-variant/30 focus:border-tertiary outline-none"
+          placeholder="Ví dụ: 200 x 100">
+      </div>
+    </div>
+    <div class="flex gap-sm mt-xl">
+      <button onclick="closeBienModal()"
+        class="flex-1 py-sm border-2 border-outline-variant/30 text-on-surface-variant rounded-full font-medium font-body-md hover:bg-surface-container transition-colors">
+        Hủy
+      </button>
+      <button id="bien-modal-save-btn" onclick="saveBien()"
+        class="flex-1 py-sm bg-tertiary text-white rounded-full font-bold font-body-md hover:opacity-80 transition-opacity">
+        Lưu
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Assignment drawer overlay -->
 <div id="assign-overlay"
@@ -537,9 +597,6 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Close drawer on Escape
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAssign(); });
-
 // Assignment for a biển: uses the first tc_id for the toggle API, mirrors count to bien badge
 function openAssignBien(bienId, tcIds, btn) {
   // Use the first tc_id as the "representative" for the assign drawer
@@ -582,6 +639,155 @@ function styleTab(id, active) {
 // Init: read hash or default to 5S
 const initTab = location.hash === '#TRUC_QUAN' ? 'TRUC_QUAN' : '5S';
 switchTab(initTab);
+
+// ── Biển modal (edit / add) ───────────────────────────────────────────────
+let _bienModalId  = null;
+let _bienModalLvId = null;
+
+function openBienModal(bienId, lvId) {
+  _bienModalId  = bienId;
+  _bienModalLvId = lvId;
+  let tenGoi = '', moTa = '', kichThuoc = '';
+  if (bienId) {
+    const row = document.getElementById('bien-row-' + bienId);
+    if (row) { tenGoi = row.dataset.tenGoi || ''; moTa = row.dataset.moTa || ''; kichThuoc = row.dataset.kichThuoc || ''; }
+  }
+  document.getElementById('bien-modal-title').textContent = bienId ? 'Chỉnh sửa biển' : 'Thêm biển mới';
+  document.getElementById('bien-modal-ten-goi').value    = tenGoi;
+  document.getElementById('bien-modal-mo-ta').value      = moTa;
+  document.getElementById('bien-modal-kich-thuoc').value = kichThuoc;
+  document.getElementById('bien-modal-overlay').classList.remove('hidden');
+  document.getElementById('bien-modal-ten-goi').focus();
+}
+
+function closeBienModal() {
+  document.getElementById('bien-modal-overlay').classList.add('hidden');
+}
+
+function saveBien() {
+  const tenGoi   = document.getElementById('bien-modal-ten-goi').value.trim();
+  const moTa     = document.getElementById('bien-modal-mo-ta').value.trim();
+  const kichThuoc = document.getElementById('bien-modal-kich-thuoc').value.trim();
+  if (!tenGoi) { showToast('Tên gọi không được để trống'); return; }
+
+  const btn = document.getElementById('bien-modal-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Đang lưu...';
+
+  if (_bienModalId) {
+    fetch('/api/audit/5s/bien/' + _bienModalId, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ten_goi: tenGoi, mo_ta: moTa, kich_thuoc: kichThuoc}),
+    })
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(data => {
+        const row = document.getElementById('bien-row-' + data.id);
+        if (row) {
+          row.dataset.tenGoi    = data.ten_goi;
+          row.dataset.moTa      = data.mo_ta;
+          row.dataset.kichThuoc = data.kich_thuoc;
+          document.getElementById('bien-tg-' + data.id).textContent = data.ten_goi;
+          document.getElementById('bien-mt-' + data.id).textContent = data.mo_ta;
+          const ktWrap = document.getElementById('bien-kt-' + data.id);
+          const ktText = document.getElementById('bien-kt-text-' + data.id);
+          if (ktText) ktText.textContent = data.kich_thuoc;
+          if (ktWrap) ktWrap.classList.toggle('hidden', !data.kich_thuoc);
+        }
+        closeBienModal();
+        showToast('Đã lưu biển');
+      })
+      .catch(() => showToast('Lỗi, thử lại sau'))
+      .finally(() => { btn.disabled = false; btn.textContent = 'Lưu'; });
+  } else {
+    fetch('/api/audit/5s/linh-vuc/' + _bienModalLvId + '/bien', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ten_goi: tenGoi, mo_ta: moTa, kich_thuoc: kichThuoc}),
+    })
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(data => {
+        appendBienRow(_bienModalLvId, data);
+        closeBienModal();
+        showToast('Đã thêm biển mới');
+      })
+      .catch(() => showToast('Lỗi, thử lại sau'))
+      .finally(() => { btn.disabled = false; btn.textContent = 'Lưu'; });
+  }
+}
+
+function appendBienRow(lvId, bien) {
+  const list = document.getElementById('bien-list-' + lvId);
+  if (!list) return;
+  list.querySelectorAll('p.text-center').forEach(el => el.remove());
+
+  const ktHidden = bien.kich_thuoc ? '' : 'hidden';
+  const criteriaHtml = bien.criteria.map(tc => {
+    const letter = tc.noi_dung[0] || '';
+    const text = (tc.noi_dung[1] === '.' && tc.noi_dung[2] === ' ') ? tc.noi_dung.slice(3) : tc.noi_dung;
+    return `<li class="group" id="tc-row-${tc.id}">
+      <div id="tc-view-${tc.id}" class="flex items-start gap-xs py-xs">
+        <span class="shrink-0 text-[11px] font-bold text-tertiary/60 mt-0.5 w-4">${escHtml(letter)}.</span>
+        <p class="flex-1 text-[13px] leading-snug text-on-surface" id="tc-text-${tc.id}">${escHtml(text)}</p>
+        <button onclick="startEdit(${tc.id})" title="Chỉnh sửa"
+          class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-tertiary">
+          <span class="msym material-symbols-outlined text-[15px]">edit</span>
+        </button>
+      </div>
+      <div id="tc-edit-${tc.id}" class="hidden pl-4">
+        <textarea id="tc-textarea-${tc.id}"
+          class="w-full bg-surface-container-low rounded-lg px-sm py-xs text-[13px] leading-snug text-on-surface border-2 border-tertiary/30 focus:border-tertiary outline-none" rows="2">${escHtml(tc.noi_dung)}</textarea>
+        <div class="flex gap-xs mt-xs">
+          <button onclick="saveEdit(${tc.id})" class="px-md py-xs bg-tertiary text-white rounded-full text-[11px] font-bold hover:opacity-80 transition-opacity">Lưu</button>
+          <button onclick="cancelEdit(${tc.id})" class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[11px] font-medium hover:bg-surface-container-high transition-colors">Hủy</button>
+        </div>
+      </div>
+    </li>`;
+  }).join('');
+
+  const tcIds = bien.criteria.map(tc => tc.id);
+
+  const div = document.createElement('div');
+  div.className = 'px-lg pt-md pb-lg';
+  div.id = 'bien-row-' + bien.id;
+  div.dataset.tenGoi    = bien.ten_goi;
+  div.dataset.moTa      = bien.mo_ta;
+  div.dataset.kichThuoc = bien.kich_thuoc;
+  div.dataset.lvId      = lvId;
+  div.innerHTML = `
+    <div class="flex items-start gap-md mb-sm">
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-[14px] text-tertiary leading-snug" id="bien-tg-${bien.id}">${escHtml(bien.ten_goi)}</p>
+        <p class="text-[12px] text-on-surface-variant mt-xs leading-relaxed" id="bien-mt-${bien.id}">${escHtml(bien.mo_ta)}</p>
+        <span id="bien-kt-${bien.id}" class="inline-flex items-center gap-xs mt-xs text-[11px] font-medium text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full ${ktHidden}">
+          <span class="msym material-symbols-outlined text-[13px]">straighten</span>
+          <span id="bien-kt-text-${bien.id}">${escHtml(bien.kich_thuoc)}</span>
+        </span>
+        <div class="mt-sm flex items-center gap-xs">
+          <span class="inline-flex items-center gap-xs px-sm py-[2px] rounded-full bg-surface-container text-[11px] font-medium text-on-surface-variant">
+            <span class="msym material-symbols-outlined text-[13px]">domain</span>
+            <span id="bien-assign-count-${bien.id}">0</span> đơn vị
+          </span>
+          <button onclick="openAssignBien(${bien.id}, ${JSON.stringify(tcIds)}, this)"
+            id="bien-assign-btn-${bien.id}"
+            class="inline-flex items-center gap-xs px-sm py-[3px] rounded-full border border-tertiary/40 bg-tertiary/5 hover:bg-tertiary hover:text-white hover:border-tertiary transition-all text-[11px] font-semibold text-tertiary">
+            <span class="msym material-symbols-outlined text-[13px]">edit_note</span>
+            Phân công
+          </button>
+        </div>
+      </div>
+      <button onclick="openBienModal(${bien.id}, ${lvId})"
+        class="shrink-0 p-1 rounded-lg text-on-surface-variant hover:text-tertiary hover:bg-surface-container transition-colors mt-0.5"
+        title="Chỉnh sửa biển">
+        <span class="msym material-symbols-outlined text-[18px]">edit</span>
+      </button>
+    </div>
+    <ul class="space-y-xs pl-sm border-l-2 border-tertiary/20">${criteriaHtml}</ul>`;
+  list.appendChild(div);
+  div.querySelectorAll('textarea').forEach(ta => ta.addEventListener('input', () => autoResize(ta)));
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeAssign(); closeBienModal(); } });
 </script>
 </body>
 </html>
