@@ -174,6 +174,61 @@ def health() -> dict:
     return {"status": "ok", "env": settings.app_env}
 
 
+def _persist_target_salary_vnd(value: int) -> None:
+    env_path = BASE_DIR / ".env"
+    key = "TARGET_SALARY_VND"
+    line = f"{key}={value}"
+    try:
+        text = env_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        env_path.write_text(f"{line}\n", encoding="utf-8")
+        return
+
+    pattern = rf"(?m)^{key}\s*=.*$"
+    if _re.search(pattern, text):
+        text = _re.sub(pattern, line, text, count=1)
+    else:
+        text = text.rstrip() + f"\n{line}\n"
+    env_path.write_text(text, encoding="utf-8")
+
+
+@app.get("/api/rcp/target-salary")
+def get_rcp_target_salary() -> dict:
+    return {
+        "target_salary_vnd": settings.target_salary_vnd,
+        "target_salary_vnd_fmt": _fmt_vnd(settings.target_salary_vnd),
+    }
+
+
+@app.put("/api/rcp/target-salary")
+async def update_rcp_target_salary(request: Request) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể cập nhật mục tiêu RCP")
+
+    raw_value = request.query_params.get("target_salary_vnd") or request.query_params.get("value")
+    if raw_value is None:
+        try:
+            data = await request.json()
+        except Exception:
+            data = {}
+        raw_value = data.get("target_salary_vnd", data.get("value"))
+
+    try:
+        value = int(str(raw_value).replace(".", "").replace(",", "").strip())
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="target_salary_vnd không hợp lệ") from exc
+    if value <= 0:
+        raise HTTPException(status_code=422, detail="target_salary_vnd phải lớn hơn 0")
+
+    object.__setattr__(settings, "target_salary_vnd", value)
+    _persist_target_salary_vnd(value)
+    return {
+        "ok": True,
+        "target_salary_vnd": settings.target_salary_vnd,
+        "target_salary_vnd_fmt": _fmt_vnd(settings.target_salary_vnd),
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 def homepage(request: Request) -> HTMLResponse:
     # Department homepage (portal)
