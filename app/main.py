@@ -1464,6 +1464,7 @@ def audit_result(
         select(AuditChiTietDiem).where(AuditChiTietDiem.phieu_id == phieu_id)
     ).all()
     diem_by_tc: dict[int, int] = {d.tieu_chi_id: d.diem for d in detail_rows}
+    detail_by_tc = {d.tieu_chi_id: d for d in detail_rows}
 
     loai_filter: list[str] = []
     if phieu.loai in ("5S", "DAY_DU"):
@@ -1474,6 +1475,7 @@ def audit_result(
     all_bien_map = {b.id: b for b in session.exec(select(AuditBien)).all()}
 
     sections_result = []
+    note_items = []
     for lv in session.exec(
         select(AuditLinhVuc)
         .where(AuditLinhVuc.loai.in_(loai_filter))
@@ -1490,12 +1492,23 @@ def audit_result(
         sect_tong = len(tc_ids) * 2
         zero_items = []
         for tc in scored_tc:
+            bien_ten = ""
+            if tc.bien_id:
+                b = all_bien_map.get(tc.bien_id)
+                bien_ten = b.ten_goi if b else ""
             if diem_by_tc.get(tc.id, 0) == 0:
-                bien_ten = ""
-                if tc.bien_id:
-                    b = all_bien_map.get(tc.bien_id)
-                    bien_ten = b.ten_goi if b else ""
                 zero_items.append({"noi_dung": tc.noi_dung, "bien_ten": bien_ten})
+            detail = detail_by_tc.get(tc.id)
+            ghi_chu = (detail.ghi_chu or "").strip() if detail else ""
+            if ghi_chu:
+                note_items.append({
+                    "linh_vuc": lv.ten,
+                    "loai": lv.loai,
+                    "bien_ten": bien_ten,
+                    "noi_dung": tc.noi_dung,
+                    "diem": diem_by_tc.get(tc.id, 0),
+                    "ghi_chu": ghi_chu,
+                })
         sections_result.append({
             "ma": lv.ma,
             "ten": lv.ten,
@@ -1537,6 +1550,7 @@ def audit_result(
                 "don_vi_ten": don_vi.ma if don_vi else "",
             },
             "sections": sections_result,
+            "note_items": note_items,
             "ket_luan_color": ket_luan_map.get(phieu.ket_luan or "", "primary"),
         },
     )

@@ -43,6 +43,8 @@ tailwind.config = {
   .reveal-1{animation-delay:.08s;opacity:0}
   .reveal-2{animation-delay:.18s;opacity:0}
   .reveal-3{animation-delay:.28s;opacity:0}
+  .result-tab-active{background:#002c50;color:#fff;box-shadow:0 8px 18px rgba(0,44,80,.12)}
+  .result-tab-inactive{background:transparent;color:#42474f}
   ::-webkit-scrollbar{width:4px}
   ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
 </style>
@@ -107,6 +109,24 @@ tailwind.config = {
     </div>
   </section>
 
+  <!-- Report tabs -->
+  <div class="reveal reveal-2 mb-lg">
+    <div class="inline-flex bg-surface-container-low rounded-full p-1 border border-outline-variant/20">
+      <button type="button" id="tab-report-btn"
+        class="result-tab result-tab-active px-lg py-sm rounded-full font-label-md text-[13px] font-bold transition-all"
+        onclick="showResultTab('report')">
+        Report tổng thể
+      </button>
+      <button type="button" id="tab-notes-btn"
+        class="result-tab result-tab-inactive px-lg py-sm rounded-full font-label-md text-[13px] font-bold transition-all flex items-center gap-xs"
+        onclick="showResultTab('notes')">
+        Ghi chú
+        <span class="px-xs py-[1px] rounded-full text-[10px] font-bold bg-white/70 text-on-surface-variant">{{ note_items | length }}</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="tab-report-panel">
   <!-- Section breakdown table -->
   <section class="bg-surface-container-lowest rounded-xl p-lg shadow-sm reveal reveal-2 overflow-hidden mb-xl">
     <div class="flex justify-between items-end mb-xl">
@@ -186,6 +206,69 @@ tailwind.config = {
       </div>
     </div>
   </section>
+  </div>
+
+  <div id="tab-notes-panel" class="hidden">
+  <!-- Notes table -->
+  <section class="bg-surface-container-lowest rounded-xl p-lg shadow-sm reveal reveal-2 overflow-hidden mb-xl">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-sm mb-xl">
+      <div>
+        <h3 class="font-headline-md text-[20px] text-primary font-bold">Ghi chú đánh giá</h3>
+        <p class="text-on-surface-variant text-[13px] mt-xs">Các nội dung được người đánh giá ghi chú trong quá trình chấm điểm.</p>
+      </div>
+      <span class="text-on-surface-variant font-label-md text-label-md">{{ note_items | length }} ghi chú</span>
+    </div>
+
+    {% if note_items %}
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse min-w-[720px]">
+        <thead>
+          <tr class="text-left text-on-surface-variant font-label-md text-label-md border-b border-outline-variant/20">
+            <th class="py-md px-sm font-medium w-12">#</th>
+            <th class="py-md px-sm font-medium w-44">Lĩnh vực</th>
+            <th class="py-md px-sm font-medium">Nội dung - tiêu chuẩn</th>
+            <th class="py-md px-sm font-medium text-center w-20">Điểm</th>
+            <th class="py-md px-sm font-medium w-64">Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in note_items %}
+          <tr class="{% if loop.index is odd %}bg-surface-container-low/30{% else %}bg-surface-container-lowest{% endif %} align-top">
+            <td class="py-md px-sm text-on-surface-variant font-label-md text-label-md">{{ loop.index }}</td>
+            <td class="py-md px-sm">
+              <div class="flex items-center gap-xs">
+                <span class="inline-block w-2 h-2 rounded-full {% if item.loai == '5S' %}bg-primary{% else %}bg-tertiary{% endif %}"></span>
+                <span class="font-semibold text-primary text-[13px] leading-snug">{{ item.linh_vuc }}</span>
+              </div>
+            </td>
+            <td class="py-md px-sm">
+              {% if item.bien_ten %}
+              <p class="font-semibold text-[13px] mb-xs" style="color:#00312a">{{ item.bien_ten }}</p>
+              {% endif %}
+              <p class="text-[13px] leading-relaxed text-on-surface">{{ item.noi_dung }}</p>
+            </td>
+            <td class="py-md px-sm text-center">
+              <span class="inline-flex items-center justify-center min-w-8 h-8 rounded-full font-bold text-[13px]
+                {% if item.diem == 0 %}bg-error-container text-error{% elif item.diem == 1 %}bg-[#fff3cd] text-[#856404]{% else %}bg-secondary-container text-on-secondary-container{% endif %}">
+                {{ item.diem }}
+              </span>
+            </td>
+            <td class="py-md px-sm">
+              <p class="text-[13px] leading-relaxed text-on-surface whitespace-pre-line">{{ item.ghi_chu }}</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="py-xxl text-center">
+      <span class="material-symbols-outlined text-outline text-[36px] mb-sm">sticky_note_2</span>
+      <p class="font-body-md text-on-surface-variant">Phiếu này chưa có ghi chú nào.</p>
+    </div>
+    {% endif %}
+  </section>
+  </div>
 
   <!-- Action buttons -->
   <div class="flex flex-col sm:flex-row gap-md justify-center reveal reveal-3 pb-8">
@@ -215,5 +298,21 @@ tailwind.config = {
   </a>
 </nav>
 
+<script>
+function showResultTab(tab) {
+  const isNotes = tab === 'notes';
+  const reportPanel = document.getElementById('tab-report-panel');
+  const notesPanel = document.getElementById('tab-notes-panel');
+  const reportBtn = document.getElementById('tab-report-btn');
+  const notesBtn = document.getElementById('tab-notes-btn');
+
+  reportPanel.classList.toggle('hidden', isNotes);
+  notesPanel.classList.toggle('hidden', !isNotes);
+  reportBtn.classList.toggle('result-tab-active', !isNotes);
+  reportBtn.classList.toggle('result-tab-inactive', isNotes);
+  notesBtn.classList.toggle('result-tab-active', isNotes);
+  notesBtn.classList.toggle('result-tab-inactive', !isNotes);
+}
+</script>
 </body>
 </html>
