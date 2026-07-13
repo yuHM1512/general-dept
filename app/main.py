@@ -609,6 +609,16 @@ def internal_audit_home(
     )
 
 
+@app.get("/internal-audit/ewb-guide", response_class=HTMLResponse)
+def ewb_guide(
+    request: Request,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "ewb_guide.html",
+        {"request": request},
+    )
+
+
 @app.get("/internal-audit/5s", response_class=HTMLResponse)
 def five_s_admin(
     request: Request,

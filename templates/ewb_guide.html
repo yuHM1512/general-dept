@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Hướng Dẫn Khảo Sát EWB</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+        "on-primary-container":"#82afe9","surface":"#F9F9FA",
+        "surface-container-lowest":"#FFFFFF","surface-container-low":"#f3f3f8",
+        "surface-container":"#ededf2","surface-container-high":"#EBEBEB",
+        "outline-variant":"#C1C7D2","outline":"#727780",
+        "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+        "secondary":"#1b6d24","on-secondary":"#ffffff",
+        "tertiary":"#00312a","background":"#f9f9fe",
+      },
+      spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+      borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+      fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
+      fontSize:{
+        "body-md":   ["16px",{"lineHeight":"24px","fontWeight":"400"}],
+        "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+        "label-md":  ["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+      },
+    },
+  },
+}
+</script>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+
+:root{
+  --ok:#1b6d24;--ok-bg:#e8f5e9;--ok-border:#a5d6a7;
+  --danger:#ba1a1a;
+  --f-border:#005A9C;--r-border:#DB2777;
+  --qb-r-bg:#FCE7F3;--qb-r-text:#9D174D;
+  --shadow:0 1px 3px rgba(11,21,39,.07),0 1px 2px rgba(11,21,39,.05);
+}
+@media(prefers-color-scheme:dark){:root{
+  --ok:#18A850;--ok-bg:#071A10;--ok-border:#145E2C;--danger:#E05252;
+  --f-border:#4A80D6;--r-border:#DB2777;--qb-r-bg:#2A0A1E;--qb-r-text:#F472B6;
+  --shadow:0 1px 4px rgba(0,0,0,.4);
+}}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* === Score picker === */
+.picker-wrap{
+  background:#fff;border:1px solid #C1C7D2;border-radius:0.75rem;
+  padding:16px;margin-bottom:14px;box-shadow:var(--shadow)
+}
+.picker-hdr{
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;color:#727780;margin-bottom:10px
+}
+.chip-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.score-chip{
+  background:#f3f3f8;border:1.5px solid #C1C7D2;color:#42474f;
+  border-radius:8px;padding:9px 2px;text-align:center;font-size:13px;font-weight:700;
+  cursor:pointer;font-variant-numeric:tabular-nums;font-family:'Inter',sans-serif;
+  transition:background .1s,border-color .1s,color .1s;-webkit-tap-highlight-color:transparent;line-height:1
+}
+.score-chip:hover{border-color:#005A9C;color:#005A9C;background:#EBF1FF}
+.score-chip.sel{background:#002c50;border-color:#002c50;color:#fff}
+
+/* === Generate button === */
+.gen-btn{
+  display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  background:#002c50;color:#fff;border:none;border-radius:0.75rem;
+  padding:15px 20px;font-family:'Manrope','Inter',sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:.5px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .15s,transform .1s;margin-bottom:16px;
+  box-shadow:0 2px 8px rgba(0,44,80,.25)
+}
+.gen-btn:hover{background:#005A9C}
+.gen-btn:active{transform:scale(.975)}
+.gen-btn svg{flex-shrink:0}
+
+/* === Score result card === */
+.score-card{
+  background:var(--ok-bg);border:1.5px solid var(--ok-border);border-radius:0.75rem;
+  padding:14px 16px;display:none;align-items:center;gap:14px;margin-bottom:14px
+}
+.score-card.show{display:flex}
+.score-icon{
+  width:42px;height:42px;background:var(--ok);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0
+}
+.score-body{flex:1;min-width:0}
+.score-eyebrow{
+  font-family:'Inter',sans-serif;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;color:var(--ok);margin-bottom:1px
+}
+.score-val{
+  font-family:'Manrope',sans-serif;font-size:26px;font-weight:800;
+  line-height:1;color:var(--ok);font-variant-numeric:tabular-nums;margin-bottom:2px
+}
+.score-note{font-family:'Inter',sans-serif;font-size:12.5px;color:#42474f}
+
+/* === Rule chips === */
+.rules{display:none;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+.rules.show{display:flex}
+.rule-chip{
+  display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;
+  font-size:12px;font-weight:600;background:#fff;border:1px solid #C1C7D2;
+  color:#42474f;white-space:nowrap;box-shadow:var(--shadow);font-family:'Inter',sans-serif
+}
+.c-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.c-dot-f{background:var(--f-border)}
+.c-dot-r{background:var(--r-border)}
+.c-cross{color:var(--danger);font-weight:900;font-size:12px}
+
+.sec-lbl{
+  display:none;font-family:'Inter',sans-serif;font-size:10.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;color:#727780;margin-bottom:10px
+}
+.sec-lbl.show{display:block}
+
+/* === Question cards === */
+.q-card{
+  background:#fff;border:1px solid #C1C7D2;border-left:4px solid var(--f-border);
+  border-radius:0.75rem;padding:14px 14px 12px;margin-bottom:10px;
+  box-shadow:var(--shadow);display:none
+}
+.q-card.show{display:block}
+.q-card.q-rev{border-left-color:var(--r-border)}
+.q-head{display:flex;align-items:flex-start;gap:9px;margin-bottom:13px}
+.q-num{
+  width:28px;height:28px;border-radius:50%;background:#f3f3f8;border:1.5px solid #C1C7D2;
+  font-size:12px;font-weight:800;color:#005A9C;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;font-variant-numeric:tabular-nums;
+  margin-top:1px;font-family:'Manrope',sans-serif
+}
+.q-type{
+  display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;
+  letter-spacing:.7px;text-transform:uppercase;flex-shrink:0;margin-top:3px;
+  font-family:'Inter',sans-serif
+}
+.qt-f{background:#EBF1FF;color:#002c50}
+.qt-r{background:var(--qb-r-bg);color:var(--qb-r-text)}
+.q-text{
+  font-family:'Inter',sans-serif;font-size:13.5px;color:#1A1C1D;
+  line-height:1.5;flex:1;padding-top:2px
+}
+
+/* === Scale row === */
+.scale-labels{
+  display:flex;justify-content:space-between;font-size:10px;color:#727780;
+  margin-bottom:5px;padding:0 2px;font-family:'Inter',sans-serif
+}
+.scale-row{display:flex;align-items:flex-end;gap:4px;margin-bottom:11px}
+.rb{
+  flex:1;min-width:0;border-radius:7px;border:1.5px solid transparent;
+  display:flex;align-items:center;justify-content:center;position:relative;
+  font-variant-numeric:tabular-nums;user-select:none;font-family:'Inter',sans-serif
+}
+.rb-inv{height:33px;background:#f3f3f8;border-color:#C1C7D2;color:#727780;font-size:13px;font-weight:500}
+.rb-x{position:absolute;top:1px;right:3px;font-size:7.5px;font-weight:900;color:var(--danger);line-height:1}
+.rb-val{height:36px;background:#fff;border-color:#C1C7D2;color:#42474f;font-size:14px;font-weight:600}
+.rb-rec{
+  height:52px;background:var(--ok);border-color:var(--ok);color:#fff;
+  font-size:21px;font-weight:800;font-family:'Manrope',sans-serif;
+  border-radius:9px;transform:translateY(-5px);
+  box-shadow:0 5px 16px rgba(27,109,36,.32),0 2px 4px rgba(27,109,36,.18)
+}
+
+.ans-pill{
+  display:inline-flex;align-items:center;gap:5px;background:var(--ok-bg);
+  border:1px solid var(--ok-border);border-radius:99px;padding:5px 13px 5px 8px;
+  font-size:12.5px;font-weight:600;color:var(--ok);font-family:'Inter',sans-serif
+}
+.ans-num{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;font-family:'Manrope',sans-serif}
+
+/* === Empty state === */
+.empty{text-align:center;padding:44px 20px}
+.empty-icon{font-size:44px;margin-bottom:14px;line-height:1}
+.empty-text{font-size:14px;color:#727780;line-height:1.6;font-family:'Inter',sans-serif}
+
+@media print{.gen-btn,.picker-wrap{display:none}.q-card{box-shadow:none;page-break-inside:avoid}}
+@media(prefers-reduced-motion:reduce){.gen-btn,.rb,.score-chip{transition:none;transform:none!important}}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+
+<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center gap-md">
+  <a href="/internal-audit" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</a>
+  <div>
+    <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Nội bộ · EWB</p>
+    <h1 class="text-[20px] font-headline-md font-bold text-primary tracking-tight leading-tight">Hướng Dẫn Trả Lời Khảo Sát</h1>
+    <p class="text-[11px] text-on-surface-variant mt-0.5 hidden sm:block">Chọn điểm mục tiêu → nhấn tạo → điền số được tô xanh vào phiếu</p>
+  </div>
+</header>
+
+<div class="max-w-[560px] mx-auto px-4 pt-6 pb-20">
+
+  <div class="picker-wrap">
+    <p class="picker-hdr">Điểm mục tiêu (chọn một)</p>
+    <div class="chip-grid" id="chips"></div>
+  </div>
+
+  <button class="gen-btn" onclick="generate()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+      <path d="M21 3v5h-5"/>
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+      <path d="M8 16H3v5"/>
+    </svg>
+    TẠO ĐỀ XUẤT NGẪU NHIÊN
+  </button>
+
+  <div class="score-card" id="sc">
+    <div class="score-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="score-body">
+      <div class="score-eyebrow">Điểm dự kiến</div>
+      <div class="score-val" id="sv"></div>
+      <div class="score-note" id="sn"></div>
+    </div>
+  </div>
+
+  <div class="rules" id="rules">
+    <div class="rule-chip">
+      <span class="c-dot c-dot-f"></span>
+      <strong>Câu thuận:</strong>&nbsp;Không chọn&nbsp;<span class="c-cross">1, 2</span>
+    </div>
+    <div class="rule-chip">
+      <span class="c-dot c-dot-r"></span>
+      <strong>Câu ngược:</strong>&nbsp;Không chọn&nbsp;<span class="c-cross">6, 7</span>
+    </div>
+  </div>
+
+  <p class="sec-lbl" id="sl">Điền đúng số được tô xanh vào phiếu khảo sát</p>
+
+  <div id="ql">
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <p class="empty-text">Chọn điểm mục tiêu ở trên, sau đó nhấn<br><strong>TẠO ĐỀ XUẤT NGẪU NHIÊN</strong></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const Q=[
+  {id:1, t:'f',text:'Nội dung đào tạo trong 12 tháng qua giúp tôi có vị trí công việc tốt hơn trong tương lai'},
+  {id:2, t:'f',text:'Công ty đã rất nỗ lực để lấy ý kiến đóng góp của người lao động trong nhà máy'},
+  {id:3, t:'r',text:'Khi tôi gặp khó khăn trong công việc, cấp trên của tôi không giúp tôi giải quyết'},
+  {id:4, t:'f',text:'Áp lực công việc của tôi hiện tại là chấp nhận được'},
+  {id:5, t:'r',text:'Tôi thường xuyên bị ốm'},
+  {id:6, t:'f',text:'Thu nhập tôi nhận từ công ty đủ để đáp ứng nhu cầu tài chính của gia đình'},
+  {id:7, t:'r',text:'Môi trường làm việc tại đây gây ảnh hưởng xấu đến sức khỏe của tôi'},
+  {id:8, t:'f',text:'Cán bộ quản lý quan tâm đến tôi'},
+  {id:9, t:'f',text:'Tại nơi làm việc, tôi được đối xử công bằng và tôn trọng'},
+  {id:10,t:'f',text:'Thu nhập ở đây cao hơn so với các công ty lân cận — lý do tôi chọn làm việc tại đây'},
+  {id:11,t:'f',text:'Tôi nghe Quản lý của tôi nói về an toàn hàng ngày'},
+  {id:12,t:'f',text:'Tôi thoải mái khi đưa ra đề xuất cải tiến trong nhà máy'},
+  {id:13,t:'f',text:'Tôi hiểu cách đặt mục tiêu sản xuất của bộ phận mình'},
+  {id:14,t:'f',text:'Tôi thường xuyên nhìn thấy Ban Giám đốc, cán bộ quản lý đến hiện trường sản xuất'},
+  {id:15,t:'f',text:'Tôi có những người bạn tốt ở nơi làm việc'},
+];
+
+const PAIR1=[3,4];
+const PAIR2=[5,9];
+const FREE=[0,1,2,6,7,8,10,11,12,13,14];
+
+let selectedScore=85;
+
+(function(){
+  const grid=document.getElementById('chips');
+  for(let v=70;v<=87;v++){
+    const btn=document.createElement('button');
+    btn.className='score-chip'+(v===85?' sel':'');
+    btn.textContent=v;
+    btn.onclick=function(){
+      selectedScore=v;
+      document.querySelectorAll('.score-chip').forEach(function(c){c.classList.remove('sel');});
+      btn.classList.add('sel');
+    };
+    grid.appendChild(btn);
+  }
+})();
+
+function mkRng(seed){
+  let s=(seed>>>0)||1;
+  return function(){s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/0x100000000;};
+}
+
+function targetToK(T){
+  return Math.ceil(21*T/20);
+}
+
+function initKi(K){
+  const ki=new Array(15).fill(3);
+  let rem=K-45;
+  for(let iter=0;iter<6&&rem>0;iter++){
+    for(let fi=0;fi<FREE.length;fi++){
+      const i=FREE[fi];
+      if(rem>0&&ki[i]<7){ki[i]++;rem--;}
+    }
+    if(rem>=2&&ki[PAIR1[0]]<7){ki[PAIR1[0]]++;ki[PAIR1[1]]++;rem-=2;}
+    if(rem>=2&&ki[PAIR2[0]]<7){ki[PAIR2[0]]++;ki[PAIR2[1]]++;rem-=2;}
+  }
+  return ki;
+}
+
+function generate(){
+  const K=targetToK(selectedScore);
+  const rng=mkRng((Date.now()&0xFFFFFF)^(Math.random()*0xFFFFFF|0));
+  const ki=initKi(K);
+
+  for(let s=0;s<120;s++){
+    const t=rng();
+    if(t<0.55){
+      const ia=FREE[Math.floor(rng()*FREE.length)];
+      const ib=FREE[Math.floor(rng()*FREE.length)];
+      if(ia!==ib&&ki[ia]<7&&ki[ib]>3){ki[ia]++;ki[ib]--;}
+    }else if(t<0.80){
+      const pair=rng()<0.5?PAIR1:PAIR2;
+      const ia=FREE[Math.floor(rng()*FREE.length)];
+      const ib=FREE[Math.floor(rng()*FREE.length)];
+      if(ia!==ib){
+        if(ki[pair[0]]<7&&ki[ia]>3&&ki[ib]>3){
+          ki[pair[0]]++;ki[pair[1]]++;ki[ia]--;ki[ib]--;
+        }else if(ki[pair[0]]>3&&ki[ia]<7&&ki[ib]<7){
+          ki[pair[0]]--;ki[pair[1]]--;ki[ia]++;ki[ib]++;
+        }
+      }
+    }else{
+      if(ki[PAIR1[0]]<7&&ki[PAIR2[0]]>3){
+        ki[PAIR1[0]]++;ki[PAIR1[1]]++;ki[PAIR2[0]]--;ki[PAIR2[1]]--;
+      }else if(ki[PAIR2[0]]<7&&ki[PAIR1[0]]>3){
+        ki[PAIR2[0]]++;ki[PAIR2[1]]++;ki[PAIR1[0]]--;ki[PAIR1[1]]--;
+      }
+    }
+  }
+
+  const ratings=Q.map(function(q,i){return q.t==='f'?ki[i]:8-ki[i];});
+  render(ratings,selectedScore);
+}
+
+function displayScore(ratings){
+  const sum=ratings.reduce(function(acc,r,i){
+    const q=Q[i];
+    const exact=q.t==='f'?r/7*100:(8-r)/7*100;
+    return acc+Math.round(exact);
+  },0);
+  return (sum/ratings.length).toFixed(2).replace('.',',');
+}
+
+function render(r,targetT){
+  const sc=displayScore(r);
+  document.getElementById('sv').textContent=sc+' / 100';
+  document.getElementById('sn').textContent='Mục tiêu: '+targetT+' điểm  →  Kết quả bộ này: '+sc;
+  document.getElementById('sc').classList.add('show');
+  document.getElementById('rules').classList.add('show');
+  document.getElementById('sl').classList.add('show');
+
+  document.getElementById('ql').innerHTML=Q.map(function(q,i){
+    const rec=r[i],isF=q.t==='f';
+    const btns=[1,2,3,4,5,6,7].map(function(v){
+      const inv=isF?v<=2:v>=6,isR=v===rec;
+      const cls=isR?'rb rb-rec':(inv?'rb rb-inv':'rb rb-val');
+      const x=inv?'<span class="rb-x">✗</span>':'';
+      return '<div class="'+cls+'">'+v+x+'</div>';
+    }).join('');
+
+    return '<div class="q-card'+(isF?'':' q-rev')+' show">'
+      +'<div class="q-head">'
+      +'<div class="q-num">'+q.id+'</div>'
+      +'<span class="q-type '+(isF?'qt-f':'qt-r')+'">'+(isF?'Câu thuận':'Câu ngược')+'</span>'
+      +'<p class="q-text">'+q.text+'</p>'
+      +'</div>'
+      +'<div class="scale-labels"><span>Hoàn toàn không đồng ý</span><span>Hoàn toàn đồng ý</span></div>'
+      +'<div class="scale-row">'+btns+'</div>'
+      +'<div class="ans-pill">'
+      +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      +'Điền số này vào phiếu: <span class="ans-num">'+rec+'</span>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+</script>
+</body>
+</html>
