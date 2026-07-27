@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     allow_local_ingest: bool = False
     default_excel_path: str | None = None
 
+    # ---- Module Khảo sát ----
+    survey_sheet_id: str = "1Z8ExrzP0m30g0_HD4XNKswNnFBunqVlxMvBDPNj5iaI"
+    survey_data_tab: str = "3. DATA"
+    survey_credentials_path: str = "credentials_m29.json"
+
     @field_validator("database_url", mode="before")
     @classmethod
     def _normalize_database_url(cls, value: object) -> str:

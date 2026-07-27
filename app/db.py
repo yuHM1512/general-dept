@@ -6,6 +6,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from app.settings import settings
 from app.services import classify_group, normalize_department
 import app.audit_models as _audit_models  # noqa: F401 – registers audit tables in SQLModel.metadata
+import app.survey_models as _survey_models  # noqa: F401 – registers survey tables in SQLModel.metadata
 
 engine = create_engine(
     settings.database_url,

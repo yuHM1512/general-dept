@@ -27,6 +27,15 @@ from app.audit_models import (
     AuditDonVi, AuditBoPhan, AuditLinhVuc, AuditBien, AuditTieuChi, AuditApDung,
     AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem, AuditHdkp,
 )
+from app.survey_models import SurveyResponse, SurveySyncJob
+from app.survey_schemas import (
+    SurveyComparisonResponse,
+    SurveyLastSyncInfo,
+    SurveySyncJobStart,
+    SurveySyncJobStatus,
+)
+from app.survey_stats import internal_comparison
+from app.survey_sync import start_sync_in_background
 from app.schemas import (
     IngestJobResponse,
     IngestJobStatus,
@@ -93,6 +102,7 @@ async def _require_login(request: Request, call_next):
         path == "/"
         or path.startswith("/rcp")
         or path.startswith("/internal-audit")
+        or path.startswith("/survey")
         or path.startswith("/api")
     )
     if needs_auth:
@@ -2738,3 +2748,129 @@ def export_below_target_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# =============================================================================
+# MODULE KHẢO SÁT
+# =============================================================================
+
+@app.get("/survey", response_class=HTMLResponse)
+def survey_home(request: Request) -> HTMLResponse:
+    """Trang landing của module Khảo sát — chứa các sub-block (nội bộ, bên ngoài)."""
+    return templates.TemplateResponse(
+        "home_survey.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+        },
+    )
+
+
+@app.get("/survey/internal", response_class=HTMLResponse)
+def survey_internal_report(request: Request) -> HTMLResponse:
+    """Báo cáo khảo sát nội bộ — bảng so sánh 4 đợt."""
+    create_db_and_tables()
+    return templates.TemplateResponse(
+        "survey_internal_report.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+        },
+    )
+
+
+@app.post("/api/survey/sync", response_model=SurveySyncJobStart)
+def api_survey_sync_start(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> SurveySyncJobStart:
+    """Khởi tạo 1 job đồng bộ từ Google Sheets (chạy background)."""
+    create_db_and_tables()
+
+    # Tránh trigger song song
+    active = session.exec(
+        select(func.count())
+        .select_from(SurveySyncJob)
+        .where(SurveySyncJob.status.in_(["pending", "running"]))
+    ).one()
+    if int(active or 0) > 0:
+        raise HTTPException(status_code=409, detail="Đang có tiến trình đồng bộ chạy. Vui lòng chờ.")
+
+    user = _current_user(request) or {}
+    job = SurveySyncJob(
+        status="pending",
+        triggered_by=str(user.get("ma_nv") or ""),
+    )
+    session.add(job)
+    session.commit()
+    session.refresh(job)
+
+    start_sync_in_background(job.id)
+    return SurveySyncJobStart(job_id=str(job.id))
+
+
+@app.get("/api/survey/sync/jobs/{job_id}", response_model=SurveySyncJobStatus)
+def api_survey_sync_status(
+    job_id: UUID,
+    session: Session = Depends(get_session),
+) -> SurveySyncJobStatus:
+    """Poll trạng thái 1 job đồng bộ."""
+    job = session.get(SurveySyncJob, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy job đồng bộ.")
+    return SurveySyncJobStatus(
+        job_id=str(job.id),
+        status=job.status,
+        total_rows=job.total_rows,
+        upserted=job.upserted,
+        skipped=job.skipped,
+        started_at=job.started_at,
+        finished_at=job.finished_at,
+        message=job.message,
+    )
+
+
+@app.get("/api/survey/sync/latest", response_model=SurveyLastSyncInfo)
+def api_survey_sync_latest(
+    session: Session = Depends(get_session),
+) -> SurveyLastSyncInfo:
+    """Trả thông tin lần sync gần nhất + tổng số dòng hiện có (cho UI init)."""
+    create_db_and_tables()
+
+    total = int(session.exec(select(func.count()).select_from(SurveyResponse)).one() or 0)
+
+    last = session.exec(
+        select(SurveySyncJob)
+        .where(SurveySyncJob.status.in_(["completed", "failed"]))
+        .order_by(SurveySyncJob.finished_at.desc())
+        .limit(1)
+    ).first()
+
+    if last is None:
+        return SurveyLastSyncInfo(
+            has_sync=False,
+            total_responses_in_db=total,
+        )
+    return SurveyLastSyncInfo(
+        has_sync=True,
+        status=last.status,
+        finished_at=last.finished_at,
+        upserted=last.upserted,
+        total_responses_in_db=total,
+    )
+
+
+@app.get("/api/survey/internal/comparison", response_model=SurveyComparisonResponse)
+def api_survey_internal_comparison(
+    session: Session = Depends(get_session),
+) -> SurveyComparisonResponse:
+    """
+    Bảng so sánh điểm tổng theo (đơn vị được khảo sát × đợt khảo sát).
+    Chỉ tính loại 'Khách hàng nội bộ'. Công thức: avg(1..7)/7*100.
+    """
+    create_db_and_tables()
+    return internal_comparison(session)
