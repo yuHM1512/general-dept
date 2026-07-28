@@ -330,6 +330,11 @@ def _seed_users() -> None:
                 {"ma_nv": "T3656", "ho_ten": "Phạm Ngọc Minh Trí", "chuc_vu": "KSHT - Tuân thủ", "don_vi": "P.TH", "bo_phan": "KSHT", "role": "user"},
                 {"ma_nv": "H3839", "ho_ten": "Nguyễn Thị Ngọc Hoa","chuc_vu": "KSHT - Tuân thủ", "don_vi": "P.TH", "bo_phan": "KSHT", "role": "user"},
                 {"ma_nv": "N1785", "ho_ten": "Lê Thị Kim Ngân",     "chuc_vu": "KSHT - Tuân thủ", "don_vi": "P.TH", "bo_phan": "KSHT", "role": "user"},
+                {"ma_nv": "T9001", "ho_ten": "Huỳnh Tấn Tuấn",      "chuc_vu": "GĐXN",            "don_vi": "XNDT", "bo_phan": "",     "role": "user"},
+                {"ma_nv": "T0980", "ho_ten": "Nguyễn Thị Đông Thuỷ", "chuc_vu": "GĐXN",            "don_vi": "XN2",  "bo_phan": "",     "role": "user"},
+                {"ma_nv": "N0276", "ho_ten": "Nguyễn Thị Nhạn",      "chuc_vu": "GĐXN",            "don_vi": "XN3",  "bo_phan": "",     "role": "user"},
+                {"ma_nv": "C0740", "ho_ten": "Nguyễn Thị Cúc",       "chuc_vu": "GĐXN",            "don_vi": "XNV2", "bo_phan": "",     "role": "user"},
+                {"ma_nv": "P0042", "ho_ten": "Nguyễn Đình Phúc",     "chuc_vu": "GĐXN",            "don_vi": "XN1-V1","bo_phan": "",    "role": "user"},
             ],
         )
 
