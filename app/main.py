@@ -1284,6 +1284,12 @@ def _bien_figure(mo_ta: str, kich_thuoc: str) -> dict:
     }
 
 
+def _bien_preview_url(bien_id: int) -> str:
+    path = static_dir / "bien_preview" / f"bien_{bien_id:02d}.png"
+    version = int(path.stat().st_mtime) if path.exists() else 0
+    return f"/static/bien_preview/bien_{bien_id:02d}.png?v={version}"
+
+
 def _build_checklist_sections(bo_phan_id: int, loai: str, session: Session) -> list[dict]:
     """Return sections with their applicable criteria for a given bo_phan and loai."""
     loai_filter: list[str] = []
@@ -1338,7 +1344,7 @@ def _build_checklist_sections(bo_phan_id: int, loai: str, session: Session) -> l
                     "mo_ta": b.mo_ta,
                     "kich_thuoc": b.kich_thuoc,
                     "figure": _bien_figure(b.mo_ta, b.kich_thuoc),
-                    "img_url": f"/static/bien_preview/bien_{b.id:02d}.png",
+                    "img_url": _bien_preview_url(b.id),
                     "criteria": [
                         {"id": tc.id, "so_thu_tu": tc.so_thu_tu, "noi_dung": tc.noi_dung}
                         for tc in all_tc if tc.bien_id == b_id
