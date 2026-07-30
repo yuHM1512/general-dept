@@ -39,7 +39,6 @@ tailwind.config = {
 <style>
   .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
   .accordion-content{max-height:0;overflow:hidden;transition:max-height .3s ease-out}
-  .accordion-active .accordion-content{max-height:4000px}
   .accordion-active .chevron{transform:rotate(180deg)}
   .chevron{transition:transform .3s}
   .progress-bar{transition:width .5s cubic-bezier(.4,0,.2,1)}
@@ -51,6 +50,7 @@ tailwind.config = {
   .sc-0 {background:#ba1a1a;color:#fff;border:1.5px solid #ba1a1a;box-shadow:0 2px 8px rgba(186,26,26,.35)}
   .sc-1 {background:#e8a000;color:#fff;border:1.5px solid #e8a000;box-shadow:0 2px 6px rgba(232,160,0,.35)}
   .sc-2 {background:#1b6d24;color:#fff;border:1.5px solid #1b6d24;box-shadow:0 2px 8px rgba(27,109,36,.35)}
+  .sc-na {background:#42474f;color:#fff;border:1.5px solid #42474f;box-shadow:0 2px 8px rgba(66,71,79,.25)}
   /* Accordion header turns blue when open */
   .accordion-active > button{background:#002c50 !important}
   .accordion-active > button .section-title{color:#fff !important}
@@ -88,7 +88,7 @@ tailwind.config = {
   </div>
 </header>
 
-<form id="audit-form" method="POST" action="/internal-audit/submit">
+<form id="audit-form" method="POST" action="/internal-audit/submit" enctype="multipart/form-data">
   <input type="hidden" name="bo_phan_id" value="{{ bo_phan.id }}">
   <input type="hidden" name="loai" value="{{ loai }}">
 
@@ -127,14 +127,20 @@ tailwind.config = {
                   <p class="font-body-md text-on-surface leading-relaxed">{{ tc.noi_dung }}</p>
                   <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
                     class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none font-body-md text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+                  <label class="note-extra hidden mt-sm inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">add_photo_alternate</span>
+                    Thêm hình ảnh
+                    <input type="file" name="image_{{ tc.id }}" accept="image/*" multiple class="hidden" onchange="updateImageCount(this, {{ tc.id }})">
+                  </label>
+                  <p id="image-count-{{ tc.id }}" class="note-extra hidden mt-xs text-[11px] text-on-surface-variant"></p>
                 </div>
                 <div class="flex items-center gap-sm flex-shrink-0">
                   <button type="button" onclick="toggleNote({{ tc.id }})" class="note-icon material-symbols-outlined text-outline hover:text-primary transition-colors p-1 text-[22px]" title="Ghi chú">sticky_note_2</button>
                   <input type="hidden" name="score_{{ tc.id }}" id="score_{{ tc.id }}" value="">
                   <div class="score-group flex bg-surface-container-low p-1 rounded-full border border-outline-variant/20 gap-1">
-                    {% for sv in [0, 1, 2] %}
+                    {% for sv in [0, 1, 2, 'NA'] %}
                     <button type="button" class="score-btn sc-unset px-4 py-1.5 rounded-full font-bold text-label-md text-[13px] transition-all active:scale-95"
-                            data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},{{ sv }})">{{ sv }}</button>
+                            data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},'{{ sv }}')">{{ 'N/A' if sv == 'NA' else sv }}</button>
                     {% endfor %}
                   </div>
                 </div>
@@ -215,14 +221,20 @@ tailwind.config = {
                         <p class="text-on-surface leading-relaxed text-[14px]">{{ tc.noi_dung }}</p>
                         <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
                           class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+                        <label class="note-extra hidden mt-sm inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
+                          <span class="material-symbols-outlined text-[16px]">add_photo_alternate</span>
+                          Thêm hình ảnh
+                          <input type="file" name="image_{{ tc.id }}" accept="image/*" multiple class="hidden" onchange="updateImageCount(this, {{ tc.id }})">
+                        </label>
+                        <p id="image-count-{{ tc.id }}" class="note-extra hidden mt-xs text-[11px] text-on-surface-variant"></p>
                       </div>
                       <div class="flex items-center gap-sm flex-shrink-0">
                         <button type="button" onclick="toggleNote({{ tc.id }})" class="note-icon material-symbols-outlined text-outline hover:text-primary transition-colors p-1 text-[22px]" title="Ghi chú">sticky_note_2</button>
                         <input type="hidden" name="score_{{ tc.id }}" id="score_{{ tc.id }}" value="">
                         <div class="score-group flex bg-surface-container-low p-1 rounded-full border border-outline-variant/20 gap-1">
-                          {% for sv in [0, 1, 2] %}
+                          {% for sv in [0, 1, 2, 'NA'] %}
                           <button type="button" class="score-btn sc-unset px-4 py-1.5 rounded-full font-bold text-label-md text-[13px] transition-all active:scale-95"
-                                  data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},{{ sv }})">{{ sv }}</button>
+                                  data-tc="{{ tc.id }}" data-score="{{ sv }}" onclick="selectScore(this,{{ tc.id }},'{{ sv }}')">{{ 'N/A' if sv == 'NA' else sv }}</button>
                           {% endfor %}
                         </div>
                       </div>
@@ -324,14 +336,22 @@ function toggleAcc(id) {
   }
 }
 
+function resizeOpenAccordion(el) {
+  const content = el && el.closest ? el.closest('.accordion-content') : null;
+  if (!content || !content.closest('.accordion-active')) return;
+  content.style.maxHeight = content.scrollHeight + 'px';
+  setTimeout(() => { content.style.maxHeight = content.scrollHeight + 'px'; }, 50);
+}
+
 function selectScore(btn, tcId, score) {
+  score = String(score);
   const group = btn.closest('.score-group');
   group.querySelectorAll('.score-btn').forEach(b => {
-    b.classList.remove('sc-0', 'sc-1', 'sc-2');
+    b.classList.remove('sc-0', 'sc-1', 'sc-2', 'sc-na');
     b.classList.add('sc-unset');
   });
   btn.classList.remove('sc-unset');
-  btn.classList.add('sc-' + score);
+  btn.classList.add(score === 'NA' ? 'sc-na' : 'sc-' + score);
   document.getElementById('score_' + tcId).value = score;
   updateSectionProgress(btn.closest('[data-sect]').dataset.sect);
   updateBienProgress(tcId);
@@ -350,11 +370,18 @@ function updateSectionProgress(sectId) {
 }
 
 function updateLiveScore() {
-  let score = 0, done = 0;
+  let score = 0, done = 0, counted = 0;
   document.querySelectorAll('[id^="score_"]').forEach(inp => {
-    if (inp.value !== '') { score += parseInt(inp.value); done++; }
+    if (inp.value !== '') {
+      done++;
+      if (inp.value !== 'NA') {
+        score += parseInt(inp.value);
+        counted++;
+      }
+    }
   });
   document.getElementById('live-score').textContent = score;
+  document.getElementById('live-max').textContent = counted * 2;
   const pct = TOTAL ? Math.round(done / TOTAL * 100) : 0;
   document.getElementById('global-progress-bar').style.width = pct + '%';
   document.getElementById('hdr-progress').textContent = done + ' / ' + TOTAL + ' tiêu chí';
@@ -363,19 +390,30 @@ function updateLiveScore() {
 }
 
 function toggleNote(tcId) {
-  const ta = document.getElementById('note_' + tcId);
-  const icon = ta.previousElementSibling;
-  if (ta.classList.contains('hidden')) {
-    ta.classList.remove('hidden');
+  const row = document.querySelector('[data-tc="' + tcId + '"]');
+  if (!row) return;
+  const fields = row.querySelectorAll('.note-field, .note-extra');
+  const icon = row.querySelector('.note-icon');
+  const shouldOpen = Array.from(fields).some(el => el.classList.contains('hidden'));
+  fields.forEach(el => el.classList.toggle('hidden', !shouldOpen));
+  if (shouldOpen) {
     icon.style.fontVariationSettings = "'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24";
     icon.classList.add('text-primary');
     icon.classList.remove('text-outline');
   } else {
-    ta.classList.add('hidden');
     icon.style.fontVariationSettings = "'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24";
     icon.classList.remove('text-primary');
     icon.classList.add('text-outline');
   }
+  resizeOpenAccordion(row);
+}
+
+function updateImageCount(input, tcId) {
+  const el = document.getElementById('image-count-' + tcId);
+  if (!el) return;
+  const count = input.files ? input.files.length : 0;
+  el.textContent = count ? count + ' hình ảnh đã chọn' : '';
+  resizeOpenAccordion(input);
 }
 
 function saveDraft() {
@@ -401,11 +439,11 @@ function saveDraft() {
       if (btn) {
         const group = btn.closest('.score-group');
         group.querySelectorAll('.score-btn').forEach(b => {
-          b.classList.remove('sc-0', 'sc-1', 'sc-2');
+          b.classList.remove('sc-0', 'sc-1', 'sc-2', 'sc-na');
           b.classList.add('sc-unset');
         });
         btn.classList.remove('sc-unset');
-        btn.classList.add('sc-' + val);
+        btn.classList.add(val === 'NA' ? 'sc-na' : 'sc-' + val);
       }
     });
     // Update all section progress + live score

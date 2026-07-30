@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import io
+import json
 import re as _re
 import threading
 from pathlib import Path
 from datetime import date, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote
 
@@ -1387,23 +1388,34 @@ async def audit_submit(
     if not bo_phan_id:
         raise HTTPException(status_code=400, detail="Thiếu bo_phan_id")
 
-    # Collect scores from form: keys like "score_<tieu_chi_id>"
-    scores: dict[int, int] = {}
+    # Collect scores from form: keys like "score_<tieu_chi_id>".
+    # "NA" means the criterion is intentionally excluded from scoring totals.
+    scores: dict[int, int | None] = {}
     notes: dict[int, str] = {}
-    for key, val in form.items():
+    note_images: dict[int, list[UploadFile]] = {}
+    for key, val in form.multi_items():
         if key.startswith("score_"):
             tc_id = int(key[6:])
-            try:
-                scores[tc_id] = int(val)
-            except (ValueError, TypeError):
-                pass
+            score_val = str(val).strip().upper()
+            if score_val == "NA":
+                scores[tc_id] = None
+            else:
+                try:
+                    scores[tc_id] = int(score_val)
+                except (ValueError, TypeError):
+                    pass
         elif key.startswith("note_"):
             tc_id = int(key[5:])
             if str(val).strip():
                 notes[tc_id] = str(val).strip()
+        elif key.startswith("image_") and hasattr(val, "filename") and hasattr(val, "read"):
+            tc_id = int(key[6:])
+            if val.filename:
+                note_images.setdefault(tc_id, []).append(val)
 
-    so_diem = sum(scores.values())
-    tong_diem = len(scores) * 2
+    scored_values = [diem for diem in scores.values() if diem is not None]
+    so_diem = sum(scored_values)
+    tong_diem = len(scored_values) * 2
     ty_le = so_diem / tong_diem if tong_diem else 0.0
 
     if ty_le > 0.90:
@@ -1453,12 +1465,34 @@ async def audit_submit(
     session.commit()
     session.refresh(phieu)
 
+    saved_images: dict[int, list[str]] = {}
+    if note_images:
+        upload_dir = static_dir / "audit_notes" / str(phieu.id)
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        allowed_ext = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+        for tc_id, files in note_images.items():
+            for file in files[:5]:
+                suffix = Path(file.filename or "").suffix.lower()
+                if suffix not in allowed_ext:
+                    continue
+                content_type = (file.content_type or "").lower()
+                if content_type and not content_type.startswith("image/"):
+                    continue
+                data = await file.read()
+                if not data or len(data) > 8 * 1024 * 1024:
+                    continue
+                filename = f"tc_{tc_id}_{uuid4().hex}{suffix}"
+                dest = upload_dir / filename
+                dest.write_bytes(data)
+                saved_images.setdefault(tc_id, []).append(f"/static/audit_notes/{phieu.id}/{filename}")
+
     for tc_id, diem in scores.items():
         session.add(AuditChiTietDiem(
             phieu_id=phieu.id,
             tieu_chi_id=tc_id,
             diem=diem,
             ghi_chu=notes.get(tc_id),
+            hinh_anh=json.dumps(saved_images.get(tc_id, []), ensure_ascii=False) if saved_images.get(tc_id) else None,
         ))
     session.commit()
 
@@ -1483,7 +1517,7 @@ def audit_result(
     detail_rows = session.exec(
         select(AuditChiTietDiem).where(AuditChiTietDiem.phieu_id == phieu_id)
     ).all()
-    diem_by_tc: dict[int, int] = {d.tieu_chi_id: d.diem for d in detail_rows}
+    diem_by_tc: dict[int, int | None] = {d.tieu_chi_id: d.diem for d in detail_rows}
     detail_by_tc = {d.tieu_chi_id: d for d in detail_rows}
 
     loai_filter: list[str] = []
@@ -1493,6 +1527,15 @@ def audit_result(
         loai_filter.append("TRUC_QUAN")
 
     all_bien_map = {b.id: b for b in session.exec(select(AuditBien)).all()}
+
+    def _image_urls(raw: str | None) -> list[str]:
+        if not raw:
+            return []
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return []
+        return [str(url) for url in data if str(url).startswith("/static/")]
 
     sections_result = []
     note_items = []
@@ -1508,8 +1551,9 @@ def audit_result(
         if not scored_tc:
             continue
         tc_ids = [tc.id for tc in scored_tc]
-        sect_so_diem = sum(diem_by_tc.get(tc_id, 0) for tc_id in tc_ids)
-        sect_tong = len(tc_ids) * 2
+        counted_scores = [diem_by_tc.get(tc_id) for tc_id in tc_ids if diem_by_tc.get(tc_id) is not None]
+        sect_so_diem = sum(counted_scores)
+        sect_tong = len(counted_scores) * 2
         zero_items = []
         for tc in scored_tc:
             bien_ten = ""
@@ -1520,14 +1564,16 @@ def audit_result(
                 zero_items.append({"noi_dung": tc.noi_dung, "bien_ten": bien_ten})
             detail = detail_by_tc.get(tc.id)
             ghi_chu = (detail.ghi_chu or "").strip() if detail else ""
-            if ghi_chu:
+            hinh_anh = _image_urls(detail.hinh_anh if detail else None)
+            if ghi_chu or hinh_anh:
                 note_items.append({
                     "linh_vuc": lv.ten,
                     "loai": lv.loai,
                     "bien_ten": bien_ten,
                     "noi_dung": tc.noi_dung,
-                    "diem": diem_by_tc.get(tc.id, 0),
+                    "diem": diem_by_tc.get(tc.id),
                     "ghi_chu": ghi_chu,
+                    "hinh_anh": hinh_anh,
                 })
         sections_result.append({
             "ma": lv.ma,

@@ -228,6 +228,13 @@ def _apply_light_migrations() -> None:
                     text("ALTER TABLE audit_5s_tieu_chi ADD COLUMN bien_id INTEGER REFERENCES audit_5s_bien(id)")
                 )
 
+        if "audit_5s_chi_tiet_diem" in insp.get_table_names():
+            cols_info = {c["name"]: c for c in insp.get_columns("audit_5s_chi_tiet_diem")}
+            if "hinh_anh" not in cols_info:
+                conn.execute(text("ALTER TABLE audit_5s_chi_tiet_diem ADD COLUMN hinh_anh TEXT"))
+            if cols_info.get("diem", {}).get("nullable") is False:
+                conn.execute(text("ALTER TABLE audit_5s_chi_tiet_diem ALTER COLUMN diem DROP NOT NULL"))
+
         # Add role column to general_employees if missing
         if "general_employees" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("general_employees")}

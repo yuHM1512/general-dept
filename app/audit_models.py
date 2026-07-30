@@ -87,8 +87,9 @@ class AuditChiTietDiem(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     phieu_id: int = Field(foreign_key="audit_5s_phieu_kiem_tra.id")
     tieu_chi_id: int = Field(foreign_key="audit_5s_tieu_chi.id")
-    diem: int   # 0, 1, or 2
+    diem: Optional[int] = None   # 0, 1, 2, or None for N/A
     ghi_chu: Optional[str] = None
+    hinh_anh: Optional[str] = None
 
 
 class AuditHdkp(SQLModel, table=True):

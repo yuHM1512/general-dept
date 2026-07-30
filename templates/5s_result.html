@@ -249,12 +249,23 @@ tailwind.config = {
             </td>
             <td class="py-md px-sm text-center">
               <span class="inline-flex items-center justify-center min-w-8 h-8 rounded-full font-bold text-[13px]
-                {% if item.diem == 0 %}bg-error-container text-error{% elif item.diem == 1 %}bg-[#fff3cd] text-[#856404]{% else %}bg-secondary-container text-on-secondary-container{% endif %}">
-                {{ item.diem }}
+                {% if item.diem is none %}bg-surface-container text-on-surface-variant{% elif item.diem == 0 %}bg-error-container text-error{% elif item.diem == 1 %}bg-[#fff3cd] text-[#856404]{% else %}bg-secondary-container text-on-secondary-container{% endif %}">
+                {{ 'N/A' if item.diem is none else item.diem }}
               </span>
             </td>
             <td class="py-md px-sm">
+              {% if item.ghi_chu %}
               <p class="text-[13px] leading-relaxed text-on-surface whitespace-pre-line">{{ item.ghi_chu }}</p>
+              {% endif %}
+              {% if item.hinh_anh %}
+              <div class="mt-sm flex flex-wrap gap-xs">
+                {% for img in item.hinh_anh %}
+                <a href="{{ img }}" target="_blank" class="block w-16 h-16 rounded-lg overflow-hidden border border-outline-variant/30 bg-surface-container-low hover:opacity-80 transition-opacity">
+                  <img src="{{ img }}" alt="Ảnh ghi chú {{ loop.index }}" class="w-full h-full object-cover">
+                </a>
+                {% endfor %}
+              </div>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
