@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 import re as _re
+import shutil
 import threading
 from pathlib import Path
 from datetime import date, datetime
@@ -723,6 +724,30 @@ def five_s_admin(
         },
     )
 
+@app.delete("/api/audit/5s/phieu/{phieu_id}")
+def delete_audit_phieu(
+    request: Request,
+    phieu_id: int,
+    session: Session = Depends(get_session),
+):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Only admin can delete audit results")
+
+    create_db_and_tables()
+    phieu = session.get(AuditPhieuKiemTra, phieu_id)
+    if not phieu:
+        raise HTTPException(status_code=404, detail="Phieu khong ton tai")
+
+    session.exec(delete(AuditHdkp).where(AuditHdkp.phieu_id == phieu_id))
+    session.exec(delete(AuditChiTietDiem).where(AuditChiTietDiem.phieu_id == phieu_id))
+    session.delete(phieu)
+    session.commit()
+
+    note_image_dir = static_dir / "audit_notes" / str(phieu_id)
+    if note_image_dir.exists() and note_image_dir.is_dir():
+        shutil.rmtree(note_image_dir)
+
+    return {"ok": True, "deleted_id": phieu_id}
 
 _LOAI_LABEL = {"5S": "5S", "TRUC_QUAN": "Trực quan", "DAY_DU": "Đầy đủ"}
 

@@ -212,7 +212,7 @@ tailwind.config = {
             <th class="py-md px-sm text-center font-medium">Điểm %</th>
             <th class="py-md px-sm text-center font-medium">Kết quả</th>
             <th class="py-md px-sm text-center font-medium">Ngày</th>
-            <th class="py-md px-sm text-center font-medium w-8">Xem</th>
+            <th class="py-md px-sm text-center font-medium w-20">Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -243,9 +243,19 @@ tailwind.config = {
             </td>
             <td class="py-md px-sm text-center font-label-md text-label-md text-on-surface-variant">{{ row.ngay }}</td>
             <td class="py-md px-sm text-center">
-              <a href="/internal-audit/result/{{ row.id }}"
-                 class="material-symbols-outlined text-outline hover:text-primary transition-colors text-[20px]"
-                 style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
+              <div class="flex items-center justify-center gap-xs">
+                <a href="/internal-audit/result/{{ row.id }}"
+                   class="material-symbols-outlined text-outline hover:text-primary transition-colors text-[20px]"
+                   title="Xem"
+                   style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
+                {% if user and user.role == 'admin' %}
+                <button type="button"
+                        onclick="deleteAuditPhieu({{ row.id }})"
+                        class="material-symbols-outlined text-outline hover:text-error transition-colors text-[20px]"
+                        title="Xóa kết quả"
+                        style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">delete</button>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% else %}
@@ -282,8 +292,18 @@ tailwind.config = {
         <span class="font-label-md text-[11px] px-sm py-xs rounded-full bg-surface-container text-on-surface-variant">
           {{ row.loai_label }}
         </span>
-        <a href="/internal-audit/result/{{ row.id }}" class="ml-auto material-symbols-outlined text-outline hover:text-primary transition-colors text-[20px]"
-           style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
+        <div class="ml-auto flex items-center gap-xs">
+          <a href="/internal-audit/result/{{ row.id }}" class="material-symbols-outlined text-outline hover:text-primary transition-colors text-[20px]"
+             title="Xem"
+             style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
+          {% if user and user.role == 'admin' %}
+          <button type="button"
+                  onclick="deleteAuditPhieu({{ row.id }})"
+                  class="material-symbols-outlined text-outline hover:text-error transition-colors text-[20px]"
+                  title="Xóa kết quả"
+                  style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">delete</button>
+          {% endif %}
+        </div>
       </div>
     </div>
     {% else %}
@@ -327,5 +347,20 @@ tailwind.config = {
   <span class="material-symbols-outlined text-[24px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">add</span>
 </a>
 
+<script>
+async function deleteAuditPhieu(phieuId) {
+  if (!confirm('Xóa kết quả đánh giá #' + phieuId + '? HĐKP liên quan cũng sẽ bị xóa.')) return;
+  try {
+    const res = await fetch('/api/audit/5s/phieu/' + phieuId, {method: 'DELETE'});
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || 'Không thể xóa kết quả.');
+    }
+    window.location.reload();
+  } catch (err) {
+    alert(err.message || 'Không thể xóa kết quả.');
+  }
+}
+</script>
 </body>
 </html>
