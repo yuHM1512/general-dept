@@ -750,6 +750,60 @@ def delete_audit_phieu(
     return {"ok": True, "deleted_id": phieu_id}
 
 _LOAI_LABEL = {"5S": "5S", "TRUC_QUAN": "Trực quan", "DAY_DU": "Đầy đủ"}
+_AUDIT_NOTE_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+def _audit_note_image_urls(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+    return [str(url) for url in data if str(url).startswith("/static/audit_notes/")]
+
+
+async def _save_audit_note_images(
+    phieu_id: int,
+    tieu_chi_id: int,
+    files: list,
+    max_files: int = 10,
+) -> list[str]:
+    if not files or max_files <= 0:
+        return []
+    upload_dir = static_dir / "audit_notes" / str(phieu_id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    saved: list[str] = []
+    for file in files[:max_files]:
+        suffix = Path(file.filename or "").suffix.lower()
+        if suffix not in _AUDIT_NOTE_IMAGE_EXTS:
+            continue
+        content_type = (getattr(file, "content_type", "") or "").lower()
+        if content_type and not content_type.startswith("image/"):
+            continue
+        data = await file.read()
+        if not data or len(data) > 8 * 1024 * 1024:
+            continue
+        filename = f"tc_{tieu_chi_id}_{uuid4().hex}{suffix}"
+        dest = upload_dir / filename
+        dest.write_bytes(data)
+        saved.append(f"/static/audit_notes/{phieu_id}/{filename}")
+    return saved
+
+
+def _delete_audit_note_files(urls: list[str]) -> None:
+    base = (static_dir / "audit_notes").resolve()
+    for url in urls:
+        if not url.startswith("/static/audit_notes/"):
+            continue
+        rel = url.removeprefix("/static/")
+        path = (static_dir / rel).resolve()
+        try:
+            path.relative_to(base)
+        except ValueError:
+            continue
+        if path.exists() and path.is_file():
+            path.unlink()
 
 @app.get("/internal-audit/5s/hdkp", response_class=HTMLResponse)
 def five_s_hdkp(
@@ -1498,24 +1552,8 @@ async def audit_submit(
 
     saved_images: dict[int, list[str]] = {}
     if note_images:
-        upload_dir = static_dir / "audit_notes" / str(phieu.id)
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        allowed_ext = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
         for tc_id, files in note_images.items():
-            for file in files[:5]:
-                suffix = Path(file.filename or "").suffix.lower()
-                if suffix not in allowed_ext:
-                    continue
-                content_type = (file.content_type or "").lower()
-                if content_type and not content_type.startswith("image/"):
-                    continue
-                data = await file.read()
-                if not data or len(data) > 8 * 1024 * 1024:
-                    continue
-                filename = f"tc_{tc_id}_{uuid4().hex}{suffix}"
-                dest = upload_dir / filename
-                dest.write_bytes(data)
-                saved_images.setdefault(tc_id, []).append(f"/static/audit_notes/{phieu.id}/{filename}")
+            saved_images[tc_id] = await _save_audit_note_images(phieu.id, tc_id, files, max_files=10)
 
     for tc_id, diem in scores.items():
         session.add(AuditChiTietDiem(
@@ -1528,6 +1566,49 @@ async def audit_submit(
     session.commit()
 
     return RedirectResponse(url=f"/internal-audit/result/{phieu.id}", status_code=303)
+
+
+@app.patch("/api/audit/5s/note/{chi_tiet_id}")
+async def update_audit_note(
+    chi_tiet_id: int,
+    ghi_chu: str = Form(default=""),
+    keep_images: str = Form(default="[]"),
+    images: list[UploadFile] | None = File(default=None),
+    session: Session = Depends(get_session),
+):
+    detail = session.get(AuditChiTietDiem, chi_tiet_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Chi tiet diem khong ton tai")
+
+    current_images = _audit_note_image_urls(detail.hinh_anh)
+    try:
+        requested_keep = json.loads(keep_images or "[]")
+    except json.JSONDecodeError:
+        requested_keep = []
+    keep_set = {str(url) for url in requested_keep if str(url) in current_images}
+    kept_images = [url for url in current_images if url in keep_set]
+    new_images = await _save_audit_note_images(
+        detail.phieu_id,
+        detail.tieu_chi_id,
+        images or [],
+        max_files=max(0, 10 - len(kept_images)),
+    )
+    final_images = kept_images + new_images
+    removed_images = [url for url in current_images if url not in final_images]
+    _delete_audit_note_files(removed_images)
+
+    note_text = (ghi_chu or "").strip()
+    detail.ghi_chu = note_text or None
+    detail.hinh_anh = json.dumps(final_images, ensure_ascii=False) if final_images else None
+    session.add(detail)
+    session.commit()
+
+    return {
+        "ok": True,
+        "chi_tiet_id": chi_tiet_id,
+        "ghi_chu": detail.ghi_chu or "",
+        "hinh_anh": final_images,
+    }
 
 
 @app.get("/internal-audit/result/{phieu_id}", response_class=HTMLResponse)
@@ -1559,15 +1640,6 @@ def audit_result(
 
     all_bien_map = {b.id: b for b in session.exec(select(AuditBien)).all()}
 
-    def _image_urls(raw: str | None) -> list[str]:
-        if not raw:
-            return []
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            return []
-        return [str(url) for url in data if str(url).startswith("/static/")]
-
     sections_result = []
     note_items = []
     for lv in session.exec(
@@ -1595,9 +1667,10 @@ def audit_result(
                 zero_items.append({"noi_dung": tc.noi_dung, "bien_ten": bien_ten})
             detail = detail_by_tc.get(tc.id)
             ghi_chu = (detail.ghi_chu or "").strip() if detail else ""
-            hinh_anh = _image_urls(detail.hinh_anh if detail else None)
+            hinh_anh = _audit_note_image_urls(detail.hinh_anh if detail else None)
             if ghi_chu or hinh_anh:
                 note_items.append({
+                    "chi_tiet_id": detail.id if detail else 0,
                     "linh_vuc": lv.ten,
                     "loai": lv.loai,
                     "bien_ten": bien_ten,

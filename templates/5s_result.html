@@ -220,57 +220,124 @@ tailwind.config = {
     </div>
 
     {% if note_items %}
-    <div class="overflow-x-auto">
-      <table class="w-full border-collapse min-w-[720px]">
-        <thead>
-          <tr class="text-left text-on-surface-variant font-label-md text-label-md border-b border-outline-variant/20">
-            <th class="py-md px-sm font-medium w-12">#</th>
-            <th class="py-md px-sm font-medium w-44">Lĩnh vực</th>
-            <th class="py-md px-sm font-medium">Nội dung - tiêu chuẩn</th>
-            <th class="py-md px-sm font-medium text-center w-20">Điểm</th>
-            <th class="py-md px-sm font-medium w-64">Ghi chú</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in note_items %}
-          <tr class="{% if loop.index is odd %}bg-surface-container-low/30{% else %}bg-surface-container-lowest{% endif %} align-top">
-            <td class="py-md px-sm text-on-surface-variant font-label-md text-label-md">{{ loop.index }}</td>
-            <td class="py-md px-sm">
-              <div class="flex items-center gap-xs">
-                <span class="inline-block w-2 h-2 rounded-full {% if item.loai == '5S' %}bg-primary{% else %}bg-tertiary{% endif %}"></span>
-                <span class="font-semibold text-primary text-[13px] leading-snug">{{ item.linh_vuc }}</span>
-              </div>
-            </td>
-            <td class="py-md px-sm">
-              {% if item.bien_ten %}
-              <p class="font-semibold text-[13px] mb-xs" style="color:#00312a">{{ item.bien_ten }}</p>
-              {% endif %}
-              <p class="text-[13px] leading-relaxed text-on-surface">{{ item.noi_dung }}</p>
-            </td>
-            <td class="py-md px-sm text-center">
-              <span class="inline-flex items-center justify-center min-w-8 h-8 rounded-full font-bold text-[13px]
+    <div class="space-y-md">
+      {% for item in note_items %}
+      <article id="note-row-{{ item.chi_tiet_id }}" class="rounded-xl border border-outline-variant/20 bg-surface-container-low/25 overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)_auto] gap-md p-md">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-xs mb-sm">
+              <span class="inline-flex items-center justify-center h-6 min-w-6 px-xs rounded-full bg-surface-container-high text-on-surface-variant font-bold text-[12px]">{{ loop.index }}</span>
+              <span class="inline-block w-2 h-2 rounded-full {% if item.loai == '5S' %}bg-primary{% else %}bg-tertiary{% endif %}"></span>
+              <span class="font-semibold text-primary text-[13px] leading-snug">{{ item.linh_vuc }}</span>
+              <span class="inline-flex items-center justify-center min-w-8 h-7 rounded-full font-bold text-[12px]
                 {% if item.diem is none %}bg-surface-container text-on-surface-variant{% elif item.diem == 0 %}bg-error-container text-error{% elif item.diem == 1 %}bg-[#fff3cd] text-[#856404]{% else %}bg-secondary-container text-on-secondary-container{% endif %}">
                 {{ 'N/A' if item.diem is none else item.diem }}
               </span>
-            </td>
-            <td class="py-md px-sm">
-              {% if item.ghi_chu %}
-              <p class="text-[13px] leading-relaxed text-on-surface whitespace-pre-line">{{ item.ghi_chu }}</p>
-              {% endif %}
-              {% if item.hinh_anh %}
-              <div class="mt-sm flex flex-wrap gap-xs">
-                {% for img in item.hinh_anh %}
-                <a href="{{ img }}" target="_blank" class="block w-16 h-16 rounded-lg overflow-hidden border border-outline-variant/30 bg-surface-container-low hover:opacity-80 transition-opacity">
-                  <img src="{{ img }}" alt="Ảnh ghi chú {{ loop.index }}" class="w-full h-full object-cover">
-                </a>
-                {% endfor %}
+            </div>
+            {% if item.bien_ten %}
+            <p class="font-semibold text-[13px] mb-xs" style="color:#00312a">{{ item.bien_ten }}</p>
+            {% endif %}
+            <p class="text-[13px] leading-relaxed text-on-surface">{{ item.noi_dung }}</p>
+          </div>
+
+          <div id="note-display-{{ item.chi_tiet_id }}" class="min-w-0">
+            <p class="font-label-md text-label-md text-on-surface-variant mb-xs">Ghi chú</p>
+            {% if item.ghi_chu %}
+            <p class="text-[13px] leading-relaxed text-on-surface whitespace-pre-line break-words">{{ item.ghi_chu }}</p>
+            {% endif %}
+            {% if item.hinh_anh %}
+            <div class="mt-sm grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-xs max-w-sm">
+              {% for img in item.hinh_anh %}
+              <a href="{{ img }}" target="_blank" class="block rounded-lg overflow-hidden border border-outline-variant/30 bg-surface-container-low hover:opacity-80 transition-opacity aspect-square">
+                <img src="{{ img }}" alt="Ảnh ghi chú {{ loop.index }}" class="w-full h-full object-cover">
+              </a>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="flex lg:flex-col items-start lg:items-end justify-end">
+            {% if item.chi_tiet_id %}
+            <button type="button"
+                    onclick="toggleNoteEdit({{ item.chi_tiet_id }}, true)"
+                    class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-surface-container-high text-primary font-bold text-[13px] hover:bg-primary/10 active:scale-95 transition-all"
+                    title="Sửa ghi chú">
+              <span class="material-symbols-outlined text-[18px]">edit</span>
+              Sửa
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if item.chi_tiet_id %}
+        <div id="note-edit-{{ item.chi_tiet_id }}" class="hidden border-t border-outline-variant/20 bg-surface-container-lowest p-md">
+          <div class="rounded-xl border border-primary/15 bg-primary/5 p-md">
+            <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-lg">
+              <label class="block min-w-0">
+                <span class="block font-label-md text-label-md text-primary mb-xs">Nội dung ghi chú</span>
+                <textarea id="edit-note-text-{{ item.chi_tiet_id }}"
+                          rows="6"
+                          class="w-full rounded-xl border border-outline-variant/40 bg-surface-container-lowest px-md py-sm text-[13px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                          placeholder="Nhập ghi chú...">{{ item.ghi_chu }}</textarea>
+              </label>
+              <div class="min-w-0">
+                <span class="block font-label-md text-label-md text-primary mb-xs">Hình ảnh</span>
+                {% if item.hinh_anh %}
+                <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-3 gap-sm mb-sm">
+                  {% for img in item.hinh_anh %}
+                  <label class="relative rounded-lg overflow-hidden border border-outline-variant/30 bg-surface-container-lowest">
+                    <img src="{{ img }}" alt="Ảnh ghi chú {{ loop.index }}" class="w-full aspect-square object-cover">
+                    <span class="absolute inset-x-0 bottom-0 flex items-center gap-xs bg-black/65 text-white text-[11px] px-xs py-[4px]">
+                      <input type="checkbox"
+                             class="edit-keep-image accent-primary"
+                             data-note-id="{{ item.chi_tiet_id }}"
+                             value="{{ img }}"
+                             checked>
+                      Giữ ảnh
+                    </span>
+                  </label>
+                  {% endfor %}
+                </div>
+                <p class="text-[12px] text-on-surface-variant mb-sm">Bỏ chọn ảnh nào thì khi lưu ảnh đó sẽ bị xoá khỏi report.</p>
+                {% else %}
+                <p class="text-[12px] text-on-surface-variant mb-sm">Chưa có ảnh cho ghi chú này.</p>
+                {% endif %}
+                <label class="flex flex-col items-center justify-center gap-xs rounded-xl border border-dashed border-primary/35 bg-surface-container-lowest px-md py-md text-center cursor-pointer hover:bg-primary/5 transition-colors min-h-32">
+                  <span class="material-symbols-outlined text-primary">add_photo_alternate</span>
+                  <span class="font-label-md text-label-md text-primary">Thêm ảnh mới</span>
+                  <span class="text-[12px] text-on-surface-variant">Có thể chọn nhiều ảnh, tối đa 10 ảnh/ghi chú.</span>
+                  <input id="edit-note-images-{{ item.chi_tiet_id }}"
+                         type="file"
+                         accept="image/*"
+                         multiple
+                         class="hidden"
+                         onchange="updateEditImageCount(this, {{ item.chi_tiet_id }})">
+                </label>
+                <p id="edit-image-count-{{ item.chi_tiet_id }}" class="text-[12px] text-primary mt-xs"></p>
               </div>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:justify-end gap-sm mt-md">
+              <button type="button"
+                      onclick="toggleNoteEdit({{ item.chi_tiet_id }}, false)"
+                      class="px-lg py-sm rounded-full border border-outline-variant/40 text-on-surface-variant font-bold text-[13px] hover:bg-surface-container-high transition-colors">
+                Huỷ
+              </button>
+              <button type="button"
+                      onclick="clearNoteEdit({{ item.chi_tiet_id }})"
+                      class="px-lg py-sm rounded-full bg-error-container text-error font-bold text-[13px] hover:opacity-90 transition-opacity">
+                Xoá ghi chú
+              </button>
+              <button type="button"
+                      onclick="saveNoteEdit({{ item.chi_tiet_id }})"
+                      class="px-lg py-sm rounded-full bg-primary text-white font-bold text-[13px] hover:opacity-90 transition-opacity">
+                Lưu thay đổi
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </article>
+      {% endfor %}
     </div>
     {% else %}
     <div class="py-xxl text-center">
@@ -323,6 +390,60 @@ function showResultTab(tab) {
   reportBtn.classList.toggle('result-tab-inactive', isNotes);
   notesBtn.classList.toggle('result-tab-active', isNotes);
   notesBtn.classList.toggle('result-tab-inactive', !isNotes);
+}
+
+function toggleNoteEdit(noteId, open) {
+  const editRow = document.getElementById('note-edit-' + noteId);
+  if (!editRow) return;
+  editRow.classList.toggle('hidden', !open);
+}
+
+function updateEditImageCount(input, noteId) {
+  const label = document.getElementById('edit-image-count-' + noteId);
+  if (!label) return;
+  const count = input.files ? input.files.length : 0;
+  label.textContent = count ? `${count} ảnh mới đã chọn` : '';
+}
+
+function clearNoteEdit(noteId) {
+  if (!confirm('Xoá ghi chú này và toàn bộ ảnh đính kèm?')) return;
+  const noteInput = document.getElementById('edit-note-text-' + noteId);
+  if (noteInput) noteInput.value = '';
+  document
+    .querySelectorAll(`.edit-keep-image[data-note-id="${noteId}"]`)
+    .forEach((checkbox) => { checkbox.checked = false; });
+  const imageInput = document.getElementById('edit-note-images-' + noteId);
+  if (imageInput) imageInput.value = '';
+  saveNoteEdit(noteId);
+}
+
+async function saveNoteEdit(noteId) {
+  const noteInput = document.getElementById('edit-note-text-' + noteId);
+  const imageInput = document.getElementById('edit-note-images-' + noteId);
+  const keepImages = Array
+    .from(document.querySelectorAll(`.edit-keep-image[data-note-id="${noteId}"]:checked`))
+    .map((checkbox) => checkbox.value);
+
+  const formData = new FormData();
+  formData.append('ghi_chu', noteInput ? noteInput.value : '');
+  formData.append('keep_images', JSON.stringify(keepImages));
+  if (imageInput && imageInput.files) {
+    Array.from(imageInput.files).forEach((file) => formData.append('images', file));
+  }
+
+  try {
+    const response = await fetch(`/api/audit/5s/note/${noteId}`, {
+      method: 'PATCH',
+      body: formData,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.detail || 'Không thể lưu ghi chú.');
+    }
+    window.location.reload();
+  } catch (error) {
+    alert(error.message || 'Không thể lưu ghi chú.');
+  }
 }
 </script>
 </body>
