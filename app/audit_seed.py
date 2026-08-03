@@ -18,9 +18,12 @@ DON_VI_DATA = [
     (6,  "P.TH",      "Phòng Tổng Hợp"),
     (7,  "Trạm Y tế", "Trạm Y tế"),
     (8,  "P.KTCN",    "Phòng Kỹ Thuật Công Nghệ"),
-    (9,  "Duy Trung",  "Cơ sở Duy Trung"),
+    (9,  "XN Duy Trung", "Xí Nghiệp Duy Trung"),
     (10, "P.QTĐS",    "Phòng Quản Trị Đời Sống"),
-    (11, "XNSX",      "Xí Nghiệp Sản Xuất"),
+    (11, "XN1-V1",    "Xí Nghiệp 1 - V1"),
+    (12, "XN2",       "Xí Nghiệp 2"),
+    (13, "XN3",       "Xí Nghiệp 3"),
+    (14, "XNV2",      "Xí Nghiệp V2"),
 ]
 
 # ─── Bộ phận ─────────────────────────────────────────────────────────────────
@@ -54,11 +57,18 @@ BO_PHAN_DATA = [
     (26, 10, "Nhà ăn Duy Trung"),
     (27, 11, "Cắt"),
     (28, 11, "May"),
-    (29, 11, "Hoàn thành"),
-    (30, 11, "Kỹ thuật"),
-    (31, 11, "Bảo trì"),
-    (32, 11, "Văn phòng"),
+    (33, 12, "Cắt"),
+    (34, 12, "May"),
+    (35, 13, "Cắt"),
+    (36, 13, "May"),
+    (37, 14, "Cắt"),
+    (38, 14, "May"),
+    (39, 9,  "Cắt"),
+    (40, 9,  "May"),
 ]
+
+DEPRECATED_BO_PHAN_IDS = {29, 30, 31, 32}
+CURRENT_FORM_BO_PHAN_IDS = {bp_id for bp_id, _, _ in BO_PHAN_DATA}
 
 # ─── Lĩnh vực ─────────────────────────────────────────────────────────────────
 # (id, loai, ma, ten, icon, thu_tu)
@@ -232,9 +242,11 @@ _BO_PHAN_TYPES: dict[int, list[int]] = {
     18: _T6,
     19: _T7, 20: _T7, 21: _T7, 22: _T7,
     23: _T7, 24: _T7, 25: _T7, 26: _T7,
-    27: _T2, 28: _T2, 29: _T2,
-    30: _T8, 31: _T8,
-    32: _T5,
+    27: _T2, 28: _T2,
+    33: _T2, 34: _T2,
+    35: _T2, 36: _T2,
+    37: _T2, 38: _T2,
+    39: _T2, 40: _T2,
 }
 
 AP_DUNG_DATA: list[tuple[int, int]] = [
@@ -305,5 +317,57 @@ def seed_if_empty(engine) -> None:
                 text(
                     f"SELECT setval(pg_get_serial_sequence('{tbl}', '{col}'), "
                     f"(SELECT MAX({col}) FROM {tbl}))"
+                )
+            )
+
+
+def sync_org_units(engine) -> None:
+    """Keep audit org master data current without touching historical results."""
+    insp = sa_inspect(engine)
+    if "audit_5s_don_vi" not in insp.get_table_names() or "audit_5s_bo_phan" not in insp.get_table_names():
+        return
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO audit_5s_don_vi (id, ma, ten) VALUES (:id, :ma, :ten) "
+                "ON CONFLICT (id) DO UPDATE SET ma = EXCLUDED.ma, ten = EXCLUDED.ten"
+            ),
+            [{"id": i, "ma": m, "ten": t} for i, m, t in DON_VI_DATA],
+        )
+        conn.execute(
+            text(
+                "INSERT INTO audit_5s_bo_phan (id, don_vi_id, ten) VALUES (:id, :don_vi_id, :ten) "
+                "ON CONFLICT (id) DO UPDATE SET don_vi_id = EXCLUDED.don_vi_id, ten = EXCLUDED.ten"
+            ),
+            [{"id": i, "don_vi_id": d, "ten": t} for i, d, t in BO_PHAN_DATA],
+        )
+        conn.execute(
+            text(
+                "INSERT INTO audit_5s_ap_dung (bo_phan_id, tieu_chi_id) "
+                "VALUES (:bo_phan_id, :tieu_chi_id) ON CONFLICT DO NOTHING"
+            ),
+            [{"bo_phan_id": bp, "tieu_chi_id": tc} for bp, tc in AP_DUNG_DATA],
+        )
+
+        # Retire old XNSX child departments from fresh form data when they are not
+        # referenced by historical assessment results.
+        for bp_id in DEPRECATED_BO_PHAN_IDS:
+            used = conn.execute(
+                text("SELECT COUNT(*) FROM audit_5s_phieu_kiem_tra WHERE bo_phan_id = :bp_id"),
+                {"bp_id": bp_id},
+            ).scalar()
+            if not used:
+                conn.execute(text("DELETE FROM audit_5s_ap_dung WHERE bo_phan_id = :bp_id"), {"bp_id": bp_id})
+                conn.execute(text("DELETE FROM audit_5s_bo_phan WHERE id = :bp_id"), {"bp_id": bp_id})
+
+        for tbl, col in [
+            ("audit_5s_don_vi", "id"),
+            ("audit_5s_bo_phan", "id"),
+        ]:
+            conn.execute(
+                text(
+                    f"SELECT setval(pg_get_serial_sequence('{tbl}', '{col}'), "
+                    f"GREATEST(COALESCE((SELECT MAX({col}) FROM {tbl}), 1), 1))"
                 )
             )

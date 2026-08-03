@@ -21,8 +21,9 @@ def create_db_and_tables() -> None:
     _apply_light_migrations()
     _migrate_to_bien()
     _seed_users()
-    from app.audit_seed import seed_if_empty
+    from app.audit_seed import seed_if_empty, sync_org_units
     seed_if_empty(engine)
+    sync_org_units(engine)
 
 
 def _apply_rename_migrations() -> None:

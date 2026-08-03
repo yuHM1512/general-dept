@@ -987,7 +987,19 @@ def five_s_new(
     session: Session = Depends(get_session),
 ) -> HTMLResponse:
     create_db_and_tables()
-    don_vi_list = session.exec(select(AuditDonVi).order_by(AuditDonVi.id)).all()
+    from app.audit_seed import CURRENT_FORM_BO_PHAN_IDS
+
+    current_bp_ids = list(CURRENT_FORM_BO_PHAN_IDS)
+    current_don_vi_ids = session.exec(
+        select(AuditBoPhan.don_vi_id)
+        .where(AuditBoPhan.id.in_(current_bp_ids))
+        .distinct()
+    ).all()
+    don_vi_list = session.exec(
+        select(AuditDonVi)
+        .where(AuditDonVi.id.in_(current_don_vi_ids))
+        .order_by(AuditDonVi.id)
+    ).all()
     return templates.TemplateResponse(
         "5s_new.html",
         {
@@ -1272,9 +1284,12 @@ def audit_get_bo_phan(
     session: Session = Depends(get_session),
 ) -> list[dict]:
     create_db_and_tables()
+    from app.audit_seed import CURRENT_FORM_BO_PHAN_IDS
+
     items = session.exec(
         select(AuditBoPhan)
         .where(AuditBoPhan.don_vi_id == don_vi_id)
+        .where(AuditBoPhan.id.in_(list(CURRENT_FORM_BO_PHAN_IDS)))
         .order_by(AuditBoPhan.id)
     ).all()
     return [{"id": bp.id, "ten": bp.ten} for bp in items]
