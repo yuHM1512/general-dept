@@ -93,6 +93,42 @@ def _is_admin(request: Request) -> bool:
     return user is not None and user.get("role") == "admin"
 
 
+_AUDIT_DON_VI_ALIASES = {
+    "XNDT": {"XNDT", "XN Duy Trung", "Duy Trung"},
+    "XN Duy Trung": {"XNDT", "XN Duy Trung", "Duy Trung"},
+    "Duy Trung": {"XNDT", "XN Duy Trung", "Duy Trung"},
+}
+
+
+def _audit_user_don_vi_values(user: dict | None) -> set[str]:
+    if not user:
+        return set()
+    raw = str(user.get("don_vi") or "").strip()
+    if not raw:
+        return set()
+    return {raw, *_AUDIT_DON_VI_ALIASES.get(raw, set())}
+
+
+def _audit_visible_don_vi_ids(user: dict | None, session: Session) -> set[int] | None:
+    if user and user.get("role") == "admin":
+        return None
+    values = _audit_user_don_vi_values(user)
+    if not values:
+        return set()
+    don_vis = session.exec(select(AuditDonVi)).all()
+    return {dv.id for dv in don_vis if dv.id and (dv.ma in values or dv.ten in values)}
+
+
+def _audit_visible_bo_phan_ids(user: dict | None, session: Session) -> set[int] | None:
+    don_vi_ids = _audit_visible_don_vi_ids(user, session)
+    if don_vi_ids is None:
+        return None
+    if not don_vi_ids:
+        return set()
+    bo_phans = session.exec(select(AuditBoPhan).where(AuditBoPhan.don_vi_id.in_(list(don_vi_ids)))).all()
+    return {bp.id for bp in bo_phans if bp.id}
+
+
 @app.middleware("http")
 async def _require_login(request: Request, call_next):
     path = request.url.path
@@ -641,8 +677,16 @@ def five_s_admin(
 ) -> HTMLResponse:
     create_db_and_tables()
     PAGE_SIZE = 20
+    user = _current_user(request)
+    visible_bp_ids = _audit_visible_bo_phan_ids(user, session)
 
-    all_phieus = session.exec(select(AuditPhieuKiemTra)).all()
+    all_phieus_q = select(AuditPhieuKiemTra)
+    if visible_bp_ids is not None:
+        if visible_bp_ids:
+            all_phieus_q = all_phieus_q.where(AuditPhieuKiemTra.bo_phan_id.in_(list(visible_bp_ids)))
+        else:
+            all_phieus_q = all_phieus_q.where(AuditPhieuKiemTra.id == -1)
+    all_phieus = session.exec(all_phieus_q).all()
     tong_phieu = len(all_phieus)
     diem_tb = round(sum(p.ty_le or 0 for p in all_phieus) / tong_phieu * 100, 1) if tong_phieu else 0.0
     dat_count = sum(1 for p in all_phieus if p.ket_luan in ("Tốt", "Đạt"))
@@ -650,6 +694,11 @@ def five_s_admin(
     khong_dat = sum(1 for p in all_phieus if p.ket_luan == "Không đạt")
 
     q = select(AuditPhieuKiemTra).order_by(AuditPhieuKiemTra.created_at.desc())
+    if visible_bp_ids is not None:
+        if visible_bp_ids:
+            q = q.where(AuditPhieuKiemTra.bo_phan_id.in_(list(visible_bp_ids)))
+        else:
+            q = q.where(AuditPhieuKiemTra.id == -1)
     if ket_luan:
         if ket_luan == "Đạt":
             q = q.where(AuditPhieuKiemTra.ket_luan.in_(["Tốt", "Đạt"]))
@@ -701,7 +750,14 @@ def five_s_admin(
             "nguoi_kiem_tra": p.nguoi_kiem_tra or "",
         })
 
-    don_vi_list = session.exec(select(AuditDonVi).order_by(AuditDonVi.id)).all()
+    visible_don_vi_ids = _audit_visible_don_vi_ids(user, session)
+    don_vi_q = select(AuditDonVi).order_by(AuditDonVi.id)
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            don_vi_q = don_vi_q.where(AuditDonVi.id.in_(list(visible_don_vi_ids)))
+        else:
+            don_vi_q = don_vi_q.where(AuditDonVi.id == -1)
+    don_vi_list = session.exec(don_vi_q).all()
 
     return templates.TemplateResponse(
         "5s_admin.html",
@@ -709,7 +765,7 @@ def five_s_admin(
             "request": request,
             "app_name": settings.app_name,
             "now_year": datetime.utcnow().year,
-            "user": _current_user(request),
+            "user": user,
             "stats": {
                 "tong_phieu": tong_phieu,
                 "diem_tb": diem_tb,
@@ -820,8 +876,15 @@ def five_s_hdkp(
 
     from sqlalchemy import text as _text
 
+    visible_don_vi_ids = _audit_visible_don_vi_ids(user, session)
     where_clauses = ["cd.diem = 0"]
     params: dict = {}
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            where_clauses.append("dv.id = ANY(:visible_don_vi_ids)")
+            params["visible_don_vi_ids"] = list(visible_don_vi_ids)
+        else:
+            where_clauses.append("1 = 0")
     if bo_phan_id:
         where_clauses.append("bp.id = :bo_phan_id")
         params["bo_phan_id"] = int(bo_phan_id)
@@ -885,28 +948,52 @@ def five_s_hdkp(
         })
 
     # Stats (over full unfiltered set for sidebar counts)
+    stats_where = ["cd.diem = 0"]
+    stats_params: dict = {}
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            stats_where.append("dv.id = ANY(:visible_don_vi_ids)")
+            stats_params["visible_don_vi_ids"] = list(visible_don_vi_ids)
+        else:
+            stats_where.append("1 = 0")
+    stats_where_sql = " AND ".join(stats_where)
     all_rows = session.execute(_text("""
         SELECT COALESCE(h.tinh_trang, 'Chưa tiếp nhận') AS ts
         FROM audit_5s_chi_tiet_diem cd
+        JOIN audit_5s_phieu_kiem_tra p ON p.id = cd.phieu_id
+        JOIN audit_5s_bo_phan bp ON bp.id = p.bo_phan_id
+        JOIN audit_5s_don_vi dv ON dv.id = bp.don_vi_id
         LEFT JOIN audit_5s_hdkp h ON h.chi_tiet_diem_id = cd.id
-        WHERE cd.diem = 0
-    """)).mappings().fetchall()
+        WHERE """ + stats_where_sql + """
+    """), stats_params).mappings().fetchall()
     chua = sum(1 for r in all_rows if r["ts"] == "Chưa tiếp nhận")
     dang  = sum(1 for r in all_rows if r["ts"] == "Đang thực hiện")
     xong  = sum(1 for r in all_rows if r["ts"] == "Hoàn thành")
     total = len(all_rows)
     pct   = round(xong / total * 100) if total else 0
 
-    don_vi_list = session.exec(select(AuditDonVi).order_by(AuditDonVi.ma)).all()
+    don_vi_q = select(AuditDonVi).order_by(AuditDonVi.ma)
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            don_vi_q = don_vi_q.where(AuditDonVi.id.in_(list(visible_don_vi_ids)))
+        else:
+            don_vi_q = don_vi_q.where(AuditDonVi.id == -1)
+    don_vi_list = session.exec(don_vi_q).all()
     bo_phan_list = (
         session.exec(
             select(AuditBoPhan)
             .where(AuditBoPhan.don_vi_id == int(don_vi_id))
             .order_by(AuditBoPhan.ten)
         ).all()
-        if don_vi_id else []
+        if don_vi_id and (visible_don_vi_ids is None or int(don_vi_id) in visible_don_vi_ids) else []
     )
-    all_bp = session.exec(select(AuditBoPhan).order_by(AuditBoPhan.ten)).all()
+    all_bp_q = select(AuditBoPhan).order_by(AuditBoPhan.ten)
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            all_bp_q = all_bp_q.where(AuditBoPhan.don_vi_id.in_(list(visible_don_vi_ids)))
+        else:
+            all_bp_q = all_bp_q.where(AuditBoPhan.id == -1)
+    all_bp = session.exec(all_bp_q).all()
     don_vi_with_bp = [
         {
             "id": dv.id,
@@ -929,7 +1016,7 @@ def five_s_hdkp(
 
 
 @app.patch("/api/audit/5s/hdkp")
-def upsert_hdkp(payload: dict, session: Session = Depends(get_session)):
+def upsert_hdkp(request: Request, payload: dict, session: Session = Depends(get_session)):
     """Upsert HĐKP record for a zero-score criterion. key = chi_tiet_diem_id."""
     from sqlalchemy import text as _text
     from datetime import date as _date
@@ -940,11 +1027,21 @@ def upsert_hdkp(payload: dict, session: Session = Depends(get_session)):
 
     # Resolve phieu_id + tieu_chi_id for the new row
     ref = session.execute(
-        _text("SELECT phieu_id, tieu_chi_id FROM audit_5s_chi_tiet_diem WHERE id = :id"),
+        _text("""
+            SELECT cd.phieu_id, cd.tieu_chi_id, dv.id AS don_vi_id
+            FROM audit_5s_chi_tiet_diem cd
+            JOIN audit_5s_phieu_kiem_tra p ON p.id = cd.phieu_id
+            JOIN audit_5s_bo_phan bp ON bp.id = p.bo_phan_id
+            JOIN audit_5s_don_vi dv ON dv.id = bp.don_vi_id
+            WHERE cd.id = :id
+        """),
         {"id": cid},
     ).mappings().fetchone()
     if not ref:
         raise HTTPException(status_code=404, detail="chi_tiet_diem not found")
+    visible_don_vi_ids = _audit_visible_don_vi_ids(_current_user(request), session)
+    if visible_don_vi_ids is not None and ref["don_vi_id"] not in visible_don_vi_ids:
+        raise HTTPException(status_code=403, detail="Not allowed for this don_vi")
 
     thoi_han_val = payload.get("thoi_han") or None
     if thoi_han_val:
@@ -1585,6 +1682,7 @@ async def audit_submit(
 
 @app.patch("/api/audit/5s/note/{chi_tiet_id}")
 async def update_audit_note(
+    request: Request,
     chi_tiet_id: int,
     ghi_chu: str = Form(default=""),
     keep_images: str = Form(default="[]"),
@@ -1594,6 +1692,11 @@ async def update_audit_note(
     detail = session.get(AuditChiTietDiem, chi_tiet_id)
     if not detail:
         raise HTTPException(status_code=404, detail="Chi tiet diem khong ton tai")
+    phieu = session.get(AuditPhieuKiemTra, detail.phieu_id)
+    bo_phan = session.get(AuditBoPhan, phieu.bo_phan_id) if phieu else None
+    visible_don_vi_ids = _audit_visible_don_vi_ids(_current_user(request), session)
+    if visible_don_vi_ids is not None and (not bo_phan or bo_phan.don_vi_id not in visible_don_vi_ids):
+        raise HTTPException(status_code=403, detail="Not allowed for this don_vi")
 
     current_images = _audit_note_image_urls(detail.hinh_anh)
     try:
@@ -1639,6 +1742,9 @@ def audit_result(
 
     bo_phan = session.get(AuditBoPhan, phieu.bo_phan_id)
     don_vi = session.get(AuditDonVi, bo_phan.don_vi_id) if bo_phan else None
+    visible_don_vi_ids = _audit_visible_don_vi_ids(_current_user(request), session)
+    if visible_don_vi_ids is not None and (not don_vi or don_vi.id not in visible_don_vi_ids):
+        raise HTTPException(status_code=403, detail="Không có quyền xem phiếu của đơn vị này")
 
     # Build section-level breakdown
     detail_rows = session.exec(
