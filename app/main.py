@@ -22,7 +22,7 @@ from sqlmodel import Session, select
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
-from app.db import create_db_and_tables, get_session
+from app.db import create_db_and_tables, engine, get_session
 from app.ingest import ingest_workbook_with_progress
 from app.models import GeneralEmployee, HangingLine, IngestJob, PayrollRow
 from app.audit_models import (
@@ -88,9 +88,44 @@ def _current_user(request: Request) -> dict | None:
         return None
 
 
+def _normalize_role(role: str | None) -> str:
+    return str(role or "user").strip().lower() or "user"
+
+
+def _employee_user_payload(employee: GeneralEmployee) -> dict:
+    return {
+        "ma_nv": employee.ma_nv,
+        "ho_ten": employee.ho_ten,
+        "chuc_vu": employee.chuc_vu,
+        "don_vi": employee.don_vi,
+        "bo_phan": employee.bo_phan,
+        "role": _normalize_role(employee.role),
+    }
+
+
+def _refresh_current_user(request: Request) -> dict | None:
+    user = _current_user(request)
+    if not user:
+        return None
+    ma_nv = str(user.get("ma_nv") or "").strip().upper()
+    if not ma_nv:
+        return user
+    try:
+        with Session(engine) as session:
+            employee = session.get(GeneralEmployee, ma_nv)
+            if not employee:
+                return user
+            fresh_user = _employee_user_payload(employee)
+            if fresh_user != user:
+                request.session["user"] = fresh_user  # type: ignore[attr-defined]
+            return fresh_user
+    except Exception:
+        return user
+
+
 def _is_admin(request: Request) -> bool:
     user = _current_user(request)
-    return user is not None and user.get("role") == "admin"
+    return user is not None and _normalize_role(user.get("role")) == "admin"
 
 
 _AUDIT_DON_VI_ALIASES = {
@@ -110,7 +145,7 @@ def _audit_user_don_vi_values(user: dict | None) -> set[str]:
 
 
 def _audit_visible_don_vi_ids(user: dict | None, session: Session) -> set[int] | None:
-    if user and user.get("role") == "admin":
+    if user and _normalize_role(user.get("role")) == "admin":
         return None
     values = _audit_user_don_vi_values(user)
     if not values:
@@ -156,6 +191,7 @@ async def _require_login(request: Request, call_next):
             if request.url.query:
                 next_url = f"{path}?{request.url.query}"
             return RedirectResponse(url=f"/login?next={quote(next_url)}", status_code=303)
+        _refresh_current_user(request)
 
     return await call_next(request)
 
@@ -366,14 +402,7 @@ def login_submit(
             status_code=401,
         )
 
-    request.session["user"] = {  # type: ignore[attr-defined]
-        "ma_nv": employee.ma_nv,
-        "ho_ten": employee.ho_ten,
-        "chuc_vu": employee.chuc_vu,
-        "don_vi": employee.don_vi,
-        "bo_phan": employee.bo_phan,
-        "role": employee.role,
-    }
+    request.session["user"] = _employee_user_payload(employee)  # type: ignore[attr-defined]
 
     return RedirectResponse(url=next or "/", status_code=303)
 
