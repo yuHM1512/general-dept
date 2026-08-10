@@ -321,6 +321,11 @@ tailwind.config = {
                     <option {% if item.tinh_trang == 'Đang thực hiện' %}selected{% endif %}>Đang thực hiện</option>
                     <option {% if item.tinh_trang == 'Hoàn thành' %}selected{% endif %}>Hoàn thành</option>
                   </select>
+                  {% if item.updated_by %}
+                  <p class="mt-xs font-label-md text-[10px] text-on-surface-variant leading-tight">
+                    Cập nhật: {{ item.updated_by }}{% if item.hdkp_updated_at %} · {{ item.hdkp_updated_at }}{% endif %}
+                  </p>
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}
@@ -417,6 +422,11 @@ tailwind.config = {
               <option {% if item.tinh_trang == 'Đang thực hiện' %}selected{% endif %}>Đang thực hiện</option>
               <option {% if item.tinh_trang == 'Hoàn thành' %}selected{% endif %}>Hoàn thành</option>
             </select>
+            {% if item.updated_by %}
+            <p class="mt-sm font-label-md text-[11px] text-on-surface-variant">
+              Cập nhật: {{ item.updated_by }}{% if item.hdkp_updated_at %} · {{ item.hdkp_updated_at }}{% endif %}
+            </p>
+            {% endif %}
           </article>
           {% endfor %}
         </div>

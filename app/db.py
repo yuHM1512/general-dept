@@ -235,6 +235,13 @@ def _apply_light_migrations() -> None:
             if cols_info.get("diem", {}).get("nullable") is False:
                 conn.execute(text("ALTER TABLE audit_5s_chi_tiet_diem ALTER COLUMN diem DROP NOT NULL"))
 
+        if "audit_5s_hdkp" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("audit_5s_hdkp")}
+            if "created_by" not in cols:
+                conn.execute(text("ALTER TABLE audit_5s_hdkp ADD COLUMN created_by VARCHAR(16) NOT NULL DEFAULT ''"))
+            if "updated_by" not in cols:
+                conn.execute(text("ALTER TABLE audit_5s_hdkp ADD COLUMN updated_by VARCHAR(16) NOT NULL DEFAULT ''"))
+
         # Add role column to general_employees if missing
         if "general_employees" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("general_employees")}

@@ -102,5 +102,7 @@ class AuditHdkp(SQLModel, table=True):
     nguoi_thuc_hien: str = Field(default="")
     thoi_han: Optional[date] = None
     tinh_trang: str = Field(default="Chưa tiếp nhận", max_length=20)
+    created_by: str = Field(default="", max_length=16)
+    updated_by: str = Field(default="", max_length=16)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

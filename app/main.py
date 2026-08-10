@@ -944,7 +944,10 @@ def five_s_hdkp(
             COALESCE(h.hanh_dong_kp, '')                        AS hanh_dong_kp,
             COALESCE(h.nguoi_thuc_hien, '')                     AS nguoi_thuc_hien,
             h.thoi_han,
-            COALESCE(h.tinh_trang, 'Chưa tiếp nhận')            AS tinh_trang
+            COALESCE(h.tinh_trang, 'Chưa tiếp nhận')            AS tinh_trang,
+            COALESCE(h.created_by, '')                          AS created_by,
+            COALESCE(h.updated_by, '')                          AS updated_by,
+            h.updated_at                                        AS hdkp_updated_at
         FROM audit_5s_chi_tiet_diem  cd
         JOIN audit_5s_phieu_kiem_tra p  ON p.id  = cd.phieu_id
         JOIN audit_5s_bo_phan        bp ON bp.id = p.bo_phan_id
@@ -974,6 +977,9 @@ def five_s_hdkp(
             "nguoi_thuc_hien":    r["nguoi_thuc_hien"],
             "thoi_han":           r["thoi_han"].isoformat() if r["thoi_han"] else "",
             "tinh_trang":         r["tinh_trang"],
+            "created_by":          r["created_by"],
+            "updated_by":          r["updated_by"],
+            "hdkp_updated_at":      r["hdkp_updated_at"].strftime("%d/%m/%Y %H:%M") if r["hdkp_updated_at"] else "",
         })
 
     # Stats (over full unfiltered set for sidebar counts)
@@ -1071,6 +1077,8 @@ def upsert_hdkp(request: Request, payload: dict, session: Session = Depends(get_
     visible_don_vi_ids = _audit_visible_don_vi_ids(_current_user(request), session)
     if visible_don_vi_ids is not None and ref["don_vi_id"] not in visible_don_vi_ids:
         raise HTTPException(status_code=403, detail="Not allowed for this don_vi")
+    user = _current_user(request) or {}
+    actor_ma_nv = str(user.get("ma_nv") or "").strip().upper()
 
     thoi_han_val = payload.get("thoi_han") or None
     if thoi_han_val:
@@ -1083,16 +1091,18 @@ def upsert_hdkp(request: Request, payload: dict, session: Session = Depends(get_
         INSERT INTO audit_5s_hdkp
             (chi_tiet_diem_id, phieu_id, tieu_chi_id,
              hanh_dong_kp, nguoi_thuc_hien, thoi_han, tinh_trang,
-             created_at, updated_at)
+             created_by, updated_by, created_at, updated_at)
         VALUES
             (:cid, :pid, :tid,
              :hd, :ntt, :thn, :tt,
-             NOW(), NOW())
+             :actor, :actor, NOW(), NOW())
         ON CONFLICT (chi_tiet_diem_id) DO UPDATE SET
             hanh_dong_kp    = COALESCE(NULLIF(:hd,  ''), audit_5s_hdkp.hanh_dong_kp),
             nguoi_thuc_hien = COALESCE(NULLIF(:ntt, ''), audit_5s_hdkp.nguoi_thuc_hien),
             thoi_han        = CASE WHEN :thn IS NOT NULL THEN :thn ELSE audit_5s_hdkp.thoi_han END,
             tinh_trang      = COALESCE(NULLIF(:tt,  ''), audit_5s_hdkp.tinh_trang),
+            created_by      = COALESCE(NULLIF(audit_5s_hdkp.created_by, ''), NULLIF(:actor, ''), audit_5s_hdkp.created_by),
+            updated_by      = COALESCE(NULLIF(:actor, ''), audit_5s_hdkp.updated_by),
             updated_at      = NOW()
     """), {
         "cid": cid,
@@ -1102,6 +1112,7 @@ def upsert_hdkp(request: Request, payload: dict, session: Session = Depends(get_
         "ntt": payload.get("nguoi_thuc_hien", ""),
         "thn": thoi_han_val,
         "tt":  payload.get("tinh_trang", ""),
+        "actor": actor_ma_nv,
     })
     session.commit()
     return {"ok": True}
