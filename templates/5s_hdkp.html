@@ -298,7 +298,7 @@ tailwind.config = {
                       data-self-dv="{{ item.don_vi_ma }}"
                       data-self-bp="{{ item.bo_phan_ten }}">
                       <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20">assignment_ind</span>
-                      {% if item.nguoi_thuc_hien %}Thay đổi{% else %}Phân công{% endif %}
+                      <span class="assign-btn-label">{% if item.nguoi_thuc_hien %}Thay đổi{% else %}Phân công{% endif %}</span>
                     </button>
                   </div>
                 </td>
@@ -629,9 +629,8 @@ async function _doAssign(value) {
       const btn = cell.querySelector('.open-assign-btn');
       btn.dataset.current = value;
       btn.dataset.selfDv = btn.dataset.selfDv; // unchanged
-      const labelSpan = [...btn.childNodes].find(n => n.nodeType === 3);
-      if (labelSpan) btn.removeChild(labelSpan);
-      btn.insertAdjacentText('beforeend', 'Thay đổi');
+      const label = btn.querySelector('.assign-btn-label');
+      if (label) label.textContent = 'Thay đổi';
     }
   }
   closeAssignModal();
