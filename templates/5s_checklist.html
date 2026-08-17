@@ -125,7 +125,7 @@ tailwind.config = {
               <div class="pt-lg flex flex-col md:flex-row md:items-start justify-between gap-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
                 <div class="flex-1">
                   <p class="font-body-md text-on-surface leading-relaxed">{{ tc.noi_dung }}</p>
-                  <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
+                  <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú bắt buộc khi điểm 0 hoặc 1..."
                     class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none font-body-md text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
                   <label class="note-extra hidden mt-sm inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
                     <span class="material-symbols-outlined text-[16px]">add_photo_alternate</span>
@@ -219,7 +219,7 @@ tailwind.config = {
                     <div class="px-lg py-md flex flex-col md:flex-row md:items-start justify-between gap-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
                       <div class="flex-1">
                         <p class="text-on-surface leading-relaxed text-[14px]">{{ tc.noi_dung }}</p>
-                        <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú (tuỳ chọn)..."
+                        <textarea name="note_{{ tc.id }}" id="note_{{ tc.id }}" placeholder="Ghi chú bắt buộc khi điểm 0 hoặc 1..."
                           class="note-field hidden mt-sm w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
                         <label class="note-extra hidden mt-sm inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
                           <span class="material-symbols-outlined text-[16px]">add_photo_alternate</span>
@@ -353,10 +353,44 @@ function selectScore(btn, tcId, score) {
   btn.classList.remove('sc-unset');
   btn.classList.add(score === 'NA' ? 'sc-na' : 'sc-' + score);
   document.getElementById('score_' + tcId).value = score;
+  syncRequiredNote(tcId, score);
   updateSectionProgress(btn.closest('[data-sect]').dataset.sect);
   updateBienProgress(tcId);
   updateLiveScore();
 }
+
+function setNoteOpen(tcId, open) {
+  const row = document.querySelector('[data-tc="' + tcId + '"]');
+  if (!row) return;
+  const fields = row.querySelectorAll('.note-field, .note-extra');
+  const icon = row.querySelector('.note-icon');
+  fields.forEach(el => el.classList.toggle('hidden', !open));
+  if (icon) {
+    icon.style.fontVariationSettings = open ? "'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24" : "'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24";
+    icon.classList.toggle('text-primary', open);
+    icon.classList.toggle('text-outline', !open);
+  }
+  resizeOpenAccordion(row);
+}
+
+function syncRequiredNote(tcId, score) {
+  const note = document.getElementById('note_' + tcId);
+  if (!note) return;
+  const required = score === '0' || score === '1';
+  note.required = required;
+  note.classList.toggle('border-error', required && !note.value.trim());
+  note.classList.toggle('ring-1', required && !note.value.trim());
+  note.classList.toggle('ring-error/40', required && !note.value.trim());
+  if (required) setNoteOpen(tcId, true);
+}
+
+document.querySelectorAll('.note-field').forEach(note => {
+  note.addEventListener('input', () => {
+    const tcId = note.id.replace('note_', '');
+    const score = document.getElementById('score_' + tcId)?.value || '';
+    syncRequiredNote(tcId, score);
+  });
+});
 
 function updateSectionProgress(sectId) {
   const rows = document.querySelectorAll('[data-sect="' + sectId + '"]');
@@ -393,19 +427,8 @@ function toggleNote(tcId) {
   const row = document.querySelector('[data-tc="' + tcId + '"]');
   if (!row) return;
   const fields = row.querySelectorAll('.note-field, .note-extra');
-  const icon = row.querySelector('.note-icon');
   const shouldOpen = Array.from(fields).some(el => el.classList.contains('hidden'));
-  fields.forEach(el => el.classList.toggle('hidden', !shouldOpen));
-  if (shouldOpen) {
-    icon.style.fontVariationSettings = "'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24";
-    icon.classList.add('text-primary');
-    icon.classList.remove('text-outline');
-  } else {
-    icon.style.fontVariationSettings = "'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24";
-    icon.classList.remove('text-primary');
-    icon.classList.add('text-outline');
-  }
-  resizeOpenAccordion(row);
+  setNoteOpen(tcId, shouldOpen);
 }
 
 function updateImageCount(input, tcId) {
@@ -444,6 +467,7 @@ function saveDraft() {
         });
         btn.classList.remove('sc-unset');
         btn.classList.add(val === 'NA' ? 'sc-na' : 'sc-' + val);
+        syncRequiredNote(tcId, val);
       }
     });
     // Update all section progress + live score
@@ -457,6 +481,24 @@ document.getElementById('audit-form').addEventListener('submit', function(e) {
   const unscored = document.querySelectorAll('[id^="score_"]');
   let missing = 0;
   unscored.forEach(inp => { if (inp.value === '') missing++; });
+  const missingNotes = [];
+  document.querySelectorAll('[id^="score_"]').forEach(inp => {
+    if (inp.value === '0' || inp.value === '1') {
+      const tcId = inp.id.replace('score_', '');
+      const note = document.getElementById('note_' + tcId);
+      if (note && !note.value.trim()) {
+        missingNotes.push(tcId);
+        syncRequiredNote(tcId, inp.value);
+      }
+    }
+  });
+  if (missingNotes.length > 0) {
+    e.preventDefault();
+    const first = document.querySelector('[data-tc="' + missingNotes[0] + '"]');
+    first && first.scrollIntoView({behavior: 'smooth', block: 'center'});
+    alert('Các tiêu chí điểm 0 hoặc 1 bắt buộc phải có ghi chú trước khi nộp phiếu.');
+    return;
+  }
   if (missing > 0) {
     if (!confirm(missing + ' tiêu chí chưa được chấm điểm. Tiếp tục nộp phiếu?')) {
       e.preventDefault();

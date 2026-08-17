@@ -939,6 +939,8 @@ def five_s_hdkp(
             dv.id                                               AS don_vi_id,
             lv.loai                                             AS loai,
             tc.noi_dung                                         AS tieu_chi_noi_dung,
+            COALESCE(cd.ghi_chu, '')                            AS ghi_chu,
+            cd.hinh_anh                                         AS hinh_anh,
             b.ten_goi                                           AS bien_ten,
             h.id                                                AS hdkp_id,
             COALESCE(h.hanh_dong_kp, '')                        AS hanh_dong_kp,
@@ -972,6 +974,8 @@ def five_s_hdkp(
             "loai":               r["loai"],
             "loai_label":         _LOAI_LABEL.get(r["loai"], r["loai"]),
             "tieu_chi_noi_dung":  r["tieu_chi_noi_dung"],
+            "ghi_chu":             r["ghi_chu"],
+            "hinh_anh":            _audit_note_image_urls(r["hinh_anh"]),
             "bien_ten":           r["bien_ten"] or "",
             "hanh_dong_kp":       r["hanh_dong_kp"],
             "nguoi_thuc_hien":    r["nguoi_thuc_hien"],
@@ -1649,6 +1653,16 @@ async def audit_submit(
             tc_id = int(key[6:])
             if val.filename:
                 note_images.setdefault(tc_id, []).append(val)
+
+    missing_required_notes = [
+        tc_id for tc_id, diem in scores.items()
+        if diem in (0, 1) and not notes.get(tc_id)
+    ]
+    if missing_required_notes:
+        raise HTTPException(
+            status_code=422,
+            detail="Các tiêu chí điểm 0 hoặc 1 bắt buộc phải có ghi chú.",
+        )
 
     scored_values = [diem for diem in scores.values() if diem is not None]
     so_diem = sum(scored_values)
