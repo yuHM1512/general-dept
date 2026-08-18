@@ -282,6 +282,7 @@ tailwind.config = {
                   data-criterion="{% if item.bien_ten %}{{ item.bien_ten | e }} — {% endif %}{{ item.tieu_chi_noi_dung | e }}"
                   data-note="{{ item.ghi_chu | default('') | e }}"
                   data-images="{{ item.hinh_anh | default([]) | tojson | e }}"
+                  data-self-assignee="{{ item.don_vi_ma | e }} – {{ item.bo_phan_ten | e }}"
                   data-context="{{ item.don_vi_ma | e }} · {{ item.bo_phan_ten | e }} · {{ item.phieu_ngay | e }}">
                 <td class="py-md px-sm text-center font-label-md text-label-md text-on-surface-variant opacity-60">{{ loop.index }}</td>
                 <td class="py-md px-sm">
@@ -401,6 +402,7 @@ tailwind.config = {
                    data-criterion="{% if item.bien_ten %}{{ item.bien_ten | e }} — {% endif %}{{ item.tieu_chi_noi_dung | e }}"
                    data-note="{{ item.ghi_chu | default('') | e }}"
                    data-images="{{ item.hinh_anh | default([]) | tojson | e }}"
+                   data-self-assignee="{{ item.don_vi_ma | e }} – {{ item.bo_phan_ten | e }}"
                    data-context="{{ item.don_vi_ma | e }} · {{ item.bo_phan_ten | e }} · {{ item.phieu_ngay | e }}">
             <!-- Card header -->
             <div class="flex items-start gap-sm mb-md">
@@ -498,13 +500,43 @@ tailwind.config = {
             placeholder="Nhập hành động khắc phục..."></textarea>
         </label>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
-          <label class="block">
+        <div class="grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-md items-start">
+          <div class="block">
             <span class="block font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs">Người thực hiện</span>
-            <input id="cap-assignee" type="text"
-              class="w-full rounded-xl border border-outline-variant/40 bg-surface-container-low px-md py-sm text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/30"
-              placeholder="VD: P.KDXNK – Kho phụ liệu">
-          </label>
+            <input id="cap-assignee" type="hidden">
+            <div class="rounded-xl border border-outline-variant/30 bg-surface-container-low p-sm space-y-sm">
+              <div class="flex items-center gap-sm">
+                <span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">person</span>
+                <p id="cap-assignee-display" class="flex-1 min-w-0 text-[13px] font-semibold text-outline truncate">Chưa phân công</p>
+              </div>
+              <button type="button" onclick="assignCapSelf()"
+                class="w-full flex items-center justify-center gap-xs rounded-lg bg-primary/10 px-sm py-xs font-label-md text-[12px] font-bold text-primary hover:bg-primary/15 active:scale-[.99] transition-all">
+                <span class="material-symbols-outlined text-[15px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">apartment</span>
+                Giao cho chính bộ phận đó
+              </button>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-xs">
+                <select id="cap-don-vi" onchange="onCapDvChange(this)"
+                  class="min-w-0 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25">
+                  <option value="">Chọn đơn vị</option>
+                  {% for dv in don_vi_list | default([]) %}
+                  <option value="{{ dv.id }}" data-ma="{{ dv.ma }}">{{ dv.ma }}</option>
+                  {% endfor %}
+                </select>
+                <select id="cap-bo-phan" onchange="onCapBpChange()"
+                  class="min-w-0 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:opacity-60"
+                  disabled>
+                  <option value="">Chọn bộ phận</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-xs">
+                <p id="cap-assignee-preview" class="flex-1 min-w-0 text-[11px] text-on-surface-variant truncate">Chọn đơn vị và bộ phận để phân công.</p>
+                <button id="cap-assign-apply" type="button" onclick="confirmCapAssignment()" disabled
+                  class="shrink-0 rounded-full px-sm py-xs font-label-md text-[11px] font-bold bg-primary text-white disabled:bg-outline-variant disabled:text-on-surface-variant disabled:cursor-not-allowed active:scale-95 transition-all">
+                  Chọn
+                </button>
+              </div>
+            </div>
+          </div>
           <label class="block">
             <span class="block font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs">Thời hạn</span>
             <input id="cap-deadline" type="date"
@@ -767,6 +799,7 @@ const STATUS_COLORS = {
 // ── Save helpers ──────────────────────────────────────────────
 const _timers = {};
 let _capRowId = null;
+let _capSelfValue = '';
 
 async function _patchHdkp(payload) {
   const response = await fetch('/api/audit/5s/hdkp', {
@@ -798,14 +831,99 @@ function applyStatusColor(sel) {
 }
 
 // ── CAP edit modal ───────────────────────────────────────────
+function setCapAssignee(value) {
+  const assignee = (value || '').trim();
+  const input = document.getElementById('cap-assignee');
+  const display = document.getElementById('cap-assignee-display');
+  input.value = assignee;
+  display.textContent = assignee || 'Chưa phân công';
+  display.classList.toggle('text-outline', !assignee);
+  display.classList.toggle('text-primary', !!assignee);
+}
+
+function resetCapAssignmentPicker(current = '') {
+  const dvSel = document.getElementById('cap-don-vi');
+  const bpSel = document.getElementById('cap-bo-phan');
+  dvSel.value = '';
+  bpSel.innerHTML = '<option value="">Chọn bộ phận</option>';
+  bpSel.disabled = true;
+  document.getElementById('cap-assignee-preview').textContent = 'Chọn đơn vị và bộ phận để phân công.';
+  document.getElementById('cap-assign-apply').disabled = true;
+
+  const [dvMa, bpTen] = current.split(' – ').map(s => s?.trim());
+  if (!dvMa) return;
+  const dvOpt = [...dvSel.options].find(o => o.dataset.ma === dvMa);
+  if (!dvOpt) return;
+  dvSel.value = dvOpt.value;
+  populateCapBp(dvSel);
+  if (bpTen) {
+    const bpOpt = [...bpSel.options].find(o => o.textContent.trim() === bpTen);
+    if (bpOpt) {
+      bpSel.value = bpOpt.value;
+      onCapBpChange();
+    }
+  }
+}
+
+function populateCapBp(dvSel) {
+  const dvId = +dvSel.value;
+  const bpSel = document.getElementById('cap-bo-phan');
+  bpSel.innerHTML = '<option value="">Chọn bộ phận</option>';
+  if (!dvId) {
+    bpSel.disabled = true;
+    onCapBpChange();
+    return;
+  }
+  const dv = ORG.find(d => d.id === dvId);
+  if (dv) {
+    dv.bo_phan.forEach(bp => {
+      const option = document.createElement('option');
+      option.value = bp.id;
+      option.textContent = bp.ten;
+      bpSel.appendChild(option);
+    });
+  }
+  bpSel.disabled = false;
+  onCapBpChange();
+}
+
+function onCapDvChange(sel) { populateCapBp(sel); }
+
+function onCapBpChange() {
+  const dvSel = document.getElementById('cap-don-vi');
+  const bpSel = document.getElementById('cap-bo-phan');
+  const dvMa = dvSel.options[dvSel.selectedIndex]?.dataset.ma || '';
+  const bpTen = bpSel.options[bpSel.selectedIndex]?.textContent.trim() || '';
+  const ok = Boolean(dvMa && bpSel.value);
+  document.getElementById('cap-assign-apply').disabled = !ok;
+  document.getElementById('cap-assignee-preview').textContent = ok
+    ? `${dvMa} – ${bpTen}`
+    : 'Chọn đơn vị và bộ phận để phân công.';
+}
+
+function assignCapSelf() {
+  setCapAssignee(_capSelfValue);
+  resetCapAssignmentPicker(_capSelfValue);
+}
+
+function confirmCapAssignment() {
+  const dvSel = document.getElementById('cap-don-vi');
+  const bpSel = document.getElementById('cap-bo-phan');
+  const dvMa = dvSel.options[dvSel.selectedIndex]?.dataset.ma || '';
+  const bpTen = bpSel.options[bpSel.selectedIndex]?.textContent.trim() || '';
+  if (dvMa && bpSel.value) setCapAssignee(`${dvMa} – ${bpTen}`);
+}
+
 function openCapModal(row) {
   _capRowId = +row.dataset.id;
+  _capSelfValue = row.dataset.selfAssignee || '';
   document.getElementById('cap-context').textContent = row.dataset.context || '';
   document.getElementById('cap-criterion').textContent = row.dataset.criterion || '';
   document.getElementById('cap-note').textContent = row.dataset.note || 'Không có ghi chú lỗi.';
   renderCapNoteImages(CAP_NOTE_IMAGES[String(_capRowId)] || []);
   document.getElementById('cap-action').value = row.dataset.action || '';
-  document.getElementById('cap-assignee').value = row.dataset.nguoi || '';
+  setCapAssignee(row.dataset.nguoi || '');
+  resetCapAssignmentPicker(row.dataset.nguoi || '');
   document.getElementById('cap-deadline').value = row.dataset.thoiHan || '';
   document.getElementById('cap-status').value = row.dataset.tinhTrang || 'Chưa tiếp nhận';
   const modal = document.getElementById('cap-modal');
