@@ -624,6 +624,11 @@ tailwind.config = {
 <script>
 // ── Org data for assignment modal ────────────────────────────
 const ORG = {{ don_vi_with_bp | default([]) | tojson }};
+const CAP_NOTE_IMAGES = {
+  {% for item in items_list | default([]) %}
+  "{{ item.id }}": {{ item.hinh_anh | default([]) | tojson }}{% if not loop.last %},{% endif %}
+  {% endfor %}
+};
 
 // ── Assignment modal state ────────────────────────────────────
 let _assignRowId = null;
@@ -798,7 +803,7 @@ function openCapModal(row) {
   document.getElementById('cap-context').textContent = row.dataset.context || '';
   document.getElementById('cap-criterion').textContent = row.dataset.criterion || '';
   document.getElementById('cap-note').textContent = row.dataset.note || 'Không có ghi chú lỗi.';
-  renderCapNoteImages(row.dataset.images || '[]');
+  renderCapNoteImages(CAP_NOTE_IMAGES[String(_capRowId)] || []);
   document.getElementById('cap-action').value = row.dataset.action || '';
   document.getElementById('cap-assignee').value = row.dataset.nguoi || '';
   document.getElementById('cap-deadline').value = row.dataset.thoiHan || '';
@@ -812,12 +817,7 @@ function openCapModal(row) {
 function renderCapNoteImages(rawImages) {
   const box = document.getElementById('cap-note-images');
   if (!box) return;
-  let images = [];
-  try {
-    images = JSON.parse(rawImages || '[]');
-  } catch (error) {
-    images = [];
-  }
+  const images = Array.isArray(rawImages) ? rawImages : [];
   box.innerHTML = '';
   box.classList.toggle('hidden', images.length === 0);
   images.forEach((src, index) => {
