@@ -1122,6 +1122,82 @@ def upsert_hdkp(request: Request, payload: dict, session: Session = Depends(get_
     return {"ok": True}
 
 
+@app.patch("/api/audit/5s/hdkp/score")
+def update_hdkp_score(request: Request, payload: dict, session: Session = Depends(get_session)):
+    """Update a zero-score detail after re-alignment so it leaves the HDKP queue."""
+    cid = int(payload.get("chi_tiet_diem_id", 0) or 0)
+    try:
+        new_score = int(payload.get("diem"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="diem must be 1 or 2")
+    if not cid:
+        raise HTTPException(status_code=422, detail="chi_tiet_diem_id required")
+    if new_score not in (1, 2):
+        raise HTTPException(status_code=422, detail="Chỉ được sửa điểm 0 thành 1 hoặc 2")
+
+    detail = session.get(AuditChiTietDiem, cid)
+    if not detail:
+        raise HTTPException(status_code=404, detail="chi_tiet_diem not found")
+    if detail.diem != 0:
+        raise HTTPException(status_code=409, detail="Dòng này không còn là điểm 0")
+
+    phieu = session.get(AuditPhieuKiemTra, detail.phieu_id)
+    bo_phan = session.get(AuditBoPhan, phieu.bo_phan_id) if phieu else None
+    visible_don_vi_ids = _audit_visible_don_vi_ids(_current_user(request), session)
+    if visible_don_vi_ids is not None and (not bo_phan or bo_phan.don_vi_id not in visible_don_vi_ids):
+        raise HTTPException(status_code=403, detail="Not allowed for this don_vi")
+
+    user = _current_user(request) or {}
+    actor_ma_nv = str(user.get("ma_nv") or "").strip().upper()
+    changed_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    score_note = f"Đã được sửa điểm: 0 -> {new_score}"
+    if actor_ma_nv:
+        score_note += f" bởi {actor_ma_nv}"
+    score_note += f" lúc {changed_at}"
+    extra_note = str(payload.get("ghi_chu") or "").strip()
+    if extra_note:
+        score_note += f". Ghi chú: {extra_note}"
+
+    current_note = (detail.ghi_chu or "").strip()
+    detail.ghi_chu = f"{current_note}\n{score_note}" if current_note else score_note
+    detail.diem = new_score
+    session.add(detail)
+
+    hdkp = session.exec(
+        select(AuditHdkp).where(AuditHdkp.chi_tiet_diem_id == cid)
+    ).first()
+    if hdkp:
+        hdkp.tinh_trang = "Hoàn thành"
+        hdkp.updated_by = actor_ma_nv or hdkp.updated_by
+        hdkp.updated_at = datetime.utcnow()
+        session.add(hdkp)
+
+    if phieu:
+        detail_rows = session.exec(
+            select(AuditChiTietDiem).where(AuditChiTietDiem.phieu_id == phieu.id)
+        ).all()
+        scored_values = [row.diem for row in detail_rows if row.diem is not None]
+        so_diem = sum(scored_values)
+        tong_diem = len(scored_values) * 2
+        ty_le = so_diem / tong_diem if tong_diem else 0.0
+        if ty_le > 0.90:
+            ket_luan = "Tốt"
+        elif ty_le >= 0.75:
+            ket_luan = "Đạt"
+        elif ty_le >= 0.50:
+            ket_luan = "Cần cải thiện"
+        else:
+            ket_luan = "Không đạt"
+        phieu.so_diem = so_diem
+        phieu.tong_diem = tong_diem
+        phieu.ty_le = round(ty_le, 4)
+        phieu.ket_luan = ket_luan
+        session.add(phieu)
+
+    session.commit()
+    return {"ok": True, "chi_tiet_diem_id": cid, "diem": new_score}
+
+
 @app.get("/internal-audit/5s/new", response_class=HTMLResponse)
 def five_s_new(
     request: Request,

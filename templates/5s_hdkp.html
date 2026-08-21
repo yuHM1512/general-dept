@@ -343,6 +343,12 @@ tailwind.config = {
                     Cập nhật: {{ item.updated_by }}{% if item.hdkp_updated_at %} · {{ item.hdkp_updated_at }}{% endif %}
                   </p>
                   {% endif %}
+                  <button type="button"
+                    onclick="openScoreModalFromButton(this, event)"
+                    class="mt-xs inline-flex items-center justify-center gap-xs rounded-full bg-secondary/10 px-sm py-xs font-label-md text-[11px] font-bold text-secondary hover:bg-secondary/15 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-[14px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">edit</span>
+                    Sửa điểm
+                  </button>
                 </td>
               </tr>
               {% endfor %}
@@ -450,6 +456,12 @@ tailwind.config = {
               Cập nhật: {{ item.updated_by }}{% if item.hdkp_updated_at %} · {{ item.hdkp_updated_at }}{% endif %}
             </p>
             {% endif %}
+            <button type="button"
+              onclick="openScoreModalFromButton(this, event)"
+              class="mt-sm w-full inline-flex items-center justify-center gap-xs rounded-full bg-secondary/10 px-md py-sm font-label-md text-[12px] font-bold text-secondary hover:bg-secondary/15 active:scale-[.99] transition-all">
+              <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">edit</span>
+              Sửa điểm
+            </button>
           </article>
           {% endfor %}
         </div>
@@ -569,6 +581,54 @@ tailwind.config = {
           Lưu HĐKP
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Score edit modal ────────────────────────────────────── -->
+<div id="score-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(26,28,29,.45);backdrop-filter:blur(4px)">
+  <div class="bg-surface-container-lowest rounded-xl shadow-xl w-full max-w-md p-lg relative" style="animation:fadeUp .25s cubic-bezier(.16,1,.3,1)">
+    <div class="flex items-start gap-sm mb-lg">
+      <span class="material-symbols-outlined text-secondary text-[24px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">edit</span>
+      <div class="min-w-0 flex-1">
+        <h3 class="font-headline-md text-[20px] font-bold text-primary leading-tight">Sửa điểm</h3>
+        <p id="score-context" class="font-label-md text-[12px] text-on-surface-variant mt-xs"></p>
+      </div>
+      <button type="button" onclick="closeScoreModal()" class="material-symbols-outlined text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors">close</button>
+    </div>
+
+    <div class="space-y-md">
+      <div class="rounded-xl bg-surface-container-low p-md">
+        <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant mb-xs">Tiêu chí</p>
+        <p id="score-criterion" class="text-[13px] text-on-surface leading-relaxed max-h-32 overflow-auto"></p>
+      </div>
+      <label class="block">
+        <span class="block font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs">Điểm mới</span>
+        <select id="score-value"
+          class="w-full rounded-xl border border-outline-variant/40 bg-surface-container-low px-md py-sm text-[14px] focus:outline-none focus:ring-2 focus:ring-secondary/30">
+          <option value="1">1 điểm</option>
+          <option value="2">2 điểm</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="block font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs">Ghi chú thêm</span>
+        <textarea id="score-note" rows="3"
+          class="w-full rounded-xl border border-outline-variant/40 bg-surface-container-low px-md py-sm text-[14px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-secondary/30 resize-y"
+          placeholder="Ví dụ: đã thống nhất lại với đơn vị..."></textarea>
+      </label>
+      <p class="font-label-md text-[11px] text-on-surface-variant">Sau khi lưu, dòng này sẽ rời khỏi danh sách HĐKP và ghi chú sẽ có dòng "Đã được sửa điểm".</p>
+    </div>
+
+    <div class="flex justify-end gap-sm mt-lg">
+      <button type="button" onclick="closeScoreModal()"
+        class="px-lg py-sm rounded-full font-label-md text-[13px] font-bold text-on-surface-variant hover:bg-surface-container transition-colors">
+        Hủy
+      </button>
+      <button type="button" onclick="saveScoreModal()"
+        class="flex items-center gap-xs px-lg py-sm rounded-full font-label-md text-[13px] font-bold bg-secondary text-white shadow hover:opacity-90 active:scale-95 transition-all">
+        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">save</span>
+        Lưu điểm
+      </button>
     </div>
   </div>
 </div>
@@ -800,6 +860,7 @@ const STATUS_COLORS = {
 const _timers = {};
 let _capRowId = null;
 let _capSelfValue = '';
+let _scoreRowId = null;
 
 async function _patchHdkp(payload) {
   const response = await fetch('/api/audit/5s/hdkp', {
@@ -814,12 +875,68 @@ async function _patchHdkp(payload) {
   return response.json().catch(() => ({ok: true}));
 }
 
+async function _patchHdkpScore(payload) {
+  const response = await fetch('/api/audit/5s/hdkp/score', {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || 'Không thể sửa điểm.');
+  }
+  return response.json().catch(() => ({ok: true}));
+}
+
 function scheduleFieldSave(el) {
   const id    = +el.dataset.id;
   const field = el.dataset.field;
   const key   = `${id}_${field}`;
   clearTimeout(_timers[key]);
   _timers[key] = setTimeout(() => _patchHdkp({chi_tiet_diem_id: id, [field]: el.value}), 700);
+}
+
+// ── Score edit modal ─────────────────────────────────────────
+function openScoreModalFromButton(button, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const row = button.closest('.cap-row');
+  if (row) openScoreModal(row);
+}
+
+function openScoreModal(row) {
+  _scoreRowId = +row.dataset.id;
+  document.getElementById('score-context').textContent = row.dataset.context || '';
+  document.getElementById('score-criterion').textContent = row.dataset.criterion || '';
+  document.getElementById('score-value').value = '1';
+  document.getElementById('score-note').value = '';
+  const modal = document.getElementById('score-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => document.getElementById('score-value').focus(), 50);
+}
+
+function closeScoreModal() {
+  const modal = document.getElementById('score-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  _scoreRowId = null;
+}
+
+async function saveScoreModal() {
+  if (!_scoreRowId) return;
+  try {
+    await _patchHdkpScore({
+      chi_tiet_diem_id: _scoreRowId,
+      diem: document.getElementById('score-value').value,
+      ghi_chu: document.getElementById('score-note').value,
+    });
+    window.location.reload();
+  } catch (error) {
+    alert(error.message || 'Không thể sửa điểm.');
+  }
 }
 
 // ── Status badge ──────────────────────────────────────────────
@@ -990,9 +1107,14 @@ document.getElementById('cap-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeCapModal();
 });
 
+document.getElementById('score-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeScoreModal();
+});
+
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     closeCapModal();
+    closeScoreModal();
     closeAssignModal();
   }
 });
