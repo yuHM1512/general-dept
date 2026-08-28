@@ -521,6 +521,60 @@ tailwind.config = {
                 <span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">person</span>
                 <p id="cap-assignee-display" class="flex-1 min-w-0 text-[13px] font-semibold text-outline truncate">Chưa phân công</p>
               </div>
+              {% if user and user.role == 'admin' %}
+              <div class="rounded-lg bg-surface-container-lowest p-sm border border-outline-variant/20 space-y-sm">
+                <div class="flex items-center gap-xs">
+                  <span class="material-symbols-outlined text-primary text-[16px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">badge</span>
+                  <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant flex-1">User phân công</p>
+                  <button type="button" onclick="toggleAssignmentUserForm()"
+                    class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary hover:bg-primary/15 active:scale-95 transition-all"
+                    title="Thêm user phân công">
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 20">person_add</span>
+                  </button>
+                </div>
+                <select id="cap-user-select" onchange="onAssignmentUserSelect(this)"
+                  class="w-full rounded-lg border border-outline-variant/30 bg-surface-container-low px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25">
+                  <option value="">Chọn user đã có</option>
+                  {% for au in assignment_users | default([]) %}
+                  <option value="{{ au.ma_nv }} – {{ au.ho_ten or au.ma_nv }}"
+                    data-ma-nv="{{ au.ma_nv | e }}"
+                    data-ho-ten="{{ au.ho_ten | e }}"
+                    data-chuc-vu="{{ au.chuc_vu | e }}"
+                    data-don-vi="{{ au.don_vi | e }}"
+                    data-bo-phan="{{ au.bo_phan | e }}">
+                    {{ au.ma_nv }}{% if au.ho_ten %} – {{ au.ho_ten }}{% endif %}{% if au.bo_phan %} · {{ au.bo_phan }}{% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+                <div id="assignment-user-form" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-xs pt-xs">
+                  <input id="assignment-user-ma-nv" maxlength="16" placeholder="Mã NV"
+                    class="rounded-lg border border-outline-variant/30 bg-surface-container-low px-sm py-xs text-[12px] uppercase focus:outline-none focus:ring-2 focus:ring-primary/25">
+                  <input id="assignment-user-ho-ten" placeholder="Họ tên"
+                    class="rounded-lg border border-outline-variant/30 bg-surface-container-low px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25">
+                  <input id="assignment-user-chuc-vu" placeholder="Chức vụ"
+                    class="rounded-lg border border-outline-variant/30 bg-surface-container-low px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25">
+                  <input id="assignment-user-don-vi" placeholder="Đơn vị"
+                    class="rounded-lg border border-outline-variant/30 bg-surface-container-low px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25">
+                  <input id="assignment-user-bo-phan" placeholder="Bộ phận"
+                    class="rounded-lg border border-outline-variant/30 bg-surface-container-low px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25">
+                  <select id="assignment-user-role"
+                    class="rounded-lg border border-outline-variant/30 bg-surface-container-low px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25">
+                    <option value="user">user</option>
+                    <option value="admin">admin</option>
+                  </select>
+                  <input id="assignment-user-station" placeholder="Station, cách nhau bằng dấu phẩy"
+                    class="sm:col-span-2 rounded-lg border border-outline-variant/30 bg-surface-container-low px-sm py-xs text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/25">
+                  <div class="sm:col-span-2 flex items-center gap-xs">
+                    <p id="assignment-user-message" class="flex-1 min-w-0 text-[11px] text-on-surface-variant truncate"></p>
+                    <button type="button" onclick="saveAssignmentUser()"
+                      class="shrink-0 inline-flex items-center gap-xs rounded-full bg-primary px-sm py-xs font-label-md text-[11px] font-bold text-white hover:bg-primary-container active:scale-95 transition-all">
+                      <span class="material-symbols-outlined text-[14px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">save</span>
+                      Lưu user
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
               <button type="button" onclick="assignCapSelf()"
                 class="w-full flex items-center justify-center gap-xs rounded-lg bg-primary/10 px-sm py-xs font-label-md text-[12px] font-bold text-primary hover:bg-primary/15 active:scale-[.99] transition-all">
                 <span class="material-symbols-outlined text-[15px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">apartment</span>
@@ -716,6 +770,7 @@ tailwind.config = {
 <script>
 // ── Org data for assignment modal ────────────────────────────
 const ORG = {{ don_vi_with_bp | default([]) | tojson }};
+let ASSIGNMENT_USERS = {{ assignment_users | default([]) | tojson }};
 const CAP_NOTE_IMAGES = {
   {% for item in items_list | default([]) %}
   "{{ item.id }}": {{ item.hinh_anh | default([]) | tojson }}{% if not loop.last %},{% endif %}
@@ -948,6 +1003,101 @@ function applyStatusColor(sel) {
 }
 
 // ── CAP edit modal ───────────────────────────────────────────
+function assignmentUserLabel(user) {
+  const code = (user?.ma_nv || '').trim();
+  const name = (user?.ho_ten || '').trim();
+  return name ? `${code} – ${name}` : code;
+}
+
+function syncAssignmentUserSelect(selectedValue = '') {
+  const select = document.getElementById('cap-user-select');
+  if (!select) return;
+  const current = selectedValue || select.value;
+  select.innerHTML = '<option value="">Chọn user đã có</option>';
+  ASSIGNMENT_USERS.forEach(user => {
+    const option = document.createElement('option');
+    const label = assignmentUserLabel(user);
+    option.value = label;
+    option.dataset.maNv = user.ma_nv || '';
+    option.dataset.hoTen = user.ho_ten || '';
+    option.dataset.chucVu = user.chuc_vu || '';
+    option.dataset.donVi = user.don_vi || '';
+    option.dataset.boPhan = user.bo_phan || '';
+    option.textContent = `${label}${user.bo_phan ? ' · ' + user.bo_phan : ''}`;
+    select.appendChild(option);
+  });
+  select.value = current;
+}
+
+function onAssignmentUserSelect(select) {
+  if (!select || !select.value) return;
+  setCapAssignee(select.value);
+}
+
+function toggleAssignmentUserForm() {
+  const form = document.getElementById('assignment-user-form');
+  if (!form) return;
+  form.classList.toggle('hidden');
+  if (!form.classList.contains('hidden')) {
+    document.getElementById('assignment-user-ma-nv')?.focus();
+  }
+}
+
+function fillAssignmentUserOrgFromPicker() {
+  const dvSel = document.getElementById('cap-don-vi');
+  const bpSel = document.getElementById('cap-bo-phan');
+  const dvMa = dvSel?.options[dvSel.selectedIndex]?.dataset.ma || '';
+  const bpTen = bpSel?.options[bpSel.selectedIndex]?.textContent.trim() || '';
+  const donViInput = document.getElementById('assignment-user-don-vi');
+  const boPhanInput = document.getElementById('assignment-user-bo-phan');
+  if (donViInput && dvMa && !donViInput.value) donViInput.value = dvMa;
+  if (boPhanInput && bpSel?.value && !boPhanInput.value) boPhanInput.value = bpTen;
+}
+
+async function saveAssignmentUser() {
+  const msg = document.getElementById('assignment-user-message');
+  fillAssignmentUserOrgFromPicker();
+  const payload = {
+    ma_nv: document.getElementById('assignment-user-ma-nv')?.value || '',
+    ho_ten: document.getElementById('assignment-user-ho-ten')?.value || '',
+    chuc_vu: document.getElementById('assignment-user-chuc-vu')?.value || '',
+    don_vi: document.getElementById('assignment-user-don-vi')?.value || '',
+    bo_phan: document.getElementById('assignment-user-bo-phan')?.value || '',
+    role: document.getElementById('assignment-user-role')?.value || 'user',
+    station: document.getElementById('assignment-user-station')?.value || '',
+  };
+  payload.ma_nv = payload.ma_nv.trim().toUpperCase();
+  if (!payload.ma_nv) {
+    if (msg) msg.textContent = 'Cần nhập mã NV.';
+    return;
+  }
+  try {
+    const response = await fetch('/api/audit/assignment-users', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.detail || 'Không thể lưu user.');
+    }
+    const data = await response.json();
+    const saved = data.user;
+    ASSIGNMENT_USERS = ASSIGNMENT_USERS.filter(user => user.ma_nv !== saved.ma_nv).concat(saved);
+    ASSIGNMENT_USERS.sort((a, b) => String(a.ma_nv).localeCompare(String(b.ma_nv)));
+    const label = assignmentUserLabel(saved);
+    syncAssignmentUserSelect(label);
+    setCapAssignee(label);
+    ['ma-nv', 'ho-ten', 'chuc-vu', 'don-vi', 'bo-phan', 'station'].forEach(id => {
+      const input = document.getElementById(`assignment-user-${id}`);
+      if (input) input.value = '';
+    });
+    if (msg) msg.textContent = data.created ? 'Đã thêm user và chọn để phân công.' : 'Đã cập nhật user và chọn để phân công.';
+  } catch (error) {
+    if (msg) msg.textContent = error.message || 'Không thể lưu user.';
+  }
+}
+
 function setCapAssignee(value) {
   const assignee = (value || '').trim();
   const input = document.getElementById('cap-assignee');
@@ -956,6 +1106,8 @@ function setCapAssignee(value) {
   display.textContent = assignee || 'Chưa phân công';
   display.classList.toggle('text-outline', !assignee);
   display.classList.toggle('text-primary', !!assignee);
+  const userSelect = document.getElementById('cap-user-select');
+  if (userSelect) userSelect.value = assignee;
 }
 
 function resetCapAssignmentPicker(current = '') {
@@ -1040,6 +1192,9 @@ function openCapModal(row) {
   renderCapNoteImages(CAP_NOTE_IMAGES[String(_capRowId)] || []);
   document.getElementById('cap-action').value = row.dataset.action || '';
   setCapAssignee(row.dataset.nguoi || '');
+  syncAssignmentUserSelect(row.dataset.nguoi || '');
+  const assignmentMsg = document.getElementById('assignment-user-message');
+  if (assignmentMsg) assignmentMsg.textContent = '';
   resetCapAssignmentPicker(row.dataset.nguoi || '');
   document.getElementById('cap-deadline').value = row.dataset.thoiHan || '';
   document.getElementById('cap-status').value = row.dataset.tinhTrang || 'Chưa tiếp nhận';

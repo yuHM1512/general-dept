@@ -1041,6 +1041,21 @@ def five_s_hdkp(
         }
         for dv in don_vi_list
     ]
+    assignment_users = []
+    if _normalize_role(user.get("role")) == "admin":
+        employees = session.exec(select(GeneralEmployee).order_by(GeneralEmployee.ma_nv)).all()
+        assignment_users = [
+            {
+                "ma_nv": employee.ma_nv,
+                "ho_ten": employee.ho_ten,
+                "chuc_vu": employee.chuc_vu,
+                "don_vi": employee.don_vi,
+                "bo_phan": employee.bo_phan,
+                "role": _normalize_role(employee.role),
+                "station": employee.station or [],
+            }
+            for employee in employees
+        ]
 
     return templates.TemplateResponse("5s_hdkp.html", {
         "request":        request,
@@ -1049,9 +1064,61 @@ def five_s_hdkp(
         "stats":          {"chua_xu_ly": chua, "dang_xu_ly": dang, "hoan_thanh": xong, "hoan_thanh_pct": pct},
         "don_vi_list":    don_vi_list,
         "don_vi_with_bp": don_vi_with_bp,
+        "assignment_users": assignment_users,
         "bo_phan_list": bo_phan_list,
         "filter":       {"don_vi_id": don_vi_id, "bo_phan_id": bo_phan_id, "tinh_trang": tinh_trang},
     })
+
+
+@app.post("/api/audit/assignment-users")
+def upsert_assignment_user(request: Request, payload: dict, session: Session = Depends(get_session)):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể thêm user phân công")
+
+    ma_nv = str(payload.get("ma_nv") or "").strip().upper()
+    if not ma_nv:
+        raise HTTPException(status_code=422, detail="ma_nv required")
+    if len(ma_nv) > 16:
+        raise HTTPException(status_code=422, detail="Mã nhân viên tối đa 16 ký tự")
+
+    role = _normalize_role(payload.get("role"))
+    if role not in {"user", "admin"}:
+        raise HTTPException(status_code=422, detail="role must be user or admin")
+
+    station_raw = payload.get("station")
+    if isinstance(station_raw, list):
+        station = [str(item).strip() for item in station_raw if str(item).strip()]
+    else:
+        station_text = str(station_raw or "").strip()
+        station = [item.strip() for item in station_text.split(",") if item.strip()]
+
+    employee = session.get(GeneralEmployee, ma_nv)
+    created = employee is None
+    if not employee:
+        employee = GeneralEmployee(ma_nv=ma_nv)
+
+    employee.ho_ten = str(payload.get("ho_ten") or "").strip()
+    employee.chuc_vu = str(payload.get("chuc_vu") or "").strip()
+    employee.don_vi = str(payload.get("don_vi") or "").strip()
+    employee.bo_phan = str(payload.get("bo_phan") or "").strip()
+    employee.role = role
+    employee.station = station
+    session.add(employee)
+    session.commit()
+
+    return {
+        "ok": True,
+        "created": created,
+        "user": {
+            "ma_nv": employee.ma_nv,
+            "ho_ten": employee.ho_ten,
+            "chuc_vu": employee.chuc_vu,
+            "don_vi": employee.don_vi,
+            "bo_phan": employee.bo_phan,
+            "role": _normalize_role(employee.role),
+            "station": employee.station or [],
+        },
+    }
 
 
 @app.patch("/api/audit/5s/hdkp")
