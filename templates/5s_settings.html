@@ -82,6 +82,87 @@ tailwind.config = {
 
   <!-- Block 5S -->
   <div id="block-5S" class="space-y-lg pb-24">
+  <section class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+    <div class="flex items-center gap-md px-lg py-md bg-primary">
+      <span class="msym material-symbols-outlined text-white text-[20px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">manage_accounts</span>
+      <div class="min-w-0">
+        <h2 class="font-label-md text-[13px] uppercase tracking-widest font-bold text-white">Người truy cập module</h2>
+        <p class="font-label-md text-[11px] text-white/70 mt-xs">Dữ liệu lưu tại general_employees</p>
+      </div>
+      <span class="ml-auto font-label-md text-[11px] text-white/70" id="access-user-count">{{ access_users | length }} user</span>
+    </div>
+
+    <div class="p-lg space-y-md">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+        <label class="block">
+          <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Mã NV *</span>
+          <input id="access-ma-nv" maxlength="16" class="w-full uppercase bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none" placeholder="VD: NV001">
+        </label>
+        <label class="block">
+          <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Họ tên</span>
+          <input id="access-ho-ten" class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none" placeholder="Tên người truy cập">
+        </label>
+        <label class="block">
+          <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Chức vụ</span>
+          <input id="access-chuc-vu" class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none" placeholder="VD: Tổ trưởng">
+        </label>
+        <label class="block">
+          <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Role</span>
+          <select id="access-role" class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none">
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Đơn vị</span>
+          <select id="access-don-vi" onchange="onAccessDvChange()" class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none">
+            <option value="">Chọn đơn vị</option>
+            {% for dv in don_vi_list | default([]) %}
+            <option value="{{ dv.ma }}">{{ dv.ma }} · {{ dv.ten }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="block">
+          <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Bộ phận</span>
+          <select id="access-bo-phan" class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none disabled:opacity-50" disabled>
+            <option value="">Chọn bộ phận</option>
+          </select>
+        </label>
+        <label class="block sm:col-span-2">
+          <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Station</span>
+          <input id="access-station" class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none" placeholder="Nhập nhiều station, cách nhau bằng dấu phẩy">
+        </label>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-sm">
+        <p id="access-form-message" class="font-label-md text-[12px] text-on-surface-variant min-h-4"></p>
+        <div class="flex justify-end gap-xs">
+          <button type="button" onclick="resetAccessForm()" class="px-md py-xs bg-surface-container text-on-surface-variant rounded-full text-[12px] font-medium hover:bg-surface-container-high transition-colors">Xóa form</button>
+          <button type="button" onclick="saveAccessUser()" class="inline-flex items-center gap-xs px-md py-xs bg-primary text-white rounded-full text-[12px] font-bold hover:bg-primary-container transition-colors">
+            <span class="msym material-symbols-outlined text-[15px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">save</span>
+            Lưu người truy cập
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-outline-variant/20">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-surface-container-low text-on-surface-variant font-label-md text-[11px] uppercase tracking-widest">
+            <tr>
+              <th class="px-md py-sm font-semibold">Mã NV</th>
+              <th class="px-md py-sm font-semibold">Họ tên</th>
+              <th class="px-md py-sm font-semibold">Đơn vị</th>
+              <th class="px-md py-sm font-semibold">Bộ phận</th>
+              <th class="px-md py-sm font-semibold">Role</th>
+              <th class="px-md py-sm font-semibold text-center">Sửa</th>
+            </tr>
+          </thead>
+          <tbody id="access-user-tbody" class="divide-y divide-outline-variant/10"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   {% for sect in sections if sect.loai == '5S' %}
   <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
 
@@ -352,6 +433,7 @@ tailwind.config = {
 const DON_VI  = {{ don_vi_json | safe }};
 const BO_PHAN = {{ bo_phan_json | safe }};
 const TC_ASSIGN = {{ tc_assignments_json | safe }};   // {"tc_id": [bp_id, ...]}
+let ACCESS_USERS = {{ access_users_json | safe }};
 
 // current state in-memory (mirrors DB)
 const assignments = {};
@@ -361,6 +443,148 @@ for (const [k, v] of Object.entries(TC_ASSIGN)) {
 function getAssigned(tcId) {
   return assignments[String(tcId)] || (assignments[String(tcId)] = new Set());
 }
+
+// ── Access users ─────────────────────────────────────────────────────────
+function stationText(user) {
+  return Array.isArray(user.station) ? user.station.join(', ') : (user.station || '');
+}
+
+function renderAccessUsers() {
+  const tbody = document.getElementById('access-user-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const count = document.getElementById('access-user-count');
+  if (count) count.textContent = `${ACCESS_USERS.length} user`;
+
+  ACCESS_USERS.forEach(user => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-surface-container-low/60 transition-colors';
+    tr.innerHTML = `
+      <td class="px-md py-sm font-label-md text-[12px] font-bold text-primary whitespace-nowrap">${escapeHtml(user.ma_nv || '')}</td>
+      <td class="px-md py-sm text-[13px] text-on-surface min-w-[160px]">
+        <p class="font-semibold">${escapeHtml(user.ho_ten || '—')}</p>
+        <p class="text-[11px] text-on-surface-variant">${escapeHtml(user.chuc_vu || '')}</p>
+      </td>
+      <td class="px-md py-sm text-[12px] text-on-surface-variant whitespace-nowrap">${escapeHtml(user.don_vi || '—')}</td>
+      <td class="px-md py-sm text-[12px] text-on-surface-variant min-w-[140px]">${escapeHtml(user.bo_phan || '—')}</td>
+      <td class="px-md py-sm">
+        <span class="inline-flex px-sm py-[2px] rounded-full text-[11px] font-bold ${user.role === 'admin' ? 'bg-primary text-white' : 'bg-surface-container text-on-surface-variant'}">${escapeHtml(user.role || 'user')}</span>
+      </td>
+      <td class="px-md py-sm text-center">
+        <button type="button" class="p-1 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Sửa user" onclick="editAccessUser('${escapeJs(user.ma_nv || '')}')">
+          <span class="msym material-symbols-outlined text-[18px]">edit</span>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
+function escapeJs(value) {
+  return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function onAccessDvChange() {
+  const dvSelect = document.getElementById('access-don-vi');
+  const bpSelect = document.getElementById('access-bo-phan');
+  if (!dvSelect || !bpSelect) return;
+  const selectedMa = dvSelect.value;
+  const selectedDv = DON_VI.find(dv => dv.ma === selectedMa);
+  bpSelect.innerHTML = '<option value="">Chọn bộ phận</option>';
+  if (!selectedDv) {
+    bpSelect.disabled = true;
+    return;
+  }
+  BO_PHAN
+    .filter(bp => bp.don_vi_id === selectedDv.id)
+    .forEach(bp => {
+      const option = document.createElement('option');
+      option.value = bp.ten;
+      option.textContent = bp.ten;
+      bpSelect.appendChild(option);
+    });
+  bpSelect.disabled = false;
+}
+
+function resetAccessForm() {
+  ['ma-nv', 'ho-ten', 'chuc-vu', 'station'].forEach(id => {
+    const input = document.getElementById(`access-${id}`);
+    if (input) input.value = '';
+  });
+  const role = document.getElementById('access-role');
+  if (role) role.value = 'user';
+  const dv = document.getElementById('access-don-vi');
+  if (dv) dv.value = '';
+  onAccessDvChange();
+  const msg = document.getElementById('access-form-message');
+  if (msg) msg.textContent = '';
+}
+
+function editAccessUser(maNv) {
+  const user = ACCESS_USERS.find(item => item.ma_nv === maNv);
+  if (!user) return;
+  document.getElementById('access-ma-nv').value = user.ma_nv || '';
+  document.getElementById('access-ho-ten').value = user.ho_ten || '';
+  document.getElementById('access-chuc-vu').value = user.chuc_vu || '';
+  document.getElementById('access-role').value = user.role || 'user';
+  document.getElementById('access-don-vi').value = user.don_vi || '';
+  onAccessDvChange();
+  document.getElementById('access-bo-phan').value = user.bo_phan || '';
+  document.getElementById('access-station').value = stationText(user);
+  document.getElementById('access-ma-nv').focus();
+  const msg = document.getElementById('access-form-message');
+  if (msg) msg.textContent = `Đang sửa ${user.ma_nv}.`;
+}
+
+async function saveAccessUser() {
+  const msg = document.getElementById('access-form-message');
+  const payload = {
+    ma_nv: document.getElementById('access-ma-nv')?.value || '',
+    ho_ten: document.getElementById('access-ho-ten')?.value || '',
+    chuc_vu: document.getElementById('access-chuc-vu')?.value || '',
+    don_vi: document.getElementById('access-don-vi')?.value || '',
+    bo_phan: document.getElementById('access-bo-phan')?.value || '',
+    role: document.getElementById('access-role')?.value || 'user',
+    station: document.getElementById('access-station')?.value || '',
+  };
+  payload.ma_nv = payload.ma_nv.trim().toUpperCase();
+  if (!payload.ma_nv) {
+    if (msg) msg.textContent = 'Cần nhập mã NV.';
+    return;
+  }
+  try {
+    const response = await fetch('/api/audit/5s/access-users', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.detail || 'Không thể lưu người truy cập.');
+    }
+    const data = await response.json();
+    const saved = data.user;
+    ACCESS_USERS = ACCESS_USERS.filter(user => user.ma_nv !== saved.ma_nv).concat(saved);
+    ACCESS_USERS.sort((a, b) => String(a.ma_nv).localeCompare(String(b.ma_nv)));
+    renderAccessUsers();
+    resetAccessForm();
+    if (msg) msg.textContent = data.created ? 'Đã thêm người truy cập.' : 'Đã cập nhật người truy cập.';
+    showToast(data.created ? 'Đã thêm người truy cập' : 'Đã cập nhật người truy cập');
+  } catch (error) {
+    if (msg) msg.textContent = error.message || 'Không thể lưu người truy cập.';
+  }
+}
+renderAccessUsers();
 
 // ── Toggle active ─────────────────────────────────────────────────────────
 function toggleCriteria(tcId, checkbox) {

@@ -1041,22 +1041,6 @@ def five_s_hdkp(
         }
         for dv in don_vi_list
     ]
-    assignment_users = []
-    if _normalize_role(user.get("role")) == "admin":
-        employees = session.exec(select(GeneralEmployee).order_by(GeneralEmployee.ma_nv)).all()
-        assignment_users = [
-            {
-                "ma_nv": employee.ma_nv,
-                "ho_ten": employee.ho_ten,
-                "chuc_vu": employee.chuc_vu,
-                "don_vi": employee.don_vi,
-                "bo_phan": employee.bo_phan,
-                "role": _normalize_role(employee.role),
-                "station": employee.station or [],
-            }
-            for employee in employees
-        ]
-
     return templates.TemplateResponse("5s_hdkp.html", {
         "request":        request,
         "user":           user,
@@ -1064,14 +1048,13 @@ def five_s_hdkp(
         "stats":          {"chua_xu_ly": chua, "dang_xu_ly": dang, "hoan_thanh": xong, "hoan_thanh_pct": pct},
         "don_vi_list":    don_vi_list,
         "don_vi_with_bp": don_vi_with_bp,
-        "assignment_users": assignment_users,
         "bo_phan_list": bo_phan_list,
         "filter":       {"don_vi_id": don_vi_id, "bo_phan_id": bo_phan_id, "tinh_trang": tinh_trang},
     })
 
 
-@app.post("/api/audit/assignment-users")
-def upsert_assignment_user(request: Request, payload: dict, session: Session = Depends(get_session)):
+@app.post("/api/audit/5s/access-users")
+def upsert_access_user(request: Request, payload: dict, session: Session = Depends(get_session)):
     if not _is_admin(request):
         raise HTTPException(status_code=403, detail="Chỉ admin mới có thể thêm user phân công")
 
@@ -1370,6 +1353,19 @@ def five_s_settings(
     don_vi_json = _json.dumps([{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list])
     bo_phan_json = _json.dumps([{"id": bp.id, "ten": bp.ten, "don_vi_id": bp.don_vi_id} for bp in bo_phan_list])
     tc_assignments_json = _json.dumps({str(k): v for k, v in tc_to_bp.items()})
+    access_users = [
+        {
+            "ma_nv": employee.ma_nv,
+            "ho_ten": employee.ho_ten,
+            "chuc_vu": employee.chuc_vu,
+            "don_vi": employee.don_vi,
+            "bo_phan": employee.bo_phan,
+            "role": _normalize_role(employee.role),
+            "station": employee.station or [],
+        }
+        for employee in session.exec(select(GeneralEmployee).order_by(GeneralEmployee.ma_nv)).all()
+    ]
+    access_users_json = _json.dumps(access_users, ensure_ascii=False)
 
     return templates.TemplateResponse(
         "5s_settings.html",
@@ -1379,9 +1375,13 @@ def five_s_settings(
             "now_year": datetime.utcnow().year,
             "user": _current_user(request),
             "sections": sections,
+            "don_vi_list": don_vi_list,
+            "bo_phan_list": bo_phan_list,
             "don_vi_json": don_vi_json,
             "bo_phan_json": bo_phan_json,
             "tc_assignments_json": tc_assignments_json,
+            "access_users": access_users,
+            "access_users_json": access_users_json,
         },
     )
 
