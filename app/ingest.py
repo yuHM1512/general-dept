@@ -105,11 +105,26 @@ def _resolve_column_indices(ws) -> dict[str, int]:
     else:
         col_index["TTBP"] = 4  # legacy positional
 
-    # ── Department: always col 5 in both formats ──
-    col_index["DEPARTMENT"] = 5
+    # ── Department: detect from header, fallback col 5 ──
+    # T6 multi-sheet: col 5 = "Tên bộ phận" (garbled encoding, caught by positional)
+    # T7 merged single-sheet: col 5 = "BP"
+    _DEPT_KEYS = ["bp", "bo phan", "ten bo phan", "ten bp", "phong ban", "bo_phan"]
+    for _key in _DEPT_KEYS:
+        if _key in header_lc:
+            col_index["DEPARTMENT"] = header_lc[_key]
+            break
+    else:
+        col_index["DEPARTMENT"] = 5  # legacy positional
 
-    # ── Full name: always col 7 in both formats ──
-    col_index["FULL_NAME"] = 7
+    # ── Full name: detect from header, fallback col 7 ──
+    # Covers "Ho va  ten" (double space), "Ho va ten", "Ho ten", etc.
+    _NAME_KEYS = ["ho va  ten", "ho va ten", "ho ten", "hoten", "full name", "ho_ten"]
+    for _key in _NAME_KEYS:
+        if _key in header_lc:
+            col_index["FULL_NAME"] = header_lc[_key]
+            break
+    else:
+        col_index["FULL_NAME"] = 7  # legacy positional
 
     # ── Job title: optional — only in legacy format (col 9) ──
     # Try common header names first; if none found, leave absent.
