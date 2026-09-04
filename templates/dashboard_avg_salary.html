@@ -300,6 +300,8 @@
   const DONUT_EMPTY = '#e2e2e3';
 
   // ---- Load filters ----
+  let _unitTeamsApi = {};
+  let _allTeamsApi = [];
   let _unitTeams = {};
   let _allTeams = [];
 
@@ -324,10 +326,24 @@
         fUnit.appendChild(o);
       });
 
-      _unitTeams = d.unit_teams || {};
-      _allTeams = d.to_sx || [];
+      _unitTeamsApi = d.unit_teams || {};
+      _allTeamsApi = d.to_sx || [];
       rebuildTeamFilter();
     } catch(e){ console.error(e); }
+  }
+
+  function rebuildTeamFilterFromData(rows){
+    const dataTeams = new Set(rows.map(r => r.to_sx));
+    const dataUnits = new Set(rows.map(r => r.xi_nghiep));
+    _allTeams = _allTeamsApi.filter(t => dataTeams.has(t));
+    _unitTeams = {};
+    for(const [u, teams] of Object.entries(_unitTeamsApi)){
+      if(dataUnits.has(u)){
+        const filtered = teams.filter(t => dataTeams.has(t));
+        if(filtered.length) _unitTeams[u] = filtered;
+      }
+    }
+    rebuildTeamFilter();
   }
 
   function rebuildTeamFilter(){
@@ -356,6 +372,7 @@
       const r = await fetch('/api/avg-salary/rows?' + params);
       const d = await r.json();
       allRows = d.rows || [];
+      rebuildTeamFilterFromData(allRows);
       renderSummary(d);
       renderTrend(allRows);
       renderLineChart(allRows);
