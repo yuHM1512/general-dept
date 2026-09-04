@@ -1,0 +1,814 @@
+{% extends "base.html" %}
+{% block title %}Lương bình quân | {{ app_name }}{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  .kpi-card { background: var(--surface-container-lowest, #fff); border-radius: 0.75rem; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  .kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--on-surface-variant, #414750); }
+  .kpi-value { font-family: 'Manrope', sans-serif; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; margin-top: 10px; font-variant-numeric: tabular-nums; line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--on-surface-variant, #414750); margin-top: 8px; font-weight: 500; }
+  .chart-card { background: var(--surface-container-lowest, #fff); border-radius: 0.75rem; padding: 28px; }
+  .chart-title { font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 600; }
+  .chart-sub { font-size: 12px; color: var(--on-surface-variant, #414750); }
+  .chart-header-bar { background: var(--primary, #002c50); color: #fff; padding: 10px 18px; border-radius: 0.5rem; font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+  .chart-header-sub { font-size: 12px; color: var(--on-surface-variant, #414750); margin-top: 4px; font-weight: 400; }
+  .tbl-header { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+  .reason-pill { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .reason-pill--filled { background: #d2e4ff; color: #00487f; }
+  .reason-pill--empty { color: var(--on-surface-variant, #414750); opacity: 0.4; }
+  .modal-overlay { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(25,28,29,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .modal-box { background: #fff; border-radius: 1rem; padding: 32px; width: 520px; max-width: 90vw; box-shadow: 0 24px 48px rgba(0,0,0,.12); animation: slideUp .3s ease; }
+  @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<section style="max-width:1320px; margin:0 auto;" class="space-y-7">
+
+  <!-- Header -->
+  <div class="flex items-center gap-4">
+    <a href="/rcp/dashboard" class="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-container-low transition-colors text-on-surface">
+      <span class="material-symbols-outlined text-xl">arrow_back</span>
+    </a>
+    <div>
+      <h1 class="text-lg font-bold text-on-surface font-headline" style="letter-spacing:-0.01em;">Lương bình quân ngày</h1>
+      <span class="text-xs font-medium text-on-surface-variant" style="letter-spacing:0.01em;">Ngưỡng cảnh báo: &lt; {{ wage_threshold_fmt }} VND · M29</span>
+    </div>
+    <div class="flex-1"></div>
+    <span class="text-xs font-semibold tracking-widest uppercase text-on-surface-variant hidden sm:block">Phòng Tổng hợp</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap items-end gap-3">
+    <div class="flex flex-col gap-1.5">
+      <span class="text-xs font-medium text-on-surface-variant" style="letter-spacing:0.01em">Năm</span>
+      <select id="fYear" class="h-10 px-3 rounded-lg bg-surface-container-low border-0 text-sm focus:ring-2 focus:ring-primary/40" style="min-width:90px">
+        <option value="{{ now_year }}">{{ now_year }}</option>
+      </select>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <span class="text-xs font-medium text-on-surface-variant" style="letter-spacing:0.01em">Tháng</span>
+      <select id="fMonth" class="h-10 px-3 rounded-lg bg-surface-container-low border-0 text-sm focus:ring-2 focus:ring-primary/40" style="min-width:110px">
+        <option value="">Tất cả</option>
+      </select>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <span class="text-xs font-medium text-on-surface-variant" style="letter-spacing:0.01em">Đơn vị</span>
+      <select id="fUnit" class="h-10 px-3 rounded-lg bg-surface-container-low border-0 text-sm focus:ring-2 focus:ring-primary/40" style="min-width:130px">
+        <option value="">Tất cả</option>
+      </select>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <span class="text-xs font-medium text-on-surface-variant" style="letter-spacing:0.01em">Tổ</span>
+      <select id="fTeam" class="h-10 px-3 rounded-lg bg-surface-container-low border-0 text-sm focus:ring-2 focus:ring-primary/40" style="min-width:130px">
+        <option value="">Tất cả</option>
+      </select>
+    </div>
+    <button id="btnRefresh" class="h-10 px-4 rounded-lg text-sm font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors inline-flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-base">refresh</span> Làm mới
+    </button>
+    <span id="loadStatus" class="text-xs text-on-surface-variant ml-auto"></span>
+  </div>
+
+  <!-- KPI cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="kpi-card">
+      <div class="flex items-center justify-between">
+        <div class="kpi-label">Số ngày cảnh báo</div>
+        <span class="material-symbols-outlined text-primary" style="font-size:28px; opacity:.6;">calendar_month</span>
+      </div>
+      <div id="statDays" class="kpi-value text-on-primary-fixed-variant">--</div>
+      <div id="statDaysSub" class="kpi-sub"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="flex items-center justify-between">
+        <div class="kpi-label">Tổ cảnh báo</div>
+        <span class="material-symbols-outlined text-error" style="font-size:28px; opacity:.6;">warning</span>
+      </div>
+      <div id="statRows" class="kpi-value text-error">--</div>
+      <div class="kpi-sub">dưới ngưỡng {{ wage_threshold_fmt|default('220.000') }} VND</div>
+    </div>
+    <div class="kpi-card">
+      <div class="flex items-center justify-between">
+        <div class="kpi-label">Đơn vị ảnh hưởng</div>
+        <span class="material-symbols-outlined text-tertiary" style="font-size:28px; opacity:.6;">apartment</span>
+      </div>
+      <div id="statUnits" class="kpi-value text-on-surface">--</div>
+      <div id="statUnitsSub" class="kpi-sub"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="flex items-center justify-between">
+        <div class="kpi-label">Lương BQ thấp nhất</div>
+        <span class="material-symbols-outlined text-error" style="font-size:28px; opacity:.6;">trending_down</span>
+      </div>
+      <div id="statMinWage" class="kpi-value text-error" style="font-size:34px; white-space:nowrap;">--</div>
+      <div id="statMinWageSub" class="kpi-sub"></div>
+    </div>
+  </div>
+
+  <!-- Trend bar chart -->
+  <div class="chart-card">
+    <div class="chart-header-bar mb-1">Số tổ dưới ngưỡng theo ngày</div>
+    <div class="chart-header-sub mb-5">Số tổ có lương BQ dưới {{ wage_threshold_fmt }} VND · <span id="trendScopeLabel"></span></div>
+    <div style="height:220px;">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Analytics row: line chart + donut -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Line chart: Lương BQ theo tổ -->
+    <div class="chart-card">
+      <div class="chart-header-bar mb-1">Lương BQ theo tổ</div>
+      <div class="chart-header-sub mb-5">Đường nét đứt: ngưỡng {{ wage_threshold_fmt }} VND</div>
+      <div style="height:220px;">
+        <canvas id="lineChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Donut chart: Phân bổ lý do -->
+    <div class="chart-card">
+      <div class="chart-header-bar mb-5">Phân bổ lý do cảnh báo</div>
+      <div class="flex items-center gap-8 flex-wrap justify-center">
+        <canvas id="donutChart" width="180" height="180" style="max-width:180px;"></canvas>
+        <div id="donutLegend" class="flex flex-col gap-2.5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap + Reason coverage -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Heatmap -->
+    <div class="chart-card lg:col-span-2">
+      <div class="chart-header-bar mb-1">Heatmap cảnh báo</div>
+      <div class="chart-header-sub mb-5">Số tổ dưới ngưỡng · Đơn vị × Ngày</div>
+      <div id="heatmapContainer" class="overflow-x-auto"></div>
+    </div>
+
+    <!-- Reason coverage -->
+    <div class="chart-card flex flex-col">
+      <div class="chart-header-bar mb-1">Tỷ lệ ghi lý do</div>
+      <div class="chart-header-sub mb-6">Theo dõi mức độ hoàn thành</div>
+      <div class="flex-1 flex flex-col justify-center gap-6">
+        <div class="text-center">
+          <div id="coveragePct" class="font-headline text-5xl font-bold" style="letter-spacing:-0.02em; font-variant-numeric:tabular-nums;">--</div>
+          <span class="text-xs text-on-surface-variant">đã ghi lý do</span>
+        </div>
+        <div class="h-2 bg-surface-container-high rounded-full overflow-hidden">
+          <div id="coverageBar" class="h-full rounded-full transition-all duration-700" style="width:0%; background:linear-gradient(135deg,#004275,#005a9c);"></div>
+        </div>
+        <div class="flex flex-col gap-2.5">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-primary-container"></div>
+              <span class="text-sm text-on-surface">Đã ghi lý do</span>
+            </div>
+            <span id="coverageWith" class="text-sm font-semibold" style="font-variant-numeric:tabular-nums;">--</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-surface-container-high"></div>
+              <span class="text-sm text-on-surface-variant">Chưa ghi</span>
+            </div>
+            <span id="coverageWithout" class="text-sm font-semibold text-error" style="font-variant-numeric:tabular-nums;">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data table -->
+  <div class="chart-card !p-0 overflow-hidden">
+    <div class="px-7 pt-5 pb-3 flex items-center justify-between">
+      <span class="chart-header-bar">Chi tiết cảnh báo</span>
+      <div class="flex items-center gap-3">
+        <span id="tableCount" class="text-xs text-on-surface-variant" style="font-variant-numeric:tabular-nums;"></span>
+        <div id="tablePager" class="flex items-center gap-1"></div>
+      </div>
+    </div>
+    <div class="px-7 pb-4 flex flex-wrap items-end gap-2.5">
+      <div class="flex flex-col gap-1">
+        <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Ngày</span>
+        <input type="date" id="tblFDate" class="h-8 px-2.5 rounded-lg bg-surface-container-low border-0 text-xs focus:ring-2 focus:ring-primary/40" style="min-width:130px">
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Đơn vị</span>
+        <select id="tblFUnit" class="h-8 px-2.5 rounded-lg bg-surface-container-low border-0 text-xs focus:ring-2 focus:ring-primary/40" style="min-width:100px">
+          <option value="">Tất cả</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Tổ</span>
+        <select id="tblFTeam" class="h-8 px-2.5 rounded-lg bg-surface-container-low border-0 text-xs focus:ring-2 focus:ring-primary/40" style="min-width:100px">
+          <option value="">Tất cả</option>
+        </select>
+      </div>
+      <label class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-surface-container-low cursor-pointer select-none">
+        <input type="checkbox" id="tblFNoReason" class="accent-error w-3.5 h-3.5">
+        <span class="text-xs font-medium text-on-surface-variant">Chưa có lý do</span>
+      </label>
+      <button id="tblFReset" class="h-8 px-3 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors inline-flex items-center gap-1">
+        <span class="material-symbols-outlined" style="font-size:14px;">restart_alt</span> Xoá lọc
+      </button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full" style="border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr class="bg-surface-container-low">
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant" style="width:36px;">STT</th>
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant">Ngày</th>
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant">Đơn vị</th>
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant">Tổ</th>
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant">Khách hàng</th>
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant">Mã hàng</th>
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant">Ngày RCC</th>
+            <th class="tbl-header px-2.5 py-2 text-right text-on-surface-variant">Lương BQ</th>
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant">Lý do</th>
+            <th class="tbl-header px-2.5 py-2 text-left text-on-surface-variant">Ghi chú</th>
+            <th class="tbl-header px-1.5 py-2 text-center text-on-surface-variant" style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="dataBody">
+          <tr><td colspan="11" class="px-4 py-8 text-center text-on-surface-variant text-sm">Đang tải dữ liệu...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+
+<!-- Note modal -->
+<div id="noteModal" class="hidden modal-overlay">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-2">
+      <span class="font-headline text-lg font-bold text-on-surface">Cập nhật lý do</span>
+      <button id="noteClose" class="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-surface-container-low transition-colors text-on-surface-variant">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+    </div>
+    <div id="noteContext" class="text-sm text-on-surface-variant mb-6"></div>
+    <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-1.5">
+        <span class="text-xs font-medium text-on-surface-variant" style="letter-spacing:0.01em">Lý do</span>
+        <select id="noteReason" class="h-11 px-3.5 rounded-lg bg-surface-container-low border-0 text-sm focus:ring-2 focus:ring-primary/40 w-full">
+          <option value="">-- Chọn lý do --</option>
+          <option value="Rải chuyền mã mới">Rải chuyền mã mới</option>
+          <option value="Chuyển đổi nhiều">Chuyển đổi nhiều</option>
+          <option value="Thiếu lao động">Thiếu lao động</option>
+          <option value="Máy hư / Nguyên liệu">Máy hư / Nguyên liệu</option>
+          <option value="Mã khó">Mã khó</option>
+          <option value="Khác">Khác</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <span class="text-xs font-medium text-on-surface-variant" style="letter-spacing:0.01em">Ghi chú</span>
+        <textarea id="noteText" rows="3" placeholder="Nhập ghi chú chi tiết..."
+                  class="px-3.5 py-3 rounded-lg bg-surface-container-low border-0 text-sm focus:ring-2 focus:ring-primary/40 w-full resize-y" style="min-height:80px; line-height:1.5;"></textarea>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2.5 mt-7">
+      <button id="noteCancel" class="h-11 px-5 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors text-sm">Huỷ</button>
+      <button id="noteSave" class="h-11 px-5 rounded-lg font-bold editorial-gradient text-on-primary hover:opacity-95 transition-all text-sm">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_extra %}
+<script>
+(function(){
+  const THRESHOLD = {{ wage_threshold }};
+  let allRows = [];
+  let trendChartInst = null;
+  let lineChartInst = null;
+  let donutChartInst = null;
+  let editingRow = null;
+
+  const $ = s => document.querySelector(s);
+  const fYear  = $('#fYear');
+  const fMonth = $('#fMonth');
+  const fUnit  = $('#fUnit');
+  const fTeam  = $('#fTeam');
+
+  function fmtVnd(v){ return Number(v).toLocaleString('vi-VN'); }
+  function fmtDate(d){ if(!d) return ''; const p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+  function fmtDateShort(d){ if(!d) return ''; const p=d.split('-'); return p[2]+'/'+p[1]; }
+
+  const TEAM_COLORS = ['#005a9c','#004940','#1b6d24','#ba1a1a','#6750a4','#b06000'];
+  const DONUT_COLORS = ['#005a9c','#1b6d24','#004940','#a1c9ff','#ba1a1a'];
+  const DONUT_EMPTY = '#e2e2e3';
+
+  // ---- Load filters ----
+  let _unitTeams = {};
+  let _allTeams = [];
+
+  async function loadFilters(){
+    const y = fYear.value;
+    try {
+      const r = await fetch(`/api/avg-salary/filters?year=${y}`);
+      const d = await r.json();
+      const prevMonth = fMonth.value;
+      fMonth.innerHTML = '<option value="">Tất cả</option>';
+      (d.months||[]).forEach(m => {
+        const o = document.createElement('option');
+        o.value = m; o.textContent = 'Tháng ' + m;
+        fMonth.appendChild(o);
+      });
+      if(prevMonth) fMonth.value = prevMonth;
+
+      fUnit.innerHTML = '<option value="">Tất cả</option>';
+      (d.xi_nghiep||[]).forEach(u => {
+        const o = document.createElement('option');
+        o.value = u; o.textContent = u;
+        fUnit.appendChild(o);
+      });
+
+      _unitTeams = d.unit_teams || {};
+      _allTeams = d.to_sx || [];
+      rebuildTeamFilter();
+    } catch(e){ console.error(e); }
+  }
+
+  function rebuildTeamFilter(){
+    const prevTeam = fTeam.value;
+    const unitVal = fUnit.value;
+    const teams = unitVal ? (_unitTeams[unitVal] || []) : _allTeams;
+    fTeam.innerHTML = '<option value="">Tất cả</option>';
+    teams.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      fTeam.appendChild(o);
+    });
+    if(teams.includes(prevTeam)) fTeam.value = prevTeam;
+  }
+
+  // ---- Load data ----
+  async function loadData(){
+    const status = $('#loadStatus');
+    status.textContent = 'Đang tải...';
+    const params = new URLSearchParams({ year: fYear.value });
+    if(fMonth.value) params.set('month', fMonth.value);
+    if(fUnit.value) params.set('xi_nghiep', fUnit.value);
+    if(fTeam.value) params.set('to_sx', fTeam.value);
+
+    try {
+      const r = await fetch('/api/avg-salary/rows?' + params);
+      const d = await r.json();
+      allRows = d.rows || [];
+      renderSummary(d);
+      renderTrend(allRows);
+      renderLineChart(allRows);
+      renderDonut(allRows);
+      renderHeatmap(allRows);
+      renderCoverage(allRows);
+      renderTable(allRows);
+      status.textContent = allRows.length + ' dòng';
+    } catch(e){
+      status.textContent = 'Lỗi tải dữ liệu';
+      console.error(e);
+    }
+  }
+
+  // ---- KPI summary ----
+  function renderSummary(d){
+    $('#statDays').textContent = d.total_days ?? '--';
+    const mLabel = fMonth.value ? 'tháng ' + fMonth.value + '/' + fYear.value : 'năm ' + fYear.value;
+    $('#statDaysSub').textContent = 'ngày trong ' + mLabel;
+    $('#statRows').textContent = d.total_rows ?? '--';
+    $('#statUnits').textContent = d.total_units ?? '--';
+    const minW = d.min_wage;
+    $('#statMinWage').textContent = minW != null ? fmtVnd(minW) + ' đ' : '--';
+    $('#trendScopeLabel').textContent = fMonth.value ? 'Tháng ' + fMonth.value + '/' + fYear.value : 'Năm ' + fYear.value;
+  }
+
+  // ---- Trend bar chart ----
+  function renderTrend(rows){
+    const byDate = {};
+    rows.forEach(r => { byDate[r.ngay_chung_tu] = (byDate[r.ngay_chung_tu]||0) + 1; });
+    const labels = Object.keys(byDate).sort();
+    const data = labels.map(l => byDate[l]);
+
+    if(trendChartInst) trendChartInst.destroy();
+    trendChartInst = new Chart($('#trendChart'), {
+      type: 'bar',
+      data: {
+        labels: labels.map(fmtDateShort),
+        datasets: [{
+          data: data,
+          backgroundColor: 'rgba(186,26,26,0.18)',
+          hoverBackgroundColor: 'rgba(186,26,26,0.35)',
+          borderColor: 'rgba(186,26,26,0.3)',
+          borderWidth: 1,
+          borderRadius: 10,
+          borderSkipped: 'bottom',
+          maxBarThickness: 20,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { title: (t) => labels[t[0].dataIndex] ? fmtDate(labels[t[0].dataIndex]) : '', label: (t) => t.raw + ' tổ' } }
+        },
+        scales: {
+          y: { beginAtZero: true, grace: '20%', ticks: { display: false }, grid: { display: false }, border: { display: false } },
+          x: { ticks: { font: { size: 11, family: 'Inter' }, color: '#727781' }, grid: { display: false }, border: { display: false } }
+        }
+      },
+      plugins: [{
+        id: 'barValueLabels',
+        afterDatasetsDraw(chart) {
+          const ctx = chart.ctx;
+          chart.data.datasets.forEach((ds, di) => {
+            const meta = chart.getDatasetMeta(di);
+            meta.data.forEach((bar, i) => {
+              const v = ds.data[i];
+              if(!v) return;
+              ctx.save();
+              ctx.fillStyle = '#727781';
+              ctx.font = '600 11px Inter';
+              ctx.textAlign = 'center';
+              ctx.fillText(v, bar.x, bar.y - 6);
+              ctx.restore();
+            });
+          });
+        }
+      }]
+    });
+  }
+
+  // ---- Line chart: Lương BQ theo tổ (top 6 teams by alert count) ----
+  function renderLineChart(rows){
+    const teamMap = {};
+    const teamAlertCount = {};
+    rows.forEach(r => {
+      const key = r.xi_nghiep + ' · Tổ ' + r.to_sx;
+      if(!teamMap[key]) teamMap[key] = {};
+      teamAlertCount[key] = (teamAlertCount[key]||0) + 1;
+      const d = r.ngay_chung_tu;
+      if(!teamMap[key][d] || r.luong_bq < teamMap[key][d]) teamMap[key][d] = r.luong_bq;
+    });
+
+    const MAX_TEAMS = 6;
+    let allDates = [...new Set(rows.map(r => r.ngay_chung_tu))].sort();
+    if(allDates.length > 31) allDates = allDates.slice(-31);
+
+    const teams = Object.entries(teamAlertCount)
+      .sort((a,b) => b[1] - a[1])
+      .slice(0, MAX_TEAMS)
+      .map(e => e[0]);
+
+    const datasets = teams.map((team, i) => ({
+      label: team,
+      data: allDates.map(d => teamMap[team][d] ?? null),
+      borderColor: TEAM_COLORS[i % TEAM_COLORS.length],
+      backgroundColor: TEAM_COLORS[i % TEAM_COLORS.length],
+      pointRadius: 4,
+      pointBackgroundColor: '#fff',
+      pointBorderWidth: 2,
+      borderWidth: 2,
+      tension: 0.1,
+      spanGaps: false,
+    }));
+
+    if(lineChartInst) lineChartInst.destroy();
+    lineChartInst = new Chart($('#lineChart'), {
+      type: 'line',
+      data: { labels: allDates.map(fmtDateShort), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 11, family: 'Inter' } } },
+          tooltip: { callbacks: { label: (t) => t.dataset.label + ': ' + fmtVnd(t.raw) + ' đ' } },
+          annotation: undefined,
+        },
+        scales: {
+          y: {
+            ticks: { font: { size: 10, family: 'Inter' }, color: '#727781', callback: v => (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 },
+            grid: { color: 'rgba(0,0,0,.04)' },
+            border: { display: false },
+          },
+          x: { ticks: { font: { size: 11, family: 'Inter' }, color: '#727781' }, grid: { display: false }, border: { display: false } }
+        }
+      },
+      plugins: [{
+        id: 'thresholdLine',
+        afterDraw(chart) {
+          const yAxis = chart.scales.y;
+          const y = yAxis.getPixelForValue(THRESHOLD);
+          if(y < yAxis.top || y > yAxis.bottom) return;
+          const ctx = chart.ctx;
+          ctx.save();
+          ctx.setLineDash([6, 4]);
+          ctx.strokeStyle = 'rgba(186,26,26,0.6)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(chart.chartArea.left, y);
+          ctx.lineTo(chart.chartArea.right, y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }]
+    });
+  }
+
+  // ---- Donut chart: Phân bổ lý do ----
+  function renderDonut(rows){
+    const counts = {};
+    let noReason = 0;
+    rows.forEach(r => {
+      if(r.ly_do) counts[r.ly_do] = (counts[r.ly_do]||0) + 1;
+      else noReason++;
+    });
+    const entries = Object.entries(counts);
+    if(noReason > 0) entries.push(['Chưa ghi', noReason]);
+
+    const labels = entries.map(e => e[0]);
+    const data = entries.map(e => e[1]);
+    const colors = entries.map((e, i) => e[0] === 'Chưa ghi' ? DONUT_EMPTY : DONUT_COLORS[i % DONUT_COLORS.length]);
+
+    if(donutChartInst) donutChartInst.destroy();
+    donutChartInst = new Chart($('#donutChart'), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+      options: {
+        responsive: false,
+        cutout: '55%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (t) => t.label + ': ' + t.raw + ' (' + Math.round(t.raw/rows.length*100) + '%)' } }
+        }
+      },
+      plugins: [{
+        id: 'centerText',
+        afterDraw(chart) {
+          const { ctx, chartArea: { left, right, top, bottom } } = chart;
+          const cx = (left + right) / 2, cy = (top + bottom) / 2;
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.font = '700 22px Manrope'; ctx.fillStyle = '#1a1c1d';
+          ctx.fillText(String(rows.length), cx, cy - 2);
+          ctx.font = '400 10px Inter'; ctx.fillStyle = '#727781';
+          ctx.fillText('dòng', cx, cy + 14);
+          ctx.restore();
+        }
+      }]
+    });
+
+    const legend = $('#donutLegend');
+    legend.innerHTML = entries.map((e, i) => {
+      const pct = Math.round(e[1] / rows.length * 100);
+      const c = e[0] === 'Chưa ghi' ? DONUT_EMPTY : DONUT_COLORS[i % DONUT_COLORS.length];
+      return `<div class="flex items-center gap-2.5">
+        <div class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${c}"></div>
+        <span class="text-sm text-on-surface flex-1">${e[0]}</span>
+        <span class="text-xs text-on-surface-variant" style="font-variant-numeric:tabular-nums;">${e[1]} (${pct}%)</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ---- Heatmap: Đơn vị × Ngày ----
+  function renderHeatmap(rows){
+    const units = [...new Set(rows.map(r => r.xi_nghiep))].sort();
+    let dates = [...new Set(rows.map(r => r.ngay_chung_tu))].sort();
+    if(!units.length || !dates.length) {
+      $('#heatmapContainer').innerHTML = '<div class="text-sm text-on-surface-variant py-4">Không đủ dữ liệu.</div>';
+      return;
+    }
+    const MAX_COLS = 31;
+    let truncated = false;
+    if(dates.length > MAX_COLS) {
+      truncated = true;
+      dates = dates.slice(-MAX_COLS);
+    }
+    const map = {};
+    rows.forEach(r => {
+      const k = r.xi_nghiep + '|' + r.ngay_chung_tu;
+      map[k] = (map[k]||0) + 1;
+    });
+
+    const colW = Math.max(38, Math.floor(700 / dates.length));
+    let html = `<div style="display:grid; grid-template-columns:80px repeat(${dates.length}, ${colW}px); gap:3px; min-width:${80 + dates.length * (colW+3)}px;">`;
+    html += `<div></div>`;
+    dates.forEach(d => { html += `<div class="text-center text-xs text-on-surface-variant py-2" style="font-variant-numeric:tabular-nums;">${fmtDateShort(d)}</div>`; });
+
+    units.forEach(u => {
+      html += `<div class="flex items-center px-2 text-sm font-semibold text-on-surface" style="white-space:nowrap;">${u}</div>`;
+      dates.forEach(d => {
+        const c = map[u + '|' + d] || 0;
+        let bg, tc;
+        if(c === 0) { bg = 'var(--surface-container-low,#f3f3f4)'; tc = 'var(--on-surface-variant,#414750)'; }
+        else if(c === 1) { bg = 'rgba(186,26,26,0.12)'; tc = '#ba1a1a'; }
+        else if(c === 2) { bg = 'rgba(186,26,26,0.25)'; tc = '#ba1a1a'; }
+        else { bg = 'rgba(186,26,26,0.45)'; tc = '#fff'; }
+        html += `<div style="background:${bg}; color:${tc}; border-radius:4px; height:40px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:${c>0?600:400}; font-variant-numeric:tabular-nums;">${c > 0 ? c : '·'}</div>`;
+      });
+    });
+
+    html += `<div style="grid-column:1/-1; display:flex; align-items:center; gap:12px; margin-top:12px; padding-left:80px; flex-wrap:wrap;">`;
+    [{l:'0 tổ',bg:'var(--surface-container-low,#f3f3f4)'},{l:'1 tổ',bg:'rgba(186,26,26,0.12)'},{l:'2 tổ',bg:'rgba(186,26,26,0.25)'},{l:'3+ tổ',bg:'rgba(186,26,26,0.45)'}].forEach(item => {
+      html += `<div class="flex items-center gap-1.5"><div style="width:14px;height:14px;border-radius:3px;background:${item.bg}"></div><span class="text-xs text-on-surface-variant">${item.l}</span></div>`;
+    });
+    if(truncated) html += `<span class="text-xs text-on-surface-variant ml-auto">Hiển thị ${MAX_COLS} ngày gần nhất</span>`;
+    html += `</div></div>`;
+
+    $('#heatmapContainer').innerHTML = html;
+  }
+
+  // ---- Reason coverage ----
+  function renderCoverage(rows){
+    const withReason = rows.filter(r => r.ly_do).length;
+    const without = rows.length - withReason;
+    const pct = rows.length ? Math.round(withReason / rows.length * 100) : 0;
+
+    const pctEl = $('#coveragePct');
+    pctEl.textContent = pct + '%';
+    pctEl.style.color = pct >= 80 ? '#1b6d24' : pct >= 50 ? '#1a1c1d' : '#ba1a1a';
+
+    const bar = $('#coverageBar');
+    bar.style.width = pct + '%';
+    bar.style.background = pct >= 80 ? 'linear-gradient(135deg,#004275,#005a9c)' : '#ba1a1a';
+
+    $('#coverageWith').textContent = withReason + '/' + rows.length;
+    $('#coverageWithout').textContent = without + '/' + rows.length;
+  }
+
+  // ---- Data table (paginated) ----
+  const PAGE_SIZE = 50;
+  let currentPage = 0;
+  let filteredRows = [];
+
+  function buildTableFilters(rows){
+    const dates = [...new Set(rows.map(r => r.ngay_chung_tu))].sort();
+    const units = [...new Set(rows.map(r => r.xi_nghiep))].sort();
+    const teams = [...new Set(rows.map(r => r.to_sx))].sort();
+    const tblFDate = $('#tblFDate'), tblFUnit = $('#tblFUnit'), tblFTeam = $('#tblFTeam');
+    if(dates.length){ tblFDate.min = dates[0]; tblFDate.max = dates[dates.length-1]; }
+    tblFDate.value = '';
+    tblFUnit.innerHTML = '<option value="">Tất cả</option>' + units.map(u => `<option value="${u}">${u}</option>`).join('');
+    tblFTeam.innerHTML = '<option value="">Tất cả</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+
+  function applyTableFilters(){
+    const fd = $('#tblFDate').value;
+    const fu = $('#tblFUnit').value;
+    const ft = $('#tblFTeam').value;
+    const noReason = $('#tblFNoReason').checked;
+    filteredRows = allRows.filter(r => {
+      if(fd && r.ngay_chung_tu !== fd) return false;
+      if(fu && r.xi_nghiep !== fu) return false;
+      if(ft && r.to_sx !== ft) return false;
+      if(noReason && r.ly_do) return false;
+      return true;
+    });
+    currentPage = 0;
+    renderTablePage(filteredRows);
+  }
+
+  function renderTable(rows){
+    buildTableFilters(rows);
+    currentPage = 0;
+    filteredRows = rows;
+    renderTablePage(rows);
+  }
+
+  function renderTablePage(rows){
+    const body = $('#dataBody');
+    if(!rows.length){
+      body.innerHTML = '<tr><td colspan="11" class="px-4 py-8 text-center text-on-surface-variant text-sm">Không có dữ liệu.</td></tr>';
+      $('#tableCount').textContent = '';
+      $('#tablePager').innerHTML = '';
+      return;
+    }
+    const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+    const start = currentPage * PAGE_SIZE;
+    const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+    $('#tableCount').textContent = rows.length + ' dòng';
+
+    // Pager
+    if(totalPages > 1){
+      let pg = `<button onclick="tablePrev()" class="w-8 h-8 rounded-lg hover:bg-surface-container-low text-on-surface-variant inline-flex items-center justify-center transition-colors" ${currentPage===0?'disabled style="opacity:.3;pointer-events:none"':''}><span class="material-symbols-outlined" style="font-size:16px">chevron_left</span></button>`;
+      pg += `<span class="text-xs text-on-surface-variant px-1" style="font-variant-numeric:tabular-nums;">${currentPage+1} / ${totalPages}</span>`;
+      pg += `<button onclick="tableNext()" class="w-8 h-8 rounded-lg hover:bg-surface-container-low text-on-surface-variant inline-flex items-center justify-center transition-colors" ${currentPage>=totalPages-1?'disabled style="opacity:.3;pointer-events:none"':''}><span class="material-symbols-outlined" style="font-size:16px">chevron_right</span></button>`;
+      $('#tablePager').innerHTML = pg;
+    } else {
+      $('#tablePager').innerHTML = '';
+    }
+
+    body.innerHTML = pageRows.map((r,idx) => {
+      const i = start + idx;
+      const lydoCls = r.ly_do ? 'reason-pill reason-pill--filled' : 'reason-pill reason-pill--empty';
+      const lydoTxt = r.ly_do || '—';
+      return `<tr style="transition:background .15s ease;" onmouseover="this.style.background='var(--surface-container-low,#f3f3f4)'" onmouseout="this.style.background=''">
+        <td style="padding:10px 10px; font-variant-numeric:tabular-nums; color:var(--on-surface-variant); font-size:12px;">${String(i+1).padStart(2,'0')}</td>
+        <td style="padding:10px 10px; white-space:nowrap; font-variant-numeric:tabular-nums;">${fmtDate(r.ngay_chung_tu)}</td>
+        <td style="padding:10px 10px; font-weight:600;">${r.xi_nghiep}</td>
+        <td style="padding:10px 10px; white-space:nowrap;">${r.to_sx}</td>
+        <td style="padding:10px 10px;">${r.khach_hang||''}</td>
+        <td style="padding:10px 10px; font-family:monospace; font-size:11px; white-space:nowrap;">${r.ma_hang||''}</td>
+        <td style="padding:10px 10px; white-space:nowrap; font-variant-numeric:tabular-nums;">${r.ngay_rc ? fmtDate(r.ngay_rc) : ''}</td>
+        <td style="padding:10px 10px; text-align:right; font-weight:700; color:#ba1a1a; font-variant-numeric:tabular-nums; font-family:monospace; white-space:nowrap;">${fmtVnd(r.luong_bq)} đ</td>
+        <td style="padding:10px 10px;"><span class="${lydoCls}">${lydoTxt}</span></td>
+        <td style="padding:10px 10px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--on-surface-variant); font-size:12px;" title="${(r.ghi_chu||'').replace(/"/g,'&quot;')}">${r.ghi_chu||'—'}</td>
+        <td style="padding:10px 6px; text-align:center;">
+          <button onclick="openNote(${i})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-surface-container-low transition-colors text-on-surface-variant" title="Sửa lý do">
+            <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ---- Note modal ----
+  window.tablePrev = function(){ if(currentPage > 0){ currentPage--; renderTablePage(filteredRows); } };
+  window.tableNext = function(){ if(currentPage < Math.ceil(filteredRows.length / PAGE_SIZE) - 1){ currentPage++; renderTablePage(filteredRows); } };
+
+  // Table sub-filters
+  $('#tblFDate').addEventListener('input', applyTableFilters);
+  $('#tblFUnit').addEventListener('change', () => {
+    const selUnit = $('#tblFUnit').value;
+    const teams = selUnit
+      ? [...new Set(allRows.filter(r => r.xi_nghiep === selUnit).map(r => r.to_sx))].sort()
+      : [...new Set(allRows.map(r => r.to_sx))].sort();
+    const tblFTeam = $('#tblFTeam');
+    const prev = tblFTeam.value;
+    tblFTeam.innerHTML = '<option value="">Tất cả</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('');
+    if(teams.includes(prev)) tblFTeam.value = prev;
+    applyTableFilters();
+  });
+  $('#tblFTeam').addEventListener('change', applyTableFilters);
+  $('#tblFNoReason').addEventListener('change', applyTableFilters);
+  $('#tblFReset').addEventListener('click', () => {
+    $('#tblFDate').value = '';
+    $('#tblFUnit').value = '';
+    $('#tblFTeam').value = '';
+    $('#tblFNoReason').checked = false;
+    applyTableFilters();
+  });
+
+  window.openNote = function(idx){
+    editingRow = allRows[idx];
+    $('#noteContext').textContent = editingRow.xi_nghiep + ' / Tổ ' + editingRow.to_sx + ' — ' + fmtDate(editingRow.ngay_chung_tu) + ' — ' + (editingRow.ma_hang||'');
+    $('#noteReason').value = editingRow.ly_do || '';
+    $('#noteText').value = editingRow.ghi_chu || '';
+    $('#noteModal').classList.remove('hidden');
+  };
+
+  function closeModal(){ $('#noteModal').classList.add('hidden'); }
+  $('#noteModal').addEventListener('click', function(e){ if(e.target === this) closeModal(); });
+  $('#noteCancel').onclick = closeModal;
+  $('#noteClose').onclick = closeModal;
+
+  $('#noteSave').onclick = async () => {
+    if(!editingRow) return;
+    const payload = {
+      xi_nghiep: editingRow.xi_nghiep,
+      to_sx: editingRow.to_sx,
+      ngay_chung_tu: editingRow.ngay_chung_tu,
+      ma_hang: editingRow.ma_hang || '',
+      ly_do: $('#noteReason').value,
+      ghi_chu: $('#noteText').value,
+    };
+    try {
+      const r = await fetch('/api/avg-salary/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if(!r.ok) throw new Error(await r.text());
+      editingRow.ly_do = payload.ly_do;
+      editingRow.ghi_chu = payload.ghi_chu;
+      renderTable(allRows);
+      renderDonut(allRows);
+      renderCoverage(allRows);
+      closeModal();
+    } catch(e){
+      alert('Lỗi lưu: ' + e.message);
+    }
+  };
+
+  // ---- Events ----
+  fYear.addEventListener('change', () => { loadFilters(); loadData(); });
+  fMonth.addEventListener('change', loadData);
+  fUnit.addEventListener('change', () => { rebuildTeamFilter(); loadData(); });
+  fTeam.addEventListener('change', loadData);
+  $('#btnRefresh').addEventListener('click', () => { loadFilters(); loadData(); });
+
+  // Init — default to current month, or latest available
+  async function init(){
+    await loadFilters();
+    const nowMonth = new Date().getMonth() + 1;
+    const opts = [...fMonth.options].map(o => o.value).filter(v => v);
+    if(opts.includes(String(nowMonth))){
+      fMonth.value = String(nowMonth);
+    } else if(opts.length){
+      fMonth.value = opts[opts.length - 1];
+    }
+    loadData();
+  }
+  init();
+})();
+</script>
+{% endblock %}

@@ -15,16 +15,16 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFi
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import delete, func
+from sqlalchemy import delete, func, text
 from sqlalchemy import exists
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlmodel import Session, select
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
-from app.db import create_db_and_tables, engine, get_session
+from app.db import avg_salary_engine, create_db_and_tables, engine, get_session
 from app.ingest import ingest_workbook_with_progress
-from app.models import GeneralEmployee, HangingLine, IngestJob, PayrollRow
+from app.models import AvgSalaryNote, GeneralEmployee, HangingLine, IngestJob, PayrollRow
 from app.audit_models import (
     AuditDonVi, AuditBoPhan, AuditLinhVuc, AuditBien, AuditTieuChi, AuditApDung,
     AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem, AuditHdkp,
@@ -463,7 +463,23 @@ def data_page(request: Request) -> HTMLResponse:
 
 
 @app.get("/rcp/dashboard", response_class=HTMLResponse)
-def dashboard_page(request: Request) -> HTMLResponse:
+def dashboard_hub_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "hub_rcp.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "target_salary_vnd_fmt": _fmt_vnd(settings.target_salary_vnd),
+            "wage_threshold_fmt": _fmt_vnd(settings.wage_threshold),
+            "now_year": datetime.utcnow().year,
+            "active_nav": "rcp_dashboard",
+            "user": _current_user(request),
+        },
+    )
+
+
+@app.get("/rcp/dashboard/rcp", response_class=HTMLResponse)
+def dashboard_rcp_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         "dashboard_rcp.html",
         {
@@ -473,6 +489,23 @@ def dashboard_page(request: Request) -> HTMLResponse:
             "now_year": datetime.utcnow().year,
             "active_nav": "rcp_dashboard",
             "target_salary_vnd": settings.target_salary_vnd,
+            "user": _current_user(request),
+        },
+    )
+
+
+@app.get("/rcp/dashboard/avg-salary", response_class=HTMLResponse)
+def dashboard_avg_salary_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "dashboard_avg_salary.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "wage_threshold": settings.wage_threshold,
+            "wage_threshold_fmt": _fmt_vnd(settings.wage_threshold),
+            "target_salary_vnd_fmt": _fmt_vnd(settings.target_salary_vnd),
+            "now_year": datetime.utcnow().year,
+            "active_nav": "rcp_dashboard",
             "user": _current_user(request),
         },
     )
@@ -2273,6 +2306,67 @@ def headcount(
     return HeadcountResponse(year=year, group_filter=group_name, points=points, avg_headcount=avg)
 
 
+@app.get("/api/bu-luong-ratio")
+def bu_luong_ratio(
+    year: int = Query(..., ge=2000, le=2100),
+    month: int | None = Query(None, ge=1, le=12),
+    don_vi: str | None = Query(None),
+    department: str | None = Query(None),
+    session: Session = Depends(get_session),
+) -> dict:
+    _ensure_no_active_ingest(session)
+
+    q = select(
+        PayrollRow.year,
+        PayrollRow.month,
+        PayrollRow.don_vi,
+        PayrollRow.department,
+        func.count().label("total"),
+        func.count().filter(PayrollRow.bu_du_luong_toi_thieu > 0).label("bu_count"),
+    ).where(PayrollRow.year == year).group_by(
+        PayrollRow.year, PayrollRow.month, PayrollRow.don_vi, PayrollRow.department,
+    )
+
+    if month:
+        q = q.where(PayrollRow.month == month)
+    if don_vi:
+        q = _apply_csv_in(q, PayrollRow.don_vi, don_vi)
+    if department:
+        q = _apply_csv_in(q, PayrollRow.department, department)
+
+    rows = session.exec(q).all()
+
+    by_month: dict[int, dict] = {}
+    for r in rows:
+        m = r.month
+        if m not in by_month:
+            by_month[m] = {"month": m, "total": 0, "bu_count": 0, "details": []}
+        by_month[m]["total"] += r.total
+        by_month[m]["bu_count"] += r.bu_count
+        by_month[m]["details"].append({
+            "don_vi": r.don_vi,
+            "department": r.department,
+            "total": r.total,
+            "bu_count": r.bu_count,
+            "rate": round(r.bu_count / r.total * 100, 1) if r.total else 0,
+        })
+
+    points = []
+    for m in sorted(by_month):
+        entry = by_month[m]
+        entry["rate"] = round(entry["bu_count"] / entry["total"] * 100, 1) if entry["total"] else 0
+        points.append(entry)
+
+    overall_total = sum(p["total"] for p in points)
+    overall_bu = sum(p["bu_count"] for p in points)
+
+    return {
+        "year": year,
+        "overall_total": overall_total,
+        "overall_bu_count": overall_bu,
+        "overall_rate": round(overall_bu / overall_total * 100, 1) if overall_total else 0,
+        "points": points,
+    }
 
 
 @app.get("/api/available-months")
@@ -3120,6 +3214,154 @@ def delete_hanging_line(
     session.delete(item)
     session.commit()
     return {"ok": True, "deleted_id": line_id}
+
+
+# ---------------------------------------------------------------------------
+# Avg-Salary (lương bình quân ngày) — queries cm_daily table
+# ---------------------------------------------------------------------------
+
+@app.get("/api/avg-salary/filters")
+def avg_salary_filters(
+    year: int = Query(..., ge=2024, le=2100),
+) -> dict:
+    with avg_salary_engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT DISTINCT EXTRACT(MONTH FROM ngay_chung_tu)::int AS m, "
+                "       xi_nghiep, \"to\" AS to_sx "
+                "FROM cm_daily "
+                "WHERE EXTRACT(YEAR FROM ngay_chung_tu) = :year "
+                "  AND luong_bq IS NOT NULL AND luong_bq < :threshold "
+                "ORDER BY m"
+            ),
+            {"year": year, "threshold": settings.wage_threshold},
+        ).fetchall()
+    months = sorted({r.m for r in rows})
+    xi_nghiep = sorted({r.xi_nghiep for r in rows if r.xi_nghiep})
+    to_sx = sorted({r.to_sx for r in rows if r.to_sx})
+    unit_teams: dict[str, list[str]] = {}
+    for r in rows:
+        if r.xi_nghiep and r.to_sx:
+            unit_teams.setdefault(r.xi_nghiep, set()).add(r.to_sx)
+    unit_teams_sorted = {k: sorted(v) for k, v in unit_teams.items()}
+    return {"year": year, "months": months, "xi_nghiep": xi_nghiep, "to_sx": to_sx, "unit_teams": unit_teams_sorted}
+
+
+@app.get("/api/avg-salary/rows")
+def avg_salary_rows(
+    year: int = Query(..., ge=2024, le=2100),
+    month: int | None = Query(None, ge=1, le=12),
+    xi_nghiep: str | None = Query(None),
+    to_sx: str | None = Query(None),
+    session: Session = Depends(get_session),
+) -> dict:
+    conditions = [
+        "EXTRACT(YEAR FROM ngay_chung_tu) = :year",
+        "luong_bq IS NOT NULL",
+        "luong_bq < :threshold",
+    ]
+    params: dict = {"year": year, "threshold": settings.wage_threshold}
+    if month:
+        conditions.append("EXTRACT(MONTH FROM ngay_chung_tu) = :month")
+        params["month"] = month
+    if xi_nghiep:
+        conditions.append("xi_nghiep = :xi_nghiep")
+        params["xi_nghiep"] = xi_nghiep
+    if to_sx:
+        conditions.append("\"to\" = :to_sx")
+        params["to_sx"] = to_sx
+
+    where = " AND ".join(conditions)
+    sql = text(
+        f"SELECT ngay_chung_tu::date AS ngay_chung_tu, "
+        f"       xi_nghiep, \"to\" AS to_sx, khach_hang, ma_hang, "
+        f"       ngay_rc::date AS ngay_rc, luong_bq "
+        f"FROM cm_daily "
+        f"WHERE {where} "
+        f"ORDER BY ngay_chung_tu DESC, xi_nghiep, \"to\""
+    )
+
+    with avg_salary_engine.connect() as conn:
+        result = conn.execute(sql, params).fetchall()
+
+    # Load notes from main DB
+    notes_map: dict[tuple, tuple[str, str]] = {}
+    all_notes = session.exec(select(AvgSalaryNote)).all()
+    for n in all_notes:
+        key = (str(n.ngay_chung_tu), n.xi_nghiep, n.to_sx, n.ma_hang)
+        notes_map[key] = (n.ly_do, n.ghi_chu)
+
+    rows = []
+    dates_set: set[str] = set()
+    units_set: set[str] = set()
+    min_wage: int | None = None
+    for r in result:
+        d = str(r.ngay_chung_tu)
+        dates_set.add(d)
+        units_set.add(r.xi_nghiep)
+        w = int(r.luong_bq)
+        if min_wage is None or w < min_wage:
+            min_wage = w
+        note_key = (d, r.xi_nghiep, r.to_sx, r.ma_hang or "")
+        ly_do, ghi_chu = notes_map.get(note_key, ("", ""))
+        rows.append({
+            "ngay_chung_tu": d,
+            "xi_nghiep": r.xi_nghiep,
+            "to_sx": r.to_sx,
+            "khach_hang": r.khach_hang or "",
+            "ma_hang": r.ma_hang or "",
+            "ngay_rc": str(r.ngay_rc) if r.ngay_rc else None,
+            "luong_bq": w,
+            "ly_do": ly_do,
+            "ghi_chu": ghi_chu,
+        })
+
+    return {
+        "year": year,
+        "total_rows": len(rows),
+        "total_days": len(dates_set),
+        "total_units": len(units_set),
+        "min_wage": min_wage,
+        "rows": rows,
+    }
+
+
+@app.post("/api/avg-salary/notes")
+def upsert_avg_salary_note(
+    request: Request,
+    payload: dict,
+    session: Session = Depends(get_session),
+) -> dict:
+    user = _current_user(request)
+    ma_nv = user.get("ma_nv", "") if user else ""
+
+    existing = session.exec(
+        select(AvgSalaryNote).where(
+            AvgSalaryNote.xi_nghiep == payload["xi_nghiep"],
+            AvgSalaryNote.to_sx == payload["to_sx"],
+            AvgSalaryNote.ngay_chung_tu == date.fromisoformat(payload["ngay_chung_tu"]),
+            AvgSalaryNote.ma_hang == (payload.get("ma_hang") or ""),
+        )
+    ).first()
+
+    if existing:
+        existing.ly_do = payload.get("ly_do", "")
+        existing.ghi_chu = payload.get("ghi_chu", "")
+        existing.updated_at = datetime.utcnow()
+        session.add(existing)
+    else:
+        note = AvgSalaryNote(
+            xi_nghiep=payload["xi_nghiep"],
+            to_sx=payload["to_sx"],
+            ngay_chung_tu=date.fromisoformat(payload["ngay_chung_tu"]),
+            ma_hang=payload.get("ma_hang") or "",
+            ly_do=payload.get("ly_do", ""),
+            ghi_chu=payload.get("ghi_chu", ""),
+            created_by=ma_nv,
+        )
+        session.add(note)
+    session.commit()
+    return {"ok": True}
 
 
 @app.get("/api/export/below-target.xlsx")

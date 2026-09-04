@@ -14,6 +14,13 @@ engine = create_engine(
     connect_args={"connect_timeout": settings.db_connect_timeout},
 )
 
+_avg_salary_url = settings.avg_salary_database_url or settings.database_url
+avg_salary_engine = create_engine(
+    _avg_salary_url,
+    pool_pre_ping=True,
+    connect_args={"connect_timeout": settings.db_connect_timeout},
+) if _avg_salary_url != settings.database_url else engine
+
 
 def create_db_and_tables() -> None:
     _apply_rename_migrations()   # rename old table names → new names BEFORE create_all

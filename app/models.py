@@ -85,3 +85,27 @@ class HangingLine(SQLModel, table=True):
 
 
 Index("ux_hanging_line_don_vi_department", HangingLine.don_vi, HangingLine.department, unique=True)
+
+
+class AvgSalaryNote(SQLModel, table=True):
+    """Ghi chú lý do lương bình quân thấp cho một tổ trong một ngày."""
+    __tablename__ = "avg_salary_note"
+
+    id: int | None = Field(default=None, primary_key=True)
+    xi_nghiep: str = Field(index=True)
+    to_sx: str = Field(index=True)
+    ngay_chung_tu: date = Field(index=True)
+    ma_hang: str = Field(default="")
+    ly_do: str = Field(default="")
+    ghi_chu: str = Field(default="")
+    created_by: str = Field(default="", max_length=16)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+Index(
+    "ux_avg_salary_note_key",
+    AvgSalaryNote.xi_nghiep, AvgSalaryNote.to_sx,
+    AvgSalaryNote.ngay_chung_tu, AvgSalaryNote.ma_hang,
+    unique=True,
+)

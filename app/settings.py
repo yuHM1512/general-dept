@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     db_connect_timeout: int = 5
 
     target_salary_vnd: int = 5_600_000
+    wage_threshold: int = 220_000
+    avg_salary_database_url: str | None = None
     preview_max_rows: int = 20_000
     create_tables_on_startup: bool = False
     allow_local_ingest: bool = False
