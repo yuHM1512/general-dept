@@ -38,6 +38,17 @@ DEPARTMENT_CANONICAL_BY_KEY = {
 }
 
 
+DON_VI_ALIASES: dict[str, str] = {
+    "XN V2": "XNV2",
+}
+
+
+def normalize_don_vi(don_vi: object) -> str:
+    text = _strip_to_none(don_vi) or ""
+    text = re.sub(r"\s+", " ", text).strip()
+    return DON_VI_ALIASES.get(text, text)
+
+
 def normalize_department(department: object) -> str:
     text = _strip_to_none(department) or ""
     text = re.sub(r"\s+", " ", text).strip()

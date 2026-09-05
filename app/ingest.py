@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import Session
 
 from app.models import PayrollRow
-from app.services import classify_group, normalize_department, normalize_header, to_int_money
+from app.services import classify_group, normalize_department, normalize_don_vi, normalize_header, to_int_money
 
 
 class IngestCounters:
@@ -268,7 +268,7 @@ def _ingest_sheet(
                 "year": year_int,
                 "month": month_int,
                 "ttbp": str(ttbp).strip(),
-                "don_vi": str(don_vi).strip(),
+                "don_vi": normalize_don_vi(don_vi),
                 "co_so": co_so,
                 "department": department,
                 "manv": manv_str,

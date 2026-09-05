@@ -4,7 +4,7 @@ from sqlalchemy import inspect, text
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.settings import settings
-from app.services import classify_group, normalize_department
+from app.services import classify_group, normalize_department, normalize_don_vi
 import app.audit_models as _audit_models  # noqa: F401 – registers audit tables in SQLModel.metadata
 import app.survey_models as _survey_models  # noqa: F401 – registers survey tables in SQLModel.metadata
 
@@ -126,6 +126,15 @@ def _apply_light_migrations() -> None:
                     ),
                     updates,
                 )
+
+            # Normalize don_vi aliases (e.g. "XN V2" → "XNV2")
+            conn.execute(
+                text(
+                    "UPDATE rcp_payrollrow SET don_vi = :new_val "
+                    "WHERE don_vi = :old_val"
+                ),
+                [{"old_val": old, "new_val": new} for old, new in [("XN V2", "XNV2")]],
+            )
 
         if "rcp_hanging_line" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("rcp_hanging_line")}
