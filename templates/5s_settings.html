@@ -62,26 +62,32 @@ tailwind.config = {
 
 <!-- Tab bar (sticky below header) -->
 <div class="sticky top-[69px] z-20 bg-background/95 backdrop-blur-md border-b border-outline-variant/20">
-  <div class="max-w-6xl mx-auto px-4 md:px-margin flex gap-xs py-sm">
+  <div class="max-w-6xl mx-auto px-4 md:px-margin flex gap-xs py-sm overflow-x-auto">
     <button id="tab-5s" onclick="switchTab('5S')"
-      class="tab-btn flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-semibold transition-all">
+      class="tab-btn shrink-0 flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-semibold transition-all">
       <span class="msym material-symbols-outlined text-[16px]">checklist</span>
       5S
       <span class="tab-count px-xs py-[1px] rounded-full text-[10px] font-bold ml-xs">{{ sections | selectattr('loai','eq','5S') | list | length }} nhóm</span>
     </button>
     <button id="tab-tv" onclick="switchTab('TRUC_QUAN')"
-      class="tab-btn flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-semibold transition-all">
+      class="tab-btn shrink-0 flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-semibold transition-all">
       <span class="msym material-symbols-outlined text-[16px]">visibility</span>
       Trực quan
       <span class="tab-count px-xs py-[1px] rounded-full text-[10px] font-bold ml-xs">{{ sections | selectattr('loai','eq','TRUC_QUAN') | list | length }} nhóm</span>
+    </button>
+    <button id="tab-users" onclick="switchTab('USERS')"
+      class="tab-btn shrink-0 flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-semibold transition-all">
+      <span class="msym material-symbols-outlined text-[16px]">manage_accounts</span>
+      Người truy cập
+      <span class="tab-count px-xs py-[1px] rounded-full text-[10px] font-bold ml-xs">{{ access_users | length }} user</span>
     </button>
   </div>
 </div>
 
 <main class="max-w-6xl mx-auto px-4 md:px-margin pt-lg">
 
-  <!-- Block 5S -->
-  <div id="block-5S" class="space-y-lg pb-24">
+  <!-- Block người truy cập -->
+  <div id="block-USERS" class="space-y-lg pb-24 hidden">
   <section class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
     <div class="flex items-center gap-md px-lg py-md bg-primary">
       <span class="msym material-symbols-outlined text-white text-[20px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">manage_accounts</span>
@@ -167,7 +173,10 @@ tailwind.config = {
       </div>
     </div>
   </section>
+  </div>
 
+  <!-- Block 5S -->
+  <div id="block-5S" class="space-y-lg pb-24">
   {% for sect in sections if sect.loai == '5S' %}
   <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
 
@@ -846,12 +855,16 @@ let _currentBienTcIds = [];
 // ── Tab navigation ────────────────────────────────────────────────────────
 function switchTab(loai) {
   const is5S = loai === '5S';
+  const isTrucQuan = loai === 'TRUC_QUAN';
+  const isUsers = loai === 'USERS';
   // Blocks
   document.getElementById('block-5S').classList.toggle('hidden', !is5S);
-  document.getElementById('block-TRUC_QUAN').classList.toggle('hidden', is5S);
+  document.getElementById('block-TRUC_QUAN').classList.toggle('hidden', !isTrucQuan);
+  document.getElementById('block-USERS').classList.toggle('hidden', !isUsers);
   // Tab active styles
   styleTab('tab-5s',  is5S);
-  styleTab('tab-tv',  !is5S);
+  styleTab('tab-tv',  isTrucQuan);
+  styleTab('tab-users', isUsers);
   // Persist in URL hash so refresh keeps state
   history.replaceState(null, '', '#' + loai);
 }
@@ -872,7 +885,7 @@ function styleTab(id, active) {
   }
 }
 // Init: read hash or default to 5S
-const initTab = location.hash === '#TRUC_QUAN' ? 'TRUC_QUAN' : '5S';
+const initTab = ['#5S', '#TRUC_QUAN', '#USERS'].includes(location.hash) ? location.hash.slice(1) : '5S';
 switchTab(initTab);
 
 // ── Biển modal (edit / add) ───────────────────────────────────────────────
