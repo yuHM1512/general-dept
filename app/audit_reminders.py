@@ -319,6 +319,37 @@ def run_audit_reminders(*, dry_run: bool = False, today: date | None = None) -> 
                 lock_connection.close()
 
 
+def send_test_reminder(test_email: str, *, unit_code: str = "P.KDXNK", today: date | None = None) -> dict:
+    """Send one real-format reminder only to the requested test mailbox, without writing the send log."""
+    recipients = _split_emails(test_email)
+    if len(recipients) != 1:
+        raise ValueError("--test-email phải là một địa chỉ email hợp lệ")
+    _validate_smtp_settings()
+    reminder_date = today or datetime.now(_timezone()).date()
+
+    with Session(engine) as session:
+        rows = collect_due_reminders(session, reminder_date)
+    matching = [row for row in rows if str(row["don_vi_ma"]).casefold() == unit_code.strip().casefold()]
+    if not matching:
+        available = sorted({str(row["don_vi_ma"]) for row in rows})
+        raise ValueError(
+            f"Không có HĐKP cần nhắc cho đơn vị {unit_code}. "
+            f"Đơn vị đang có dữ liệu: {', '.join(available) or 'không có'}"
+        )
+
+    message = _build_message(matching[0], matching, recipients, [], reminder_date)
+    message.replace_header("Subject", "[TEST] " + str(message["Subject"]))
+    _send_message(message)
+    return {
+        "status": "test_sent",
+        "unit": matching[0]["don_vi_ma"],
+        "items": len(matching),
+        "recipient": recipients[0],
+        "subject": str(message["Subject"]),
+        "send_log_written": False,
+    }
+
+
 def _scheduler_loop() -> None:
     scheduled = _scheduled_time()
     last_attempt_date: date | None = None
@@ -358,8 +389,15 @@ def start_audit_reminder_scheduler() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Gửi email nhắc HĐKP theo đơn vị")
     parser.add_argument("--dry-run", action="store_true", help="Chỉ xem các nhóm sẽ gửi, không gửi email")
+    parser.add_argument("--test-email", help="Gửi một email mẫu duy nhất tới địa chỉ test")
+    parser.add_argument("--unit", default="P.KDXNK", help="Mã đơn vị dùng cho email test (mặc định: P.KDXNK)")
     args = parser.parse_args()
-    print(run_audit_reminders(dry_run=args.dry_run))
+    if args.dry_run and args.test_email:
+        parser.error("Chỉ dùng một trong hai tùy chọn --dry-run hoặc --test-email")
+    if args.test_email:
+        print(send_test_reminder(args.test_email, unit_code=args.unit))
+    else:
+        print(run_audit_reminders(dry_run=args.dry_run))
 
 
 if __name__ == "__main__":

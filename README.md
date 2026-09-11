@@ -40,7 +40,9 @@ email và `don_vi` trùng với đơn vị của HĐKP; các bộ phận trực 
 2. Với Gmail/Google Workspace, dùng App Password tại `SMTP_PASSWORD`, không dùng mật khẩu đăng nhập.
 3. Kiểm tra dữ liệu và người nhận mà không gửi email:
    - `.\.venv\Scripts\python -m app.audit_reminders --dry-run`
-4. Đổi `AUDIT_REMINDER_ENABLED=true` và khởi động lại service.
+4. Gửi đúng mẫu email thật tới duy nhất hộp thư test, không ghi lịch sử gửi và không gửi cho đơn vị:
+   - `.\.venv\Scripts\python -m app.audit_reminders --test-email ban@hachiba.com.vn --unit P.KDXNK`
+5. Đổi `AUDIT_REMINDER_ENABLED=true` và khởi động lại service.
 
 Mỗi đơn vị chỉ được gửi một lần trong ngày. Lịch sử gửi được lưu trong
 `public.audit_5s_reminder_log` để tránh gửi trùng khi service restart hoặc chạy nhiều process.
