@@ -1190,6 +1190,19 @@ def update_reminder_settings(request: Request, payload: dict, session: Session =
     return {"ok": True, "settings": reminder_setting_payload(reminder_setting)}
 
 
+@app.post("/api/audit/5s/reminder-send-now")
+def send_reminders_now(request: Request):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể gửi email nhắc ngay")
+    from app.audit_reminders import run_audit_reminders
+    try:
+        return {"ok": True, **run_audit_reminders()}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Không thể gửi email nhắc; kiểm tra cấu hình SMTP")
+
+
 @app.post("/api/audit/5s/reminder-test")
 def send_reminder_test(request: Request, payload: dict):
     if not _is_admin(request):

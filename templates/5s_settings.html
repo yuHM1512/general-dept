@@ -158,9 +158,14 @@ tailwind.config = {
 
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-sm">
             <p id="reminder-save-message" class="font-label-md text-[12px] text-on-surface-variant min-h-4"></p>
-            <button id="reminder-save-button" type="button" onclick="saveReminderSettings()" class="inline-flex items-center justify-center gap-xs px-lg py-sm bg-primary text-white rounded-full text-[13px] font-bold hover:bg-primary-container transition-colors">
-              <span class="msym material-symbols-outlined text-[16px]">save</span>Lưu lịch gửi
-            </button>
+            <div class="flex flex-wrap justify-end gap-sm">
+              <button id="reminder-send-now-button" type="button" onclick="sendRemindersNow()" class="inline-flex items-center justify-center gap-xs px-lg py-sm bg-secondary text-white rounded-full text-[13px] font-bold hover:opacity-90 disabled:opacity-50 transition-all">
+                <span class="msym material-symbols-outlined text-[16px]">outgoing_mail</span>Gửi ngay
+              </button>
+              <button id="reminder-save-button" type="button" onclick="saveReminderSettings()" class="inline-flex items-center justify-center gap-xs px-lg py-sm bg-primary text-white rounded-full text-[13px] font-bold hover:bg-primary-container disabled:opacity-50 transition-colors">
+                <span class="msym material-symbols-outlined text-[16px]">save</span>Lưu lịch gửi
+              </button>
+            </div>
           </div>
         </div>
 
@@ -610,6 +615,32 @@ async function saveReminderSettings() {
     showToast('Đã lưu lịch nhắc email');
   } catch (error) {
     message.textContent = error.message || 'Không thể lưu lịch gửi.';
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function sendRemindersNow() {
+  if (!confirm('Gửi email thật ngay bây giờ tới tất cả đơn vị đang có HĐKP cần nhắc?')) return;
+  const button = document.getElementById('reminder-send-now-button');
+  const message = document.getElementById('reminder-save-message');
+  button.disabled = true;
+  message.textContent = 'Đang tổng hợp và gửi email cho các đơn vị...';
+  try {
+    const response = await fetch('/api/audit/5s/reminder-send-now', {method: 'POST'});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || 'Không thể gửi email nhắc.');
+    const failed = Array.isArray(data.errors) ? data.errors.length : 0;
+    if (data.status === 'locked') {
+      message.textContent = 'Một tiến trình gửi khác đang chạy, vui lòng thử lại sau.';
+    } else if (data.sent > 0) {
+      message.textContent = `Đã gửi ${data.sent} email đơn vị${failed ? `; ${failed} email lỗi` : ''}.`;
+      showToast(`Đã gửi ${data.sent} email nhắc HĐKP`);
+    } else {
+      message.textContent = 'Không có email mới cần gửi; các đơn vị có thể đã được nhắc hôm nay.';
+    }
+  } catch (error) {
+    message.textContent = error.message || 'Không thể gửi email nhắc.';
   } finally {
     button.disabled = false;
   }
