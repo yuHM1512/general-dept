@@ -62,7 +62,7 @@ tailwind.config = {
 
 <!-- Tab bar (sticky below header) -->
 <div class="sticky top-[69px] z-20 bg-background/95 backdrop-blur-md border-b border-outline-variant/20">
-  <div class="max-w-3xl mx-auto px-4 md:px-margin flex gap-xs py-sm">
+  <div class="max-w-6xl mx-auto px-4 md:px-margin flex gap-xs py-sm">
     <button id="tab-5s" onclick="switchTab('5S')"
       class="tab-btn flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-semibold transition-all">
       <span class="msym material-symbols-outlined text-[16px]">checklist</span>
@@ -78,7 +78,7 @@ tailwind.config = {
   </div>
 </div>
 
-<main class="max-w-3xl mx-auto px-4 md:px-margin pt-lg">
+<main class="max-w-6xl mx-auto px-4 md:px-margin pt-lg">
 
   <!-- Block 5S -->
   <div id="block-5S" class="space-y-lg pb-24">
@@ -150,7 +150,7 @@ tailwind.config = {
       </div>
 
       <div class="overflow-x-auto rounded-xl border border-outline-variant/20">
-        <table class="w-full text-left border-collapse">
+        <table class="w-full min-w-[840px] text-left border-separate border-spacing-0">
           <thead class="bg-surface-container-low text-on-surface-variant font-label-md text-[11px] uppercase tracking-widest">
             <tr>
               <th class="px-md py-sm font-semibold">Mã NV</th>
@@ -159,7 +159,7 @@ tailwind.config = {
               <th class="px-md py-sm font-semibold">Đơn vị</th>
               <th class="px-md py-sm font-semibold">Bộ phận</th>
               <th class="px-md py-sm font-semibold">Role</th>
-              <th class="px-md py-sm font-semibold text-center">Sửa</th>
+              <th class="sticky right-0 z-10 bg-surface-container-low px-md py-sm font-semibold text-center shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.45)]">Sửa</th>
             </tr>
           </thead>
           <tbody id="access-user-tbody" class="divide-y divide-outline-variant/10"></tbody>
@@ -476,7 +476,7 @@ function renderAccessUsers() {
       <td class="px-md py-sm">
         <span class="inline-flex px-sm py-[2px] rounded-full text-[11px] font-bold ${user.role === 'admin' ? 'bg-primary text-white' : 'bg-surface-container text-on-surface-variant'}">${escapeHtml(user.role || 'user')}</span>
       </td>
-      <td class="px-md py-sm text-center">
+      <td class="sticky right-0 z-10 bg-surface-container-lowest px-md py-sm text-center shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.45)]">
         <button type="button" class="p-1 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Sửa user" onclick="editAccessUser('${escapeJs(user.ma_nv || '')}')">
           <span class="msym material-symbols-outlined text-[18px]">edit</span>
         </button>
