@@ -32,6 +32,22 @@ class Settings(BaseSettings):
     survey_data_tab: str = "3. DATA"
     survey_credentials_path: str = "credentials_m29.json"
 
+    # ---- Email nhắc HĐKP ----
+    audit_reminder_enabled: bool = False
+    audit_reminder_time: str = "08:00"
+    audit_reminder_timezone: str = "Asia/Bangkok"
+    audit_reminder_poll_seconds: int = 60
+    audit_reminder_base_url: str = "http://localhost:8012"
+    audit_reminder_cc: str = ""
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "Hệ thống Đánh giá nội bộ"
+    smtp_use_tls: bool = True
+    smtp_use_ssl: bool = False
+
     @field_validator("database_url", mode="before")
     @classmethod
     def _normalize_database_url(cls, value: object) -> str:

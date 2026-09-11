@@ -27,7 +27,7 @@ from app.ingest import ingest_workbook_with_progress
 from app.models import AvgSalaryNote, GeneralEmployee, HangingLine, IngestJob, PayrollRow
 from app.audit_models import (
     AuditDonVi, AuditBoPhan, AuditLinhVuc, AuditBien, AuditTieuChi, AuditApDung,
-    AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem, AuditHdkp,
+    AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem, AuditHdkp, AuditReminderLog,
 )
 from app.survey_models import SurveyResponse, SurveySyncJob
 from app.survey_schemas import (
@@ -251,6 +251,9 @@ def _apply_csv_in(query, column, csv_value: str | None):
 def _startup() -> None:
     if settings.create_tables_on_startup:
         create_db_and_tables()
+    if settings.audit_reminder_enabled:
+        from app.audit_reminders import start_audit_reminder_scheduler
+        start_audit_reminder_scheduler()
 
 
 @app.get("/health")

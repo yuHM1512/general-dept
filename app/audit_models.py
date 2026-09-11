@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -106,3 +107,18 @@ class AuditHdkp(SQLModel, table=True):
     updated_by: str = Field(default="", max_length=16)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AuditReminderLog(SQLModel, table=True):
+    __tablename__ = "audit_5s_reminder_log"
+    __table_args__ = (
+        UniqueConstraint("reminder_date", "don_vi_id", name="uq_audit_5s_reminder_log_date_unit"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    reminder_date: date = Field(index=True)
+    don_vi_id: int = Field(foreign_key="audit_5s_don_vi.id", index=True)
+    recipient_emails: str = Field(default="")
+    item_count: int = Field(default=0)
+    subject: str = Field(default="")
+    sent_at: datetime = Field(default_factory=datetime.utcnow)
