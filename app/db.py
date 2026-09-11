@@ -258,9 +258,13 @@ def _apply_light_migrations() -> None:
             if "updated_by" not in cols:
                 conn.execute(text("ALTER TABLE audit_5s_hdkp ADD COLUMN updated_by VARCHAR(16) NOT NULL DEFAULT ''"))
 
-        # Add role column to general_employees if missing
+        # Add employee settings columns if missing
         if "general_employees" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("general_employees")}
+            if "email" not in cols:
+                conn.execute(
+                    text("ALTER TABLE general_employees ADD COLUMN IF NOT EXISTS email VARCHAR(254) NOT NULL DEFAULT ''")
+                )
             if "role" not in cols:
                 conn.execute(
                     text("ALTER TABLE general_employees ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'")

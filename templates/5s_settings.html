@@ -129,6 +129,10 @@ tailwind.config = {
           </select>
         </label>
         <label class="block sm:col-span-2">
+          <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Email</span>
+          <input id="access-email" type="email" maxlength="254" autocomplete="email" class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none" placeholder="VD: ten@congty.com">
+        </label>
+        <label class="block sm:col-span-2">
           <span class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant mb-xs block">Station</span>
           <input id="access-station" class="w-full bg-surface-container-low rounded-lg px-md py-sm text-[14px] border-2 border-outline-variant/30 focus:border-primary outline-none" placeholder="Nhập nhiều station, cách nhau bằng dấu phẩy">
         </label>
@@ -151,6 +155,7 @@ tailwind.config = {
             <tr>
               <th class="px-md py-sm font-semibold">Mã NV</th>
               <th class="px-md py-sm font-semibold">Họ tên</th>
+              <th class="px-md py-sm font-semibold">Email</th>
               <th class="px-md py-sm font-semibold">Đơn vị</th>
               <th class="px-md py-sm font-semibold">Bộ phận</th>
               <th class="px-md py-sm font-semibold">Role</th>
@@ -465,6 +470,7 @@ function renderAccessUsers() {
         <p class="font-semibold">${escapeHtml(user.ho_ten || '—')}</p>
         <p class="text-[11px] text-on-surface-variant">${escapeHtml(user.chuc_vu || '')}</p>
       </td>
+      <td class="px-md py-sm text-[12px] text-on-surface-variant break-all min-w-[180px]">${escapeHtml(user.email || '—')}</td>
       <td class="px-md py-sm text-[12px] text-on-surface-variant whitespace-nowrap">${escapeHtml(user.don_vi || '—')}</td>
       <td class="px-md py-sm text-[12px] text-on-surface-variant min-w-[140px]">${escapeHtml(user.bo_phan || '—')}</td>
       <td class="px-md py-sm">
@@ -517,7 +523,7 @@ function onAccessDvChange() {
 }
 
 function resetAccessForm() {
-  ['ma-nv', 'ho-ten', 'chuc-vu', 'station'].forEach(id => {
+  ['ma-nv', 'ho-ten', 'email', 'chuc-vu', 'station'].forEach(id => {
     const input = document.getElementById(`access-${id}`);
     if (input) input.value = '';
   });
@@ -535,6 +541,7 @@ function editAccessUser(maNv) {
   if (!user) return;
   document.getElementById('access-ma-nv').value = user.ma_nv || '';
   document.getElementById('access-ho-ten').value = user.ho_ten || '';
+  document.getElementById('access-email').value = user.email || '';
   document.getElementById('access-chuc-vu').value = user.chuc_vu || '';
   document.getElementById('access-role').value = user.role || 'user';
   document.getElementById('access-don-vi').value = user.don_vi || '';
@@ -548,9 +555,13 @@ function editAccessUser(maNv) {
 
 async function saveAccessUser() {
   const msg = document.getElementById('access-form-message');
+  const emailInput = document.getElementById('access-email');
+  emailInput.value = emailInput.value.trim();
+  if (!emailInput.reportValidity()) return;
   const payload = {
     ma_nv: document.getElementById('access-ma-nv')?.value || '',
     ho_ten: document.getElementById('access-ho-ten')?.value || '',
+    email: emailInput.value,
     chuc_vu: document.getElementById('access-chuc-vu')?.value || '',
     don_vi: document.getElementById('access-don-vi')?.value || '',
     bo_phan: document.getElementById('access-bo-phan')?.value || '',

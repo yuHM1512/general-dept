@@ -45,6 +45,7 @@ class GeneralEmployee(SQLModel, table=True):
 
     ma_nv: str = Field(primary_key=True, max_length=16)
     ho_ten: str = Field(default="")
+    email: str = Field(default="", max_length=254)
     chuc_vu: str = Field(default="")
     don_vi: str = Field(default="")
     bo_phan: str = Field(default="")

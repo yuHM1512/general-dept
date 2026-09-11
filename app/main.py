@@ -1101,6 +1101,12 @@ def upsert_access_user(request: Request, payload: dict, session: Session = Depen
     if role not in {"user", "admin"}:
         raise HTTPException(status_code=422, detail="role must be user or admin")
 
+    email = None
+    if "email" in payload:
+        email = str(payload.get("email") or "").strip()
+        if len(email) > 254 or (email and not _re.fullmatch(r"[^\s@]+@[^\s@]+", email)):
+            raise HTTPException(status_code=422, detail="Email không hợp lệ")
+
     station_raw = payload.get("station")
     if isinstance(station_raw, list):
         station = [str(item).strip() for item in station_raw if str(item).strip()]
@@ -1114,6 +1120,8 @@ def upsert_access_user(request: Request, payload: dict, session: Session = Depen
         employee = GeneralEmployee(ma_nv=ma_nv)
 
     employee.ho_ten = str(payload.get("ho_ten") or "").strip()
+    if email is not None:
+        employee.email = email
     employee.chuc_vu = str(payload.get("chuc_vu") or "").strip()
     employee.don_vi = str(payload.get("don_vi") or "").strip()
     employee.bo_phan = str(payload.get("bo_phan") or "").strip()
@@ -1133,6 +1141,7 @@ def upsert_access_user(request: Request, payload: dict, session: Session = Depen
             "bo_phan": employee.bo_phan,
             "role": _normalize_role(employee.role),
             "station": employee.station or [],
+            "email": employee.email,
         },
     }
 
@@ -1395,6 +1404,7 @@ def five_s_settings(
             "bo_phan": employee.bo_phan,
             "role": _normalize_role(employee.role),
             "station": employee.station or [],
+            "email": employee.email,
         }
         for employee in session.exec(select(GeneralEmployee).order_by(GeneralEmployee.ma_nv)).all()
     ]
