@@ -251,9 +251,8 @@ def _apply_csv_in(query, column, csv_value: str | None):
 def _startup() -> None:
     if settings.create_tables_on_startup:
         create_db_and_tables()
-    if settings.audit_reminder_enabled:
-        from app.audit_reminders import start_audit_reminder_scheduler
-        start_audit_reminder_scheduler()
+    from app.audit_reminders import start_audit_reminder_scheduler
+    start_audit_reminder_scheduler()
 
 
 @app.get("/health")
@@ -1149,6 +1148,65 @@ def upsert_access_user(request: Request, payload: dict, session: Session = Depen
     }
 
 
+@app.put("/api/audit/5s/reminder-settings")
+def update_reminder_settings(request: Request, payload: dict, session: Session = Depends(get_session)):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể cập nhật lịch nhắc email")
+
+    enabled = payload.get("enabled")
+    if not isinstance(enabled, bool):
+        raise HTTPException(status_code=422, detail="enabled phải là true hoặc false")
+    frequency = str(payload.get("frequency") or "").strip().lower()
+    if frequency not in {"daily", "weekly"}:
+        raise HTTPException(status_code=422, detail="Tần suất phải là daily hoặc weekly")
+    try:
+        weekday = int(payload.get("weekday", 0))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Thứ trong tuần không hợp lệ")
+    if weekday not in range(7):
+        raise HTTPException(status_code=422, detail="Thứ trong tuần không hợp lệ")
+    send_time = str(payload.get("send_time") or "").strip()
+    if not _re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", send_time):
+        raise HTTPException(status_code=422, detail="Giờ gửi phải có định dạng HH:MM")
+    timezone_name = str(payload.get("timezone") or "Asia/Bangkok").strip()
+    if timezone_name != "Asia/Bangkok":
+        raise HTTPException(status_code=422, detail="Hiện hệ thống chỉ hỗ trợ múi giờ Asia/Bangkok")
+
+    from app.audit_reminders import get_reminder_setting, reminder_setting_payload, smtp_is_configured
+    if enabled and not smtp_is_configured():
+        raise HTTPException(status_code=422, detail="Chưa cấu hình đầy đủ SMTP trong .env")
+    reminder_setting = get_reminder_setting(session)
+    reminder_setting.enabled = enabled
+    reminder_setting.frequency = frequency
+    reminder_setting.weekday = weekday
+    reminder_setting.send_time = send_time
+    reminder_setting.timezone = timezone_name
+    user = _current_user(request) or {}
+    reminder_setting.updated_by = str(user.get("ma_nv") or "").strip().upper()
+    reminder_setting.updated_at = datetime.utcnow()
+    session.add(reminder_setting)
+    session.commit()
+    session.refresh(reminder_setting)
+    return {"ok": True, "settings": reminder_setting_payload(reminder_setting)}
+
+
+@app.post("/api/audit/5s/reminder-test")
+def send_reminder_test(request: Request, payload: dict):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể gửi email test")
+    test_email = str(payload.get("email") or "").strip()
+    unit_code = str(payload.get("unit_code") or "P.KDXNK").strip().upper()
+    from app.audit_reminders import send_test_reminder
+    try:
+        return send_test_reminder(test_email, unit_code=unit_code)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=502, detail="Không thể gửi email test; kiểm tra cấu hình SMTP")
+
+
 @app.patch("/api/audit/5s/hdkp")
 def upsert_hdkp(request: Request, payload: dict, session: Session = Depends(get_session)):
     """Upsert HĐKP record for a zero-score criterion. key = chi_tiet_diem_id."""
@@ -1412,6 +1470,14 @@ def five_s_settings(
         for employee in session.exec(select(GeneralEmployee).order_by(GeneralEmployee.ma_nv)).all()
     ]
     access_users_json = _json.dumps(access_users, ensure_ascii=False)
+    from app.audit_reminders import get_reminder_setting, reminder_setting_payload
+    reminder_setting = get_reminder_setting(session)
+    reminder_settings = reminder_setting_payload(reminder_setting)
+    last_reminder_log = session.exec(
+        select(AuditReminderLog).order_by(AuditReminderLog.sent_at.desc())
+    ).first()
+    current_user = _current_user(request) or {}
+    current_employee = session.get(GeneralEmployee, str(current_user.get("ma_nv") or "").strip().upper())
 
     return templates.TemplateResponse(
         "5s_settings.html",
@@ -1428,6 +1494,11 @@ def five_s_settings(
             "tc_assignments_json": tc_assignments_json,
             "access_users": access_users,
             "access_users_json": access_users_json,
+            "reminder_settings": reminder_settings,
+            "reminder_last_sent": (
+                last_reminder_log.sent_at.strftime("%d/%m/%Y %H:%M") if last_reminder_log else "Chưa gửi"
+            ),
+            "reminder_test_email": current_employee.email if current_employee else "",
         },
     )
 

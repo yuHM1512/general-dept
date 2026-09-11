@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from sqlalchemy import text
 from sqlmodel import Session, select
 
-from app.audit_models import AuditReminderLog
+from app.audit_models import AuditReminderLog, AuditReminderSetting
 from app.db import engine
 from app.models import GeneralEmployee
 from app.settings import settings
@@ -29,11 +29,12 @@ _DON_VI_ALIASES = {"XNDT", "XN Duy Trung", "Duy Trung"}
 _LOAI_LABEL = {"5S": "5S", "TRUC_QUAN": "Trực quan", "DAY_DU": "Đầy đủ"}
 
 
-def _timezone():
+def _timezone(name: str | None = None):
+    timezone_name = name or settings.audit_reminder_timezone
     try:
-        return ZoneInfo(settings.audit_reminder_timezone)
+        return ZoneInfo(timezone_name)
     except ZoneInfoNotFoundError:
-        if settings.audit_reminder_timezone == "Asia/Bangkok":
+        if timezone_name == "Asia/Bangkok":
             return timezone(timedelta(hours=7), name="Asia/Bangkok")
         raise
 
@@ -43,6 +44,61 @@ def _scheduled_time() -> time:
         return time.fromisoformat(settings.audit_reminder_time)
     except ValueError as exc:
         raise ValueError("AUDIT_REMINDER_TIME phải có định dạng HH:MM") from exc
+
+
+def smtp_is_configured() -> bool:
+    sender = settings.smtp_from_email.strip() or settings.smtp_username.strip()
+    return bool(
+        settings.smtp_host.strip()
+        and sender
+        and (not settings.smtp_username.strip() or settings.smtp_password)
+    )
+
+
+def get_reminder_setting(session: Session) -> AuditReminderSetting:
+    setting = session.get(AuditReminderSetting, 1)
+    if setting:
+        return setting
+    session.execute(text("""
+        INSERT INTO audit_5s_reminder_setting
+            (id, enabled, frequency, weekday, send_time, timezone, updated_by, updated_at)
+        VALUES
+            (1, :enabled, :frequency, :weekday, :send_time, :timezone, '', NOW())
+        ON CONFLICT (id) DO NOTHING
+    """), {
+        "enabled": settings.audit_reminder_enabled,
+        "frequency": settings.audit_reminder_frequency,
+        "weekday": settings.audit_reminder_weekday,
+        "send_time": settings.audit_reminder_time,
+        "timezone": settings.audit_reminder_timezone,
+    })
+    session.commit()
+    setting = session.get(AuditReminderSetting, 1)
+    if not setting:
+        raise RuntimeError("Không thể khởi tạo cấu hình nhắc email")
+    return setting
+
+
+def reminder_setting_payload(setting: AuditReminderSetting) -> dict:
+    return {
+        "enabled": setting.enabled,
+        "frequency": setting.frequency,
+        "weekday": setting.weekday,
+        "send_time": setting.send_time,
+        "timezone": setting.timezone,
+        "updated_by": setting.updated_by,
+        "updated_at": setting.updated_at.isoformat() if setting.updated_at else None,
+        "smtp_configured": smtp_is_configured(),
+    }
+
+
+def schedule_matches(setting: AuditReminderSetting, now: datetime) -> bool:
+    scheduled = time.fromisoformat(setting.send_time)
+    matches_day = (
+        setting.frequency == "daily"
+        or (setting.frequency == "weekly" and now.weekday() == setting.weekday)
+    )
+    return matches_day and now.time() >= scheduled
 
 
 def _split_emails(value: str) -> list[str]:
@@ -351,23 +407,25 @@ def send_test_reminder(test_email: str, *, unit_code: str = "P.KDXNK", today: da
 
 
 def _scheduler_loop() -> None:
-    scheduled = _scheduled_time()
-    last_attempt_date: date | None = None
+    last_attempt_key: tuple | None = None
     poll_seconds = max(15, settings.audit_reminder_poll_seconds)
-    logger.info(
-        "Đã bật lịch nhắc HĐKP lúc %s (%s)",
-        settings.audit_reminder_time,
-        settings.audit_reminder_timezone,
-    )
+    logger.info("Scheduler nhắc HĐKP đã sẵn sàng")
     while True:
-        now = datetime.now(_timezone())
-        if now.time() >= scheduled and last_attempt_date != now.date():
-            last_attempt_date = now.date()
-            try:
-                result = run_audit_reminders(today=now.date())
-                logger.info("Kết quả nhắc HĐKP: %s", result)
-            except Exception:
-                logger.exception("Job nhắc HĐKP thất bại")
+        try:
+            with Session(engine) as session:
+                reminder_setting = get_reminder_setting(session)
+            if reminder_setting.enabled:
+                now = datetime.now(_timezone(reminder_setting.timezone))
+                attempt_key = (
+                    now.date(), reminder_setting.frequency, reminder_setting.weekday,
+                    reminder_setting.send_time, reminder_setting.timezone,
+                )
+                if schedule_matches(reminder_setting, now) and last_attempt_key != attempt_key:
+                    last_attempt_key = attempt_key
+                    result = run_audit_reminders(today=now.date())
+                    logger.info("Kết quả nhắc HĐKP: %s", result)
+        except Exception:
+            logger.exception("Job nhắc HĐKP thất bại")
         threading.Event().wait(poll_seconds)
 
 
@@ -376,8 +434,10 @@ def start_audit_reminder_scheduler() -> None:
     with _scheduler_lock:
         if _scheduler_thread and _scheduler_thread.is_alive():
             return
-        _validate_smtp_settings()
-        _scheduled_time()
+        AuditReminderLog.__table__.create(engine, checkfirst=True)
+        AuditReminderSetting.__table__.create(engine, checkfirst=True)
+        with Session(engine) as session:
+            get_reminder_setting(session)
         _scheduler_thread = threading.Thread(
             target=_scheduler_loop,
             name="audit-hdkp-reminder",

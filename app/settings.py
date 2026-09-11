@@ -34,6 +34,8 @@ class Settings(BaseSettings):
 
     # ---- Email nhắc HĐKP ----
     audit_reminder_enabled: bool = False
+    audit_reminder_frequency: str = "daily"
+    audit_reminder_weekday: int = 0
     audit_reminder_time: str = "08:00"
     audit_reminder_timezone: str = "Asia/Bangkok"
     audit_reminder_poll_seconds: int = 60

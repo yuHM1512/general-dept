@@ -122,3 +122,16 @@ class AuditReminderLog(SQLModel, table=True):
     item_count: int = Field(default=0)
     subject: str = Field(default="")
     sent_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AuditReminderSetting(SQLModel, table=True):
+    __tablename__ = "audit_5s_reminder_setting"
+
+    id: int = Field(default=1, primary_key=True)
+    enabled: bool = Field(default=False)
+    frequency: str = Field(default="daily", max_length=10)
+    weekday: int = Field(default=0)
+    send_time: str = Field(default="08:00", max_length=5)
+    timezone: str = Field(default="Asia/Bangkok", max_length=50)
+    updated_by: str = Field(default="", max_length=16)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
