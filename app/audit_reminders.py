@@ -184,7 +184,7 @@ def _build_message(unit: dict, items: list[dict], recipients: list[str], cc: lis
     unit_label = f"{unit['don_vi_ma']} – {unit['don_vi_ten']}"
     pending_count = sum(item["tinh_trang"] in {"Chưa tiếp nhận", "Chưa được tiếp nhận"} for item in items)
     overdue_count = len(items) - pending_count
-    subject = f"[HĐKP] Nhắc xử lý {len(items)} hành động – {unit['don_vi_ma']} – {_format_date(today)}"
+    subject = f"[HĐKP 5S/Trực quan] Nhắc xử lý {len(items)} hành động – {unit['don_vi_ma']} – {_format_date(today)}"
     query = urlencode({"don_vi_id": unit["don_vi_id"]})
     action_url = f"{settings.audit_reminder_base_url.rstrip('/')}/internal-audit/5s/hdkp?{query}"
 
