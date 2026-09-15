@@ -130,8 +130,7 @@ tailwind.config = {
     </div>
     <div class="bg-surface-container-lowest rounded-xl p-md md:p-lg shadow-sm border border-outline-variant/10">
       <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-sm">Điểm TB</p>
-      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none"
-        style="color:{% if stats.diem_tb >= 75 %}#00AA55{% elif stats.diem_tb >= 50 %}#FF8C00{% else %}#CE2525{% endif %}">
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none {% if stats.diem_tb >= 75 %}text-[#00AA55]{% elif stats.diem_tb >= 50 %}text-[#FF8C00]{% else %}text-[#CE2525]{% endif %}">
         {{ stats.diem_tb }}%
       </p>
     </div>
@@ -224,20 +223,17 @@ tailwind.config = {
               <p class="font-label-md text-label-md text-on-surface-variant">{{ row.don_vi_ten }}</p>
             </td>
             <td class="py-md px-sm text-center">
-              <span class="font-label-md text-[12px] font-bold py-xs rounded-full whitespace-nowrap inline-block"
-                style="min-width:88px;{% if row.loai == '5S' %}background:#005A9C;color:#ffffff{% elif row.loai == 'TRUC_QUAN' %}background:#00312a;color:#ffffff{% else %}background:#5B21B6;color:#ffffff{% endif %}">
+              <span class="font-label-md text-[12px] font-bold py-xs rounded-full whitespace-nowrap inline-block min-w-[88px] text-white {% if row.loai == '5S' %}bg-[#005A9C]{% elif row.loai == 'TRUC_QUAN' %}bg-[#00312a]{% else %}bg-[#5B21B6]{% endif %}">
                 {{ row.loai_label }}
               </span>
             </td>
             <td class="py-md px-sm text-center">
-              <span class="font-headline-md font-bold text-[18px]"
-                style="color:{% if row.ty_le_pct >= 75 %}#00AA55{% elif row.ty_le_pct >= 50 %}#FF8C00{% else %}#CE2525{% endif %}">
+              <span class="font-headline-md font-bold text-[18px] {% if row.ty_le_pct >= 75 %}text-[#00AA55]{% elif row.ty_le_pct >= 50 %}text-[#FF8C00]{% else %}text-[#CE2525]{% endif %}">
                 {{ row.ty_le_pct }}%
               </span>
             </td>
             <td class="py-md px-sm text-center">
-              <span class="font-label-md text-[12px] font-bold py-xs rounded-full whitespace-nowrap inline-block"
-                style="min-width:120px;{% if row.ket_luan in ('Tốt', 'Đạt') %}background:#00FF7F;color:#1F2937{% elif row.ket_luan == 'Cần cải thiện' %}background:#FF8C00;color:#ffffff{% elif row.ket_luan == 'Không đạt' %}background:#CE2525;color:#ffffff{% else %}background:#ededf2;color:#42474f{% endif %}">
+              <span class="font-label-md text-[12px] font-bold py-xs rounded-full whitespace-nowrap inline-block min-w-[120px] {% if row.ket_luan in ('Tốt', 'Đạt') %}bg-[#00FF7F] text-[#1F2937]{% elif row.ket_luan == 'Cần cải thiện' %}bg-[#FF8C00] text-white{% elif row.ket_luan == 'Không đạt' %}bg-[#CE2525] text-white{% else %}bg-[#ededf2] text-[#42474f]{% endif %}">
                 {% if row.ket_luan in ('Tốt', 'Đạt') %}Đạt{% else %}{{ row.ket_luan }}{% endif %}
               </span>
             </td>
@@ -277,16 +273,14 @@ tailwind.config = {
     {% for row in rows %}
     <div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/10 relative">
       <!-- Score badge top-right -->
-      <span class="absolute top-md right-md font-headline-md font-bold text-[18px]"
-        style="color:{% if row.ty_le_pct >= 75 %}#00AA55{% elif row.ty_le_pct >= 50 %}#FF8C00{% else %}#CE2525{% endif %}">
+      <span class="absolute top-md right-md font-headline-md font-bold text-[18px] {% if row.ty_le_pct >= 75 %}text-[#00AA55]{% elif row.ty_le_pct >= 50 %}text-[#FF8C00]{% else %}text-[#CE2525]{% endif %}">
         {{ row.ty_le_pct }}%
       </span>
       <p class="font-label-md text-label-md text-on-surface-variant mb-xs">{{ row.ngay }} &bull; #{{ row.id }}</p>
       <p class="font-body-md font-bold text-on-surface pr-16">{{ row.bo_phan_ten }}</p>
       <p class="font-label-md text-label-md text-on-surface-variant">{{ row.don_vi_ten }}</p>
       <div class="mt-sm flex items-center gap-sm">
-        <span class="font-label-md text-[11px] font-bold px-sm py-xs rounded-full"
-          style="{% if row.ket_luan in ('Tốt', 'Đạt') %}background:#00FF7F;color:#1F2937{% elif row.ket_luan == 'Cần cải thiện' %}background:#FF8C00;color:#ffffff{% elif row.ket_luan == 'Không đạt' %}background:#CE2525;color:#ffffff{% else %}background:#ededf2;color:#42474f{% endif %}">
+        <span class="font-label-md text-[11px] font-bold px-sm py-xs rounded-full {% if row.ket_luan in ('Tốt', 'Đạt') %}bg-[#00FF7F] text-[#1F2937]{% elif row.ket_luan == 'Cần cải thiện' %}bg-[#FF8C00] text-white{% elif row.ket_luan == 'Không đạt' %}bg-[#CE2525] text-white{% else %}bg-[#ededf2] text-[#42474f]{% endif %}">
           {% if row.ket_luan in ('Tốt', 'Đạt') %}Đạt{% else %}{{ row.ket_luan }}{% endif %}
         </span>
         <span class="font-label-md text-[11px] px-sm py-xs rounded-full bg-surface-container text-on-surface-variant">
