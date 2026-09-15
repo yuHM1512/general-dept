@@ -246,8 +246,8 @@ tailwind.config = {
                    style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
                 {% if user and user.role == 'admin' %}
                 <button type="button"
-                        onclick="deleteAuditPhieu({{ row.id }})"
-                        class="material-symbols-outlined text-outline hover:text-error transition-colors text-[20px]"
+                        data-phieu-id="{{ row.id }}"
+                        class="js-delete-audit material-symbols-outlined text-outline hover:text-error transition-colors text-[20px]"
                         title="Xóa kết quả"
                         style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">delete</button>
                 {% endif %}
@@ -292,8 +292,8 @@ tailwind.config = {
              style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
           {% if user and user.role == 'admin' %}
           <button type="button"
-                  onclick="deleteAuditPhieu({{ row.id }})"
-                  class="material-symbols-outlined text-outline hover:text-error transition-colors text-[20px]"
+                  data-phieu-id="{{ row.id }}"
+                  class="js-delete-audit material-symbols-outlined text-outline hover:text-error transition-colors text-[20px]"
                   title="Xóa kết quả"
                   style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">delete</button>
           {% endif %}
@@ -355,6 +355,10 @@ async function deleteAuditPhieu(phieuId) {
     alert(err.message || 'Không thể xóa kết quả.');
   }
 }
+
+document.querySelectorAll('.js-delete-audit').forEach((button) => {
+  button.addEventListener('click', () => deleteAuditPhieu(button.dataset.phieuId));
+});
 </script>
 </body>
 </html>
