@@ -39,6 +39,7 @@ from app.survey_schemas import (
 from app.survey_stats import internal_comparison
 from app.survey_sync import start_sync_in_background
 from app.mtcl.routes import router as mtcl_router
+from app.pccc.routes import router as pccc_router
 from app.schemas import (
     IngestJobResponse,
     IngestJobStatus,
@@ -205,6 +206,7 @@ app.add_middleware(
     https_only=False,
 )
 app.include_router(mtcl_router)
+app.include_router(pccc_router)
 
 
 def _ensure_no_active_ingest(session: Session) -> None:
@@ -720,6 +722,21 @@ def internal_audit_home(
             "app_name": settings.app_name,
             "now_year": datetime.utcnow().year,
             "user": _current_user(request),
+        },
+    )
+
+
+@app.get("/internal-audit/pccc", response_class=HTMLResponse)
+def pccc_page(request: Request) -> HTMLResponse:
+    user = _current_user(request) or {}
+    return templates.TemplateResponse(
+        "pccc.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": user,
+            "is_admin": _is_admin(request),
         },
     )
 

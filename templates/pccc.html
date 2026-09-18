@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#004275" />
+  <title>Kiểm đếm quân số – PCCC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/pccc.css?v=20260918-department-assignments" />
+</head>
+<body>
+  <div id="offline-banner" class="offline-banner" hidden>
+    <span class="material-symbols-outlined">cloud_off</span>
+    Mất kết nối mạng. Dữ liệu đang nhập vẫn được giữ trên thiết bị.
+  </div>
+
+  <header class="app-header">
+    <a href="/internal-audit" class="icon-button" aria-label="Quay lại Đánh giá nội bộ">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <div class="header-copy">
+      <span class="eyebrow">PCCC</span>
+      <h1>Kiểm đếm quân số</h1>
+    </div>
+    <button id="admin-home-button" class="icon-button" type="button" aria-label="Mở dashboard admin" hidden>
+      <span class="material-symbols-outlined">monitoring</span>
+    </button>
+  </header>
+
+  {% if is_admin %}
+  <nav class="app-shell admin-toolbar" aria-label="Quản trị PCCC" style="padding-bottom:0">
+    <button id="drills-nav" class="admin-nav-button" type="button"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>Đợt diễn tập</button>
+    <button id="new-drill-nav" class="admin-nav-button" type="button"><span class="material-symbols-outlined" aria-hidden="true">add_circle</span>Tạo đợt mới</button>
+    <button id="assignments-nav" class="admin-nav-button" type="button"><span class="material-symbols-outlined" aria-hidden="true">group_add</span>Phân công nhân sự</button>
+    <select id="drill-picker" class="quiet-input" aria-label="Chọn đợt diễn tập"><option value="">Chọn đợt diễn tập</option></select>
+  </nav>
+  {% endif %}
+  <main id="pccc-app" class="app-shell" aria-live="polite">
+    <section class="loading-state" aria-label="Đang tải dữ liệu">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-hero"></div>
+      <div class="skeleton-grid">
+        <div class="skeleton skeleton-kpi"></div>
+        <div class="skeleton skeleton-kpi"></div>
+        <div class="skeleton skeleton-kpi"></div>
+      </div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    window.PCCC_BOOTSTRAP = {{ {
+      "user": user,
+      "isAdmin": is_admin
+    } | tojson }};
+  </script>
+  <script src="/static/pccc.js?v=20260918-department-assignments" defer></script>
+</body>
+</html>

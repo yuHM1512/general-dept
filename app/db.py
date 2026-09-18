@@ -8,6 +8,7 @@ from app.services import classify_group, normalize_department, normalize_don_vi
 import app.audit_models as _audit_models  # noqa: F401 – registers audit tables in SQLModel.metadata
 import app.survey_models as _survey_models  # noqa: F401 – registers survey tables in SQLModel.metadata
 import app.mtcl.models as _mtcl_models  # noqa: F401 – registers MTCL tables in SQLModel.metadata
+import app.pccc.models as _pccc_models  # noqa: F401 – registers PCCC tables in SQLModel.metadata
 
 engine = create_engine(
     settings.database_url,
@@ -31,6 +32,8 @@ def create_db_and_tables() -> None:
     from app.audit_seed import seed_if_empty, sync_org_units
     seed_if_empty(engine)
     sync_org_units(engine)
+    from app.pccc.seed import sync_master_data as sync_pccc_master_data
+    sync_pccc_master_data(engine)
 
 
 def _apply_rename_migrations() -> None:
@@ -296,6 +299,46 @@ def _apply_light_migrations() -> None:
                 "ALTER TABLE mtcl_depart ALTER COLUMN id SET DEFAULT nextval('mtcl_depart_id_seq')"
             ))
             conn.execute(text("ALTER SEQUENCE mtcl_depart_id_seq OWNED BY mtcl_depart.id"))
+
+        if "pccc_kiem_dem" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("pccc_kiem_dem")}
+            if "xac_nhan_by" not in cols:
+                conn.execute(
+                    text("ALTER TABLE pccc_kiem_dem ADD COLUMN xac_nhan_by VARCHAR(16) NOT NULL DEFAULT ''")
+                )
+            if "xac_nhan_at" not in cols:
+                conn.execute(text("ALTER TABLE pccc_kiem_dem ADD COLUMN xac_nhan_at TIMESTAMP"))
+            conn.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_pccc_kiem_dem_xac_nhan_at ON pccc_kiem_dem(xac_nhan_at)")
+            )
+
+        if "pccc_phan_cong" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("pccc_phan_cong")}
+            if "bo_phan_id" not in cols:
+                conn.execute(text(
+                    "ALTER TABLE pccc_phan_cong ADD COLUMN bo_phan_id INTEGER "
+                    "REFERENCES pccc_bo_phan(id)"
+                ))
+            conn.execute(text(
+                "ALTER TABLE pccc_phan_cong "
+                "DROP CONSTRAINT IF EXISTS uq_pccc_phan_cong_don_vi_nhan_vien"
+            ))
+            conn.execute(text(
+                "ALTER TABLE pccc_phan_cong "
+                "DROP CONSTRAINT IF EXISTS uq_pccc_phan_cong_don_vi_vai_tro"
+            ))
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_pccc_phan_cong_bo_phan_id "
+                "ON pccc_phan_cong(bo_phan_id)"
+            ))
+            conn.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_pccc_phan_cong_unit_role "
+                "ON pccc_phan_cong(don_vi_id, vai_tro) WHERE bo_phan_id IS NULL"
+            ))
+            conn.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_pccc_phan_cong_department_role "
+                "ON pccc_phan_cong(bo_phan_id, vai_tro) WHERE bo_phan_id IS NOT NULL"
+            ))
 
 
 def _migrate_to_bien() -> None:
