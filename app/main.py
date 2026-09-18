@@ -38,6 +38,7 @@ from app.survey_schemas import (
 )
 from app.survey_stats import internal_comparison
 from app.survey_sync import start_sync_in_background
+from app.mtcl.routes import router as mtcl_router
 from app.schemas import (
     IngestJobResponse,
     IngestJobStatus,
@@ -176,6 +177,7 @@ async def _require_login(request: Request, call_next):
         or path.startswith("/rcp")
         or path.startswith("/internal-audit")
         or path.startswith("/survey")
+        or path.startswith("/mtcl")
         or path.startswith("/api")
     )
     if needs_auth:
@@ -202,6 +204,7 @@ app.add_middleware(
     same_site="lax",
     https_only=False,
 )
+app.include_router(mtcl_router)
 
 
 def _ensure_no_active_ingest(session: Session) -> None:

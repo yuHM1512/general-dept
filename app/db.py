@@ -7,6 +7,7 @@ from app.settings import settings
 from app.services import classify_group, normalize_department, normalize_don_vi
 import app.audit_models as _audit_models  # noqa: F401 – registers audit tables in SQLModel.metadata
 import app.survey_models as _survey_models  # noqa: F401 – registers survey tables in SQLModel.metadata
+import app.mtcl.models as _mtcl_models  # noqa: F401 – registers MTCL tables in SQLModel.metadata
 
 engine = create_engine(
     settings.database_url,
@@ -269,6 +270,32 @@ def _apply_light_migrations() -> None:
                 conn.execute(
                     text("ALTER TABLE general_employees ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'")
                 )
+
+        if "mtcl_company" in insp.get_table_names():
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_mtcl_company_nam ON mtcl_company(nam)"))
+            conn.execute(text("CREATE SEQUENCE IF NOT EXISTS mtcl_company_id_seq"))
+            conn.execute(text(
+                "SELECT setval('mtcl_company_id_seq', "
+                "COALESCE((SELECT MAX(id) FROM mtcl_company), 1), "
+                "(SELECT MAX(id) FROM mtcl_company) IS NOT NULL)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE mtcl_company ALTER COLUMN id SET DEFAULT nextval('mtcl_company_id_seq')"
+            ))
+            conn.execute(text("ALTER SEQUENCE mtcl_company_id_seq OWNED BY mtcl_company.id"))
+        if "mtcl_depart" in insp.get_table_names():
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_mtcl_depart_nam ON mtcl_depart(nam)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_mtcl_depart_id_depart ON mtcl_depart(id_depart)"))
+            conn.execute(text("CREATE SEQUENCE IF NOT EXISTS mtcl_depart_id_seq"))
+            conn.execute(text(
+                "SELECT setval('mtcl_depart_id_seq', "
+                "COALESCE((SELECT MAX(id) FROM mtcl_depart), 1), "
+                "(SELECT MAX(id) FROM mtcl_depart) IS NOT NULL)"
+            ))
+            conn.execute(text(
+                "ALTER TABLE mtcl_depart ALTER COLUMN id SET DEFAULT nextval('mtcl_depart_id_seq')"
+            ))
+            conn.execute(text("ALTER SEQUENCE mtcl_depart_id_seq OWNED BY mtcl_depart.id"))
 
 
 def _migrate_to_bien() -> None:

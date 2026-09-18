@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ page_title }} {{ diagram.nam }}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+        "on-primary-container":"#82afe9","surface":"#F9F9FA",
+        "surface-container-lowest":"#FFFFFF","surface-container-low":"#f3f3f8",
+        "surface-container":"#ededf2","surface-container-high":"#EBEBEB",
+        "outline-variant":"#C1C7D2","outline":"#727780",
+        "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+        "secondary":"#1b6d24","on-secondary":"#ffffff",
+        "tertiary":"#00312a","background":"#f9f9fe",
+      },
+      spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+      borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+      fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
+      fontSize:{
+        "body-md":    ["16px",{"lineHeight":"24px","fontWeight":"400"}],
+        "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+        "label-md":   ["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+      },
+    },
+  },
+}
+</script>
+<style>
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .reveal{animation:fadeUp .45s cubic-bezier(.16,1,.3,1) forwards}
+  .reveal-1{animation-delay:.06s;opacity:0}
+  .reveal-2{animation-delay:.12s;opacity:0}
+  :root{--org-line:#3d6480;--org-line-w:3px}
+
+  /* ---------- Sidebar nav ---------- */
+  .nav-item{position:relative;overflow:hidden}
+  .nav-item.active::before{
+    content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0.25rem;
+    background:linear-gradient(180deg,#005A9C,#002c50);
+  }
+  .nav-icon-chip{
+    width:30px;height:30px;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    background:#ededf2;color:#42474f;transition:background .15s,color .15s;
+  }
+  .nav-item.active .nav-icon-chip{background:#002c50;color:#fff}
+
+  /* ---------- Org chart ---------- */
+  .org{width:100%;display:flex;flex-direction:column;align-items:center}
+  .org-company{
+    width:100%;
+    background:#fff;
+    border-radius:0.75rem;
+    overflow:hidden;
+    box-shadow:0 12px 28px rgba(0,44,80,.12);
+  }
+  .org-name{
+    width:100%;
+    text-align:center;
+    background:linear-gradient(135deg,#002c50,#005A9C);
+    color:#fff;
+    border-radius:0.75rem;
+    padding:14px 18px;
+    box-shadow:0 12px 28px rgba(0,44,80,.22);
+  }
+  .org-company > .org-name{
+    border-radius:0;
+    box-shadow:none;
+  }
+  .org-name .org-name-label{
+    margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(255,255,255,.68);font-family:Inter,sans-serif;
+  }
+  .org-name h3{
+    margin:0;font-family:Manrope,sans-serif;font-weight:800;font-size:17px;
+    letter-spacing:.04em;text-transform:uppercase;line-height:1.3;
+  }
+  .org-name .org-year{
+    display:inline-block;margin-top:8px;font-size:11px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:#fff;background:rgba(255,255,255,.16);
+    padding:3px 12px;border-radius:0.75rem;
+  }
+
+  .org-split{width:100%;display:grid;grid-template-columns:1fr;gap:10px;padding:12px 14px 14px}
+  @media (min-width:768px){
+    .org-split{grid-template-columns:1fr 1fr;gap:12px}
+  }
+  .org-pane{
+    background:#F9F9FA;border-radius:0.75rem;padding:14px 16px;
+    border-top:3px solid transparent;
+  }
+  .org-pane h4{
+    margin:0;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    /* font-size:10px; */
+    font-weight:700;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-family:Inter,sans-serif;
+  }
+  .org-pane.cscl{border-top-color:#005A9C;background:#eef5fb}
+  .org-pane.cscl h4{color:#005A9C}
+  .org-pane.mtcl{border-top-color:#1b6d24;background:#eef6ef}
+  .org-pane.mtcl h4{color:#1b6d24}
+  .org-pane p{
+    margin:8px 0 0;font-size:13px;line-height:1.55;font-weight:500;color:#1A1C1D;white-space:pre-wrap;
+  }
+
+  .org-joint{width:100%;height:48px;position:relative}
+  .org-joint::before{
+    content:'';position:absolute;left:50%;top:0;width:var(--org-line-w);height:100%;
+    background:var(--org-line);transform:translateX(-50%);
+  }
+
+  .org-leaves{
+    --cols:4;
+    --gap:20px;
+    --rail:48px;
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(var(--cols),minmax(0,1fr));
+    column-gap:var(--gap);
+    row-gap:var(--rail);
+    position:relative;
+    padding-top:var(--rail);
+    align-items:stretch;
+  }
+  .org-leaves::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols) / 2);
+    right:calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols) / 2);
+    height:var(--org-line-w);
+    background:var(--org-line);
+  }
+  .org-card{
+    position:relative;
+    min-width:0;
+    height:100%;
+    display:flex;flex-direction:column;
+    background:#fff;
+    border-radius:0.75rem;
+    box-shadow:0 8px 20px rgba(0,44,80,.06);
+  }
+  .org-card::before{
+    content:'';
+    position:absolute;
+    left:50%;
+    top:calc(-1 * var(--rail) + var(--org-line-w) / 2);
+    width:var(--org-line-w);
+    height:calc(var(--rail) - var(--org-line-w) / 2);
+    background:var(--org-line);
+    transform:translateX(-50%);
+  }
+  .org-card .org-name{
+    padding:12px 14px;
+    border-radius:0.75rem 0.75rem 0 0;
+    box-shadow:none;
+    background:linear-gradient(205deg,#032f6f,#3a7ac1);
+  }
+  .org-card .org-name h4{
+    margin:0;font-family:Manrope,sans-serif;font-size:14px;line-height:1.35;font-weight:800;color:#fff;
+  }
+  .org-body-box{
+    background:#fff;
+    border-radius:0 0 0.75rem 0.75rem;
+    padding:12px 14px 14px;
+    box-shadow:none;
+    flex:1;
+  }
+  .org-body-box .org-body{
+    margin:0;
+    font-size:12px;line-height:1.55;color:#42474f;
+    white-space:pre-wrap;
+  }
+
+  /* ---------- Form fields ---------- */
+  .field-input{
+    background:#ededf2;border:2px solid transparent;border-radius:0.5rem;
+    padding:0.5rem 0.75rem;font-size:14px;width:100%;transition:background .15s,border-color .15s;
+  }
+  .field-input:focus{outline:none;background:#fff;border-color:#005A9C}
+  .field-input:disabled{opacity:.6;cursor:not-allowed}
+  .accent-bar{width:4px;border-radius:999px;flex-shrink:0}
+
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+  @media print {
+    header, aside, .no-print { display: none !important; }
+    body { background: white; }
+    main { max-width: 100%; padding: 0; }
+  }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+
+{% set tab_q = '&tab=' ~ tab %}
+{% set year_q = '?nam=' ~ diagram.nam %}
+
+<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center justify-between gap-md no-print">
+  <div class="flex items-center gap-md min-w-0">
+    <a href="/mtcl" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150 shrink-0">arrow_back</a>
+    <div class="min-w-0">
+      <p class="font-label-md text-label-md text-on-surface-variant truncate">Chất lượng</p>
+      <h1 class="text-[18px] md:text-[22px] font-headline-md font-bold text-primary tracking-tight leading-tight">Mục tiêu chất lượng &amp; chính sách chất lượng</h1>
+    </div>
+  </div>
+</header>
+
+<div class="flex">
+  <aside class="hidden md:flex flex-col w-56 shrink-0 bg-surface-container-lowest border-r border-outline-variant/20 sticky top-[69px] overflow-y-auto no-print" style="height:calc(100vh - 69px)">
+    <div class="px-lg py-md">
+      <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant mb-xs">Chất lượng</p>
+      <p class="font-headline-md font-bold text-[15px] text-primary leading-snug">Mục tiêu &amp; chính sách chất lượng</p>
+    </div>
+    <nav class="p-sm flex flex-col gap-xs mt-sm">
+      <a href="{{ base_path }}{{ year_q }}&tab=so-do"
+         class="nav-item {% if tab == 'so-do' %}active{% endif %} flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] transition-colors {% if tab == 'so-do' %}font-bold bg-primary/10 text-primary{% else %}font-medium text-on-surface-variant hover:bg-surface-container{% endif %}">
+        <span class="nav-icon-chip">
+          <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' {% if tab == 'so-do' %}1{% else %}0{% endif %},'wght' 400,'GRAD' 0,'opsz' 24">account_tree</span>
+        </span>
+        MTCL &amp; CSCL
+      </a>
+      <a href="{{ base_path }}{{ year_q }}&tab=cong-ty"
+         class="nav-item {% if tab == 'cong-ty' %}active{% endif %} flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] transition-colors {% if tab == 'cong-ty' %}font-bold bg-primary/10 text-primary{% else %}font-medium text-on-surface-variant hover:bg-surface-container{% endif %}">
+        <span class="nav-icon-chip">
+          <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' {% if tab == 'cong-ty' %}1{% else %}0{% endif %},'wght' 400,'GRAD' 0,'opsz' 24">apartment</span>
+        </span>
+        Thêm MTCL công ty
+      </a>
+      <a href="{{ base_path }}{{ year_q }}&tab=don-vi"
+         class="nav-item {% if tab == 'don-vi' %}active{% endif %} flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] transition-colors {% if tab == 'don-vi' %}font-bold bg-primary/10 text-primary{% else %}font-medium text-on-surface-variant hover:bg-surface-container{% endif %}">
+        <span class="nav-icon-chip">
+          <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' {% if tab == 'don-vi' %}1{% else %}0{% endif %},'wght' 400,'GRAD' 0,'opsz' 24">group</span>
+        </span>
+        Thêm MTCL đơn vị
+      </a>
+    </nav>
+  </aside>
+
+  <div class="flex-1 min-w-0">
+    <nav class="md:hidden sticky top-[69px] z-30 bg-background/95 backdrop-blur-md px-4 py-sm flex gap-xs overflow-x-auto no-print">
+      <a href="{{ base_path }}{{ year_q }}&tab=so-do" class="shrink-0 px-md py-sm rounded-full text-[12px] font-bold {% if tab == 'so-do' %}bg-primary text-white{% else %}bg-surface-container text-on-surface-variant{% endif %}">MTCL &amp; CSCL</a>
+      <a href="{{ base_path }}{{ year_q }}&tab=cong-ty" class="shrink-0 px-md py-sm rounded-full text-[12px] font-bold {% if tab == 'cong-ty' %}bg-primary text-white{% else %}bg-surface-container text-on-surface-variant{% endif %}">MTCL công ty</a>
+      <a href="{{ base_path }}{{ year_q }}&tab=don-vi" class="shrink-0 px-md py-sm rounded-full text-[12px] font-bold {% if tab == 'don-vi' %}bg-primary text-white{% else %}bg-surface-container text-on-surface-variant{% endif %}">MTCL đơn vị</a>
+    </nav>
+
+    <main class="w-full px-4 md:px-lg lg:px-xl pt-xl pb-28">
+
+      {% if tab == 'so-do' %}
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-md mb-xl reveal">
+        <div>
+          <p class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-sm">Sơ đồ theo năm</p>
+          <h2 class="text-[24px] md:text-[32px] font-headline-md font-bold text-primary leading-tight">Năm {{ diagram.nam }}</h2>
+          <p class="text-on-surface-variant mt-sm text-[14px]">
+            {{ diagram.company_count }} chính sách / mục tiêu công ty · {{ diagram.depart_count }} mục tiêu đơn vị
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-sm no-print">
+          {% if diagram.years %}
+            {% for y in diagram.years %}
+            <a href="{{ base_path }}?nam={{ y }}{{ tab_q }}"
+               class="px-md py-sm rounded-full text-[13px] font-semibold transition-colors {% if y == diagram.nam %}bg-primary text-white shadow-sm{% else %}bg-surface-container-low text-on-surface-variant hover:bg-surface-container{% endif %}">
+              {{ y }}
+            </a>
+            {% endfor %}
+          {% else %}
+            <span class="px-md py-sm rounded-full text-[13px] font-semibold bg-primary text-white">{{ diagram.nam }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if diagram.company_count == 0 and diagram.depart_count == 0 %}
+      <div class="bg-surface-container-lowest rounded-xl p-xxl text-center shadow-sm reveal">
+        <div class="mx-auto flex items-center justify-center w-16 h-16 bg-surface-container-low" style="border-radius:50%">
+          <span class="material-symbols-outlined text-[32px] text-outline" style="font-variation-settings:'FILL' 0,'wght' 300">account_tree</span>
+        </div>
+        <h3 class="mt-lg font-headline-md font-bold text-primary text-[20px]">Chưa có dữ liệu năm {{ diagram.nam }}</h3>
+        <p class="mt-sm text-on-surface-variant text-[14px]">
+          {% if is_admin %}Dùng tab bên trái để thêm MTCL công ty và MTCL đơn vị.{% else %}Liên hệ admin để nhập dữ liệu.{% endif %}
+        </p>
+      </div>
+      {% else %}
+      <div class="reveal reveal-1">
+            {% set n_dv = diagram.don_vi|length %}
+            {% set ncols = [n_dv, 4]|min %}
+            {% if ncols < 1 %}{% set ncols = 1 %}{% endif %}
+            <div class="org">
+              <div class="org-company">
+                <div class="org-name">
+                  <!-- <p class="org-name-label">Công ty</p> -->
+                  <h3>Công ty Cổ phần Dệt May 29/3</h3>
+                  <span class="org-year">Năm {{ diagram.nam }}</span>
+                </div>
+                {% if diagram.chien_luoc %}
+                <div class="org-split">
+                  {% for group in diagram.chien_luoc %}
+                    {% for item in group.muc_tieu %}
+                    <div class="org-pane cscl">
+                      <h4><span class="material-symbols-outlined text-[14px]">policy</span>Chính sách chất lượng</h4>
+                      <p>{{ item.cscl or 'Chưa có chính sách chất lượng' }}</p>
+                      {% if item.note %}<p style="font-style:italic;font-size:12px;color:#42474f">{{ item.note }}</p>{% endif %}
+                    </div>
+                    <div class="org-pane mtcl">
+                      <h4><span class="material-symbols-outlined text-[14px]">flag</span>Mục tiêu chất lượng</h4>
+                      <p>{{ item.mtcl }}</p>
+                    </div>
+                    {% endfor %}
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+
+              {% if diagram.don_vi %}
+              <div class="org-joint"></div>
+              <div class="org-leaves" style="--cols: {{ ncols }}">
+                {% for dv in diagram.don_vi %}
+                <article class="org-card">
+                  <div class="org-name">
+                    <h4>{{ dv.mo_ta or dv.ten }}</h4>
+                  </div>
+                  <div class="org-body-box">
+                    <p class="org-body">{% if dv.content %}{{ dv.content }}{% else %}Chưa nhập nội dung{% endif %}</p>
+                  </div>
+                </article>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+      {% if tab == 'cong-ty' %}
+      <div class="mb-xl reveal">
+        <p class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-sm">Nhập liệu</p>
+        <h2 class="text-[24px] md:text-[32px] font-headline-md font-bold text-primary leading-tight">Thêm MTCL công ty</h2>
+        <p class="text-on-surface-variant mt-sm text-[14px]">Chính sách chất lượng (CSCL) và mục tiêu chất lượng cấp công ty theo năm.</p>
+      </div>
+
+      <form id="company-form" class="bg-surface-container-lowest rounded-xl p-lg shadow-sm space-y-md mb-xl reveal reveal-1" onsubmit="return submitCompany(event)">
+        <input type="hidden" id="company-id" value="">
+        <div class="flex items-center gap-sm pb-sm">
+          <span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings:'FILL' 1">apartment</span>
+          <h3 class="font-headline-md font-bold text-[15px] text-primary">Thông tin MTCL công ty</h3>
+        </div>
+        <div class="max-w-[180px]">
+          <label class="font-label-md text-[12px] text-on-surface-variant">Năm</label>
+          <input id="company-nam" type="number" min="2000" max="2100" value="{{ diagram.nam }}" {% if not is_admin %}disabled{% endif %} class="mt-xs field-input">
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+          <div class="flex gap-sm">
+            <span class="accent-bar" style="background:#005A9C"></span>
+            <div class="flex-1 min-w-0">
+              <label class="font-label-md text-[12px] text-on-surface-variant">Chính sách chất lượng (CSCL)</label>
+              <textarea id="company-cscl" rows="6" {% if not is_admin %}disabled{% endif %} class="mt-xs field-input"></textarea>
+            </div>
+          </div>
+          <div class="flex gap-sm">
+            <span class="accent-bar" style="background:#1b6d24"></span>
+            <div class="flex-1 min-w-0">
+              <label class="font-label-md text-[12px] text-on-surface-variant">Mục tiêu chất lượng (MTCL)</label>
+              <textarea id="company-mtcl" rows="6" {% if not is_admin %}disabled{% endif %} class="mt-xs field-input"></textarea>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="font-label-md text-[12px] text-on-surface-variant">Ghi chú</label>
+          <input id="company-note" {% if not is_admin %}disabled{% endif %} class="mt-xs field-input">
+        </div>
+        <p id="company-error" class="text-[12px] text-red-600 min-h-4"></p>
+        {% if is_admin %}
+        <div class="flex gap-sm pt-xs">
+          <button type="submit" class="flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-bold bg-primary text-white hover:bg-primary-container transition-colors">
+            <span class="material-symbols-outlined text-[16px]">save</span>Lưu
+          </button>
+          <button type="button" onclick="resetCompanyForm()" class="flex items-center gap-xs px-md py-sm rounded-full text-[13px] font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">
+            <span class="material-symbols-outlined text-[16px]">refresh</span>Làm mới
+          </button>
+        </div>
+        {% else %}
+        <p class="text-[13px] text-on-surface-variant">Chỉ admin mới được thêm hoặc sửa.</p>
+        {% endif %}
+      </form>
+
+      <div class="space-y-md">
+        {% for group in diagram.chien_luoc %}
+          {% for item in group.muc_tieu %}
+          <div class="bg-surface-container-lowest rounded-xl p-md shadow-sm relative reveal">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-md pr-10">
+              <div class="flex gap-sm">
+                <span class="accent-bar" style="background:#005A9C"></span>
+                <div class="min-w-0">
+                  <p class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant">Chính sách chất lượng (CSCL)</p>
+                  <p class="mt-xs text-[14px] whitespace-pre-wrap">{{ item.cscl or '—' }}</p>
+                </div>
+              </div>
+              <div class="flex gap-sm">
+                <span class="accent-bar" style="background:#1b6d24"></span>
+                <div class="min-w-0">
+                  <p class="font-label-md text-[11px] uppercase tracking-widest text-on-surface-variant">Mục tiêu chất lượng (MTCL)</p>
+                  <p class="mt-xs text-[14px] whitespace-pre-wrap">{{ item.mtcl or '—' }}</p>
+                </div>
+              </div>
+            </div>
+            {% if is_admin %}
+            <div class="absolute top-2 right-2 flex gap-xs">
+              <button type="button" class="p-1 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container" title="Sửa" onclick='editCompany({{ item.id }}, {{ item.cscl | tojson }}, {{ item.mtcl | tojson }}, {{ item.note | tojson }})'>
+                <span class="material-symbols-outlined text-[16px]">edit</span>
+              </button>
+              <button type="button" class="p-1 rounded-lg text-on-surface-variant hover:text-red-600 hover:bg-red-50" title="Xóa" onclick="deleteCompany({{ item.id }})">
+                <span class="material-symbols-outlined text-[16px]">delete</span>
+              </button>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+        <div class="bg-surface-container-lowest rounded-xl p-xl text-center shadow-sm reveal">
+          <div class="mx-auto flex items-center justify-center w-12 h-12 bg-surface-container-low" style="border-radius:50%">
+            <span class="material-symbols-outlined text-[24px] text-outline">apartment</span>
+          </div>
+          <p class="mt-md text-on-surface-variant text-[14px]">Chưa có MTCL công ty năm {{ diagram.nam }}.</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if tab == 'don-vi' %}
+      <div class="mb-xl reveal">
+        <p class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-sm">Nhập liệu</p>
+        <h2 class="text-[24px] md:text-[32px] font-headline-md font-bold text-primary leading-tight">Thêm MTCL đơn vị</h2>
+        <p class="text-on-surface-variant mt-sm text-[14px]">Mục tiêu chất lượng triển khai theo từng đơn vị trong năm {{ diagram.nam }}.</p>
+      </div>
+
+      <form id="depart-form" class="bg-surface-container-lowest rounded-xl p-lg shadow-sm space-y-md mb-xl max-w-2xl reveal reveal-1" onsubmit="return submitDepart(event)">
+        <input type="hidden" id="depart-id" value="">
+        <div class="flex items-center gap-sm pb-sm">
+          <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings:'FILL' 1">group</span>
+          <h3 class="font-headline-md font-bold text-[15px] text-primary">Thông tin MTCL đơn vị</h3>
+        </div>
+        <div class="max-w-[180px]">
+          <label class="font-label-md text-[12px] text-on-surface-variant">Năm</label>
+          <input id="depart-nam" type="number" min="2000" max="2100" value="{{ diagram.nam }}" {% if not is_admin %}disabled{% endif %} class="mt-xs field-input">
+        </div>
+        <div>
+          <label class="font-label-md text-[12px] text-on-surface-variant">Đơn vị</label>
+          <select id="depart-id-depart" {% if not is_admin %}disabled{% endif %} class="mt-xs field-input">
+            {% for d in diagram.departments %}
+            <option value="{{ d.id }}">{{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="font-label-md text-[12px] text-on-surface-variant">Nội dung mục tiêu đơn vị</label>
+          <textarea id="depart-content" rows="4" {% if not is_admin %}disabled{% endif %} class="mt-xs field-input"></textarea>
+        </div>
+        <div>
+          <label class="font-label-md text-[12px] text-on-surface-variant">Ghi chú</label>
+          <input id="depart-note" {% if not is_admin %}disabled{% endif %} class="mt-xs field-input">
+        </div>
+        <p id="depart-error" class="text-[12px] text-red-600 min-h-4"></p>
+        {% if is_admin %}
+        <div class="flex gap-sm pt-xs">
+          <button type="submit" class="flex items-center gap-xs px-lg py-sm rounded-full text-[13px] font-bold bg-primary text-white hover:bg-primary-container transition-colors">
+            <span class="material-symbols-outlined text-[16px]">save</span>Lưu
+          </button>
+          <button type="button" onclick="resetDepartForm()" class="flex items-center gap-xs px-md py-sm rounded-full text-[13px] font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">
+            <span class="material-symbols-outlined text-[16px]">refresh</span>Làm mới
+          </button>
+        </div>
+        {% else %}
+        <p class="text-[13px] text-on-surface-variant">Chỉ admin mới được thêm hoặc sửa.</p>
+        {% endif %}
+      </form>
+
+      <div class="space-y-md max-w-2xl">
+        {% for dv in diagram.don_vi %}
+        <div class="bg-surface-container-lowest rounded-xl p-md shadow-sm relative reveal">
+          <div class="flex gap-sm pr-10">
+            <span class="accent-bar" style="background:#1b6d24"></span>
+            <div class="min-w-0">
+              <p class="font-headline-md font-bold text-primary text-[16px]">{{ dv.ten }}</p>
+              <p class="mt-sm text-[14px] whitespace-pre-wrap">{% if dv.content %}{{ dv.content }}{% else %}<span class="text-outline italic">Chưa nhập nội dung</span>{% endif %}</p>
+            </div>
+          </div>
+          {% if is_admin %}
+          <div class="absolute top-2 right-2 flex gap-xs">
+            <button type="button" class="p-1 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container" title="Sửa" onclick='editDepart({{ dv.id }}, {{ dv.id_depart }}, {{ dv.content | tojson }}, {{ dv.note | tojson }})'>
+              <span class="material-symbols-outlined text-[16px]">edit</span>
+            </button>
+            <button type="button" class="p-1 rounded-lg text-on-surface-variant hover:text-red-600 hover:bg-red-50" title="Xóa" onclick="deleteDepart({{ dv.id }})">
+              <span class="material-symbols-outlined text-[16px]">delete</span>
+            </button>
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="bg-surface-container-lowest rounded-xl p-xl text-center shadow-sm reveal">
+          <div class="mx-auto flex items-center justify-center w-12 h-12 bg-surface-container-low" style="border-radius:50%">
+            <span class="material-symbols-outlined text-[24px] text-outline">group</span>
+          </div>
+          <p class="mt-md text-on-surface-variant text-[14px]">Chưa có MTCL đơn vị năm {{ diagram.nam }}.</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </main>
+  </div>
+</div>
+
+<script>
+const CURRENT_YEAR = {{ diagram.nam }};
+const BASE_PATH = {{ base_path | tojson }};
+const TAB = {{ tab | tojson }};
+
+function tabUrl(nam) {
+  return `${BASE_PATH}?nam=${nam}&tab=${TAB}`;
+}
+
+function resetCompanyForm() {
+  document.getElementById('company-id').value = '';
+  document.getElementById('company-nam').value = CURRENT_YEAR;
+  document.getElementById('company-cscl').value = '';
+  document.getElementById('company-mtcl').value = '';
+  document.getElementById('company-note').value = '';
+  document.getElementById('company-error').textContent = '';
+}
+
+function resetDepartForm() {
+  document.getElementById('depart-id').value = '';
+  document.getElementById('depart-nam').value = CURRENT_YEAR;
+  document.getElementById('depart-content').value = '';
+  document.getElementById('depart-note').value = '';
+  document.getElementById('depart-error').textContent = '';
+}
+
+function editCompany(id, cscl, mtcl, note) {
+  document.getElementById('company-id').value = String(id);
+  document.getElementById('company-cscl').value = cscl || '';
+  document.getElementById('company-mtcl').value = mtcl || '';
+  document.getElementById('company-note').value = note || '';
+  document.getElementById('company-cscl').focus();
+}
+
+function editDepart(id, idDepart, content, note) {
+  document.getElementById('depart-id').value = String(id);
+  document.getElementById('depart-id-depart').value = String(idDepart);
+  document.getElementById('depart-content').value = content || '';
+  document.getElementById('depart-note').value = note || '';
+  document.getElementById('depart-content').focus();
+}
+
+async function submitCompany(event) {
+  event.preventDefault();
+  const id = document.getElementById('company-id').value;
+  const nam = Number(document.getElementById('company-nam').value);
+  const err = document.getElementById('company-error');
+  let url = '/api/mtcl/company';
+  if (id) url += `/${id}`;
+  try {
+    const response = await fetch(url, {
+      method: id ? 'PUT' : 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        nam,
+        cscl: document.getElementById('company-cscl').value,
+        mtcl: document.getElementById('company-mtcl').value,
+        note: document.getElementById('company-note').value,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      err.textContent = data.detail || 'Không lưu được. Kiểm tra quyền admin.';
+      return false;
+    }
+    window.location.href = tabUrl(nam);
+  } catch (e) {
+    err.textContent = 'Không kết nối được máy chủ.';
+  }
+  return false;
+}
+
+async function submitDepart(event) {
+  event.preventDefault();
+  const id = document.getElementById('depart-id').value;
+  const nam = Number(document.getElementById('depart-nam').value);
+  const err = document.getElementById('depart-error');
+  let url = '/api/mtcl/depart';
+  if (id) url += `/${id}`;
+  try {
+    const response = await fetch(url, {
+      method: id ? 'PUT' : 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        nam,
+        id_depart: Number(document.getElementById('depart-id-depart').value),
+        content: document.getElementById('depart-content').value,
+        note: document.getElementById('depart-note').value,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      err.textContent = data.detail || 'Không lưu được. Kiểm tra quyền admin.';
+      return false;
+    }
+    window.location.href = tabUrl(nam);
+  } catch (e) {
+    err.textContent = 'Không kết nối được máy chủ.';
+  }
+  return false;
+}
+
+async function deleteCompany(id) {
+  if (!confirm('Xóa MTCL công ty này?')) return;
+  const response = await fetch(`/api/mtcl/company/${id}`, {method: 'DELETE'});
+  if (!response.ok) {
+    alert('Không xóa được. Kiểm tra quyền admin.');
+    return;
+  }
+  window.location.reload();
+}
+
+async function deleteDepart(id) {
+  if (!confirm('Xóa MTCL đơn vị này?')) return;
+  const response = await fetch(`/api/mtcl/depart/${id}`, {method: 'DELETE'});
+  if (!response.ok) {
+    alert('Không xóa được. Kiểm tra quyền admin.');
+    return;
+  }
+  window.location.reload();
+}
+</script>
+</body>
+</html>
