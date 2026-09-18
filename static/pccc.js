@@ -24,7 +24,7 @@
   };
 
   const statusLabels = {
-    NHAP: "Đang chuẩn bị",
+    NHAP: "Đang mở báo số",
     MO_SI_SO: "Đang mở báo số",
     DANG_KIEM_DEM: "Đang kiểm đếm",
     DA_KET_THUC: "Đã kết thúc",
@@ -215,7 +215,7 @@
       return `<div class="data-row"><div class="data-copy"><div class="data-name">${e(row.bo_phan_ten)}</div><div class="data-meta">${counts}</div></div>${badge(label, icon, kind)}</div>`;
     }).join("");
 
-    const isOpen = ["MO_SI_SO", "DANG_KIEM_DEM"].includes(d.dot.trang_thai);
+    const isOpen = ["NHAP", "MO_SI_SO", "DANG_KIEM_DEM"].includes(d.dot.trang_thai);
     const baselineComplete = d.records.length > 0 && d.records.every((row) => row.si_so_dau_ngay !== null);
     let cta = `<button class="primary-button" disabled><span class="material-symbols-outlined">schedule</span>Chưa mở báo số</button>`;
     if (isOpen && d.da_xac_nhan) {
@@ -433,16 +433,12 @@
       app.innerHTML = `<section class="empty-state screen"><div class="empty-icon"><span class="material-symbols-outlined">emergency_home</span></div><h2>Chưa có đợt diễn tập</h2><p>Tạo đợt mới để mở khai báo sĩ số cho các đơn vị.</p><form id="create-drill-form" class="empty-form"><label>Tên đợt<input class="quiet-input" name="ten" value="Diễn tập PCCC ${today.slice(0, 4)}" required/></label><label>Ngày diễn tập<input class="quiet-input" name="ngay_dien_tap" type="date" value="${today}" required/></label><label>Giờ dự kiến<input class="quiet-input" name="bat_dau_du_kien" type="time"/></label><button class="primary-button" type="submit"><span class="material-symbols-outlined">add_circle</span>Tạo đợt diễn tập</button></form></section>`;
       if (state.screen === "new-drill") {
         app.querySelector("h2").textContent = "Tạo đợt diễn tập mới";
-        app.querySelector("p").textContent = "Đợt mới được lưu ở trạng thái chuẩn bị. Cần kết thúc đợt đang hoạt động trước khi mở khai báo sĩ số cho đợt mới.";
+        app.querySelector("p").textContent = "Tạo xong là các đơn vị có thể khai sĩ số đầu ngày và kiểm đếm thực tế ngay. Hãy kết thúc đợt cũ để tránh chọn nhầm.";
       }
       return;
     }
     const o = state.overview;
     if (!o) return;
-    const nextActions = {
-      NHAP: ["MO_SI_SO", "Mở báo số", "group_add", "primary-button"],
-    };
-    const action = nextActions[o.dot.trang_thai];
     const units = o.units.filter((item) => state.adminFilter === "ALL" || item.trang_thai === state.adminFilter);
     const rows = units.map((item) => {
       const [label, icon, kind] = overviewStatus(item);
@@ -450,7 +446,7 @@
     }).join("");
     app.innerHTML = `<section class="screen"><div class="section-heading"><span class="eyebrow">Admin</span><h2>Dashboard kiểm đếm</h2><p>${e(o.dot.ten)} · ${dateText(o.dot.ngay_dien_tap)}</p></div><div class="admin-toolbar"><select id="admin-filter" class="quiet-input"><option value="ALL">Tất cả trạng thái</option><option value="CHUA_KHAI_BAO">Chưa khai báo</option><option value="DA_CO_SI_SO">Có sĩ số</option><option value="DANG_KIEM_DEM">Đang kiểm đếm</option><option value="CO_CHENH_LECH">Có chênh lệch</option><option value="DA_XAC_NHAN">Đã xác nhận</option></select><span class="chip ${o.dot.trang_thai === "DANG_KIEM_DEM" ? "success" : "primary"}">${e(statusLabels[o.dot.trang_thai])}</span></div>
       <div class="admin-layout"><div class="kpi-grid admin-kpis"><div class="kpi-card"><div class="kpi-label">Tổng sĩ số</div><div class="kpi-value">${number(o.tong_si_so_dau_ngay)}</div></div><div class="kpi-card"><div class="kpi-label">Thực tế</div><div class="kpi-value success">${number(o.tong_thuc_te_kiem_dem)}</div></div><div class="kpi-card"><div class="kpi-label">Chênh lệch</div><div class="kpi-value ${o.chenh_lech ? "error" : "success"}">${o.chenh_lech > 0 ? "+" : ""}${number(o.chenh_lech)}</div></div><div class="kpi-card"><div class="kpi-label">Hoàn tất</div><div class="kpi-value">${o.unit_confirmed_count}/${o.unit_count}</div></div></div><div><div class="list-title" style="margin-top:0">Đơn vị (${units.length}/${o.unit_count})</div><div class="data-list admin-list">${rows || `<div class="notice info">Không có đơn vị ở trạng thái đã chọn.</div>`}</div></div></div>
-      <div class="sticky-actions"><div class="action-inner"><button class="secondary-button" data-action="export"><span class="material-symbols-outlined">download</span>Xuất CSV</button>${action ? `<button class="${action[3]}" data-action="drill-status" data-status="${action[0]}"><span class="material-symbols-outlined">${action[2]}</span>${action[1]}</button>` : o.dot.trang_thai === "DA_KET_THUC" ? `<button class="primary-button" disabled><span class="material-symbols-outlined">verified</span>Đợt đã kết thúc</button>` : `<button class="primary-button" disabled><span class="material-symbols-outlined">sensors</span>Đợt đang mở</button>`}</div></div></section>`;
+      <div class="sticky-actions"><div class="action-inner"><button class="secondary-button" data-action="export"><span class="material-symbols-outlined">download</span>Xuất CSV</button>${o.dot.trang_thai === "DA_KET_THUC" ? `<button class="primary-button" disabled><span class="material-symbols-outlined">verified</span>Đợt đã kết thúc</button>` : `<button class="primary-button" disabled><span class="material-symbols-outlined">sensors</span>Đợt đang mở</button>`}</div></div></section>`;
     const filter = document.getElementById("admin-filter");
     if (filter) filter.value = state.adminFilter;
     if (["NHAP", "MO_SI_SO", "DANG_KIEM_DEM"].includes(o.dot.trang_thai)) {

@@ -237,6 +237,30 @@ class PcccServiceTest(unittest.TestCase):
             self.assertEqual(len(list_drills(admin, False, session)), 3)
             self.assertIsNone(active_drill(session))
 
+    def test_new_drill_is_open_for_reporting_immediately(self) -> None:
+        from starlette.requests import Request
+
+        from app.pccc.routes import create_drill
+        from app.pccc.schemas import PcccDrillCreate
+
+        admin = Request({"type": "http", "session": {"user": {"role": "admin", "ma_nv": "ADMIN"}}})
+        with Session(self.engine) as session:
+            unit = PcccDonVi(ma="TEST", ten="Đơn vị test")
+            session.add(unit)
+            session.flush()
+            session.add(PcccBoPhan(don_vi_id=unit.id, ma="BP", ten="Bộ phận test"))
+            session.commit()
+
+            result = create_drill(
+                admin,
+                PcccDrillCreate(ten="Đợt báo ngay", ngay_dien_tap=date(2026, 9, 18)),
+                session,
+            )
+
+            self.assertEqual(result.trang_thai, "MO_SI_SO")
+            records = session.exec(select(PcccKiemDem).where(PcccKiemDem.dot_id == result.id)).all()
+            self.assertEqual(len(records), 1)
+
     def test_baseline_and_actual_are_available_in_same_open_status(self) -> None:
         from starlette.requests import Request
         from app.pccc.routes import confirm_unit_result, update_actual_count, update_baseline

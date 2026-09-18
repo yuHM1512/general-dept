@@ -38,6 +38,7 @@
               placeholder="Nhập mã nhân viên (ví dụ: A1234)"
               autocomplete="username"
               autofocus
+              onkeydown="if (event.key === 'Enter') doLogin()"
             />
           </div>
 
@@ -52,6 +53,8 @@
     </div>
 
     <script>
+      const nextUrl = {{ next_url | tojson }};
+
       async function doLogin() {
         const code = document.getElementById("loginEmployeeCode").value.trim().toUpperCase();
         if (!code) {
@@ -61,14 +64,14 @@
         try {
           const formData = new FormData();
           formData.append("ma_nv", code);
-          const endpoint = "/login?next=" + encodeURIComponent("{{ next_url }}");
+          const endpoint = "/login?next=" + encodeURIComponent(nextUrl);
           const res = await fetch(endpoint, { method: "POST", body: formData });
           if (res.redirected) {
             window.location.href = res.url;
             return;
           }
           if (res.ok) {
-            window.location.href = "{{ next_url }}";
+            window.location.href = nextUrl;
             return;
           }
           alert("Đăng nhập thất bại");

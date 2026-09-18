@@ -310,6 +310,7 @@ def create_drill(
         ten=payload.ten.strip(),
         ngay_dien_tap=payload.ngay_dien_tap,
         bat_dau_du_kien=payload.bat_dau_du_kien,
+        trang_thai="MO_SI_SO",
         ghi_chu=payload.ghi_chu.strip(),
         created_by=current_employee_code(user),
     )
@@ -408,7 +409,7 @@ def update_baseline(
 ) -> PcccUnitDetailOut:
     user = _current_user(request)
     drill = _get_drill(session, drill_id)
-    if drill.trang_thai not in {"MO_SI_SO", "DANG_KIEM_DEM"}:
+    if drill.trang_thai not in {"NHAP", "MO_SI_SO", "DANG_KIEM_DEM"}:
         raise HTTPException(status_code=409, detail="Đợt diễn tập chưa mở báo số")
     unit = require_unit_access(user, session, unit_id)
     department_ids = visible_department_ids(user, session, unit_id)
@@ -436,7 +437,7 @@ def update_actual_count(
 ) -> PcccUnitDetailOut:
     user = _current_user(request)
     drill = _get_drill(session, drill_id)
-    if drill.trang_thai not in {"MO_SI_SO", "DANG_KIEM_DEM"}:
+    if drill.trang_thai not in {"NHAP", "MO_SI_SO", "DANG_KIEM_DEM"}:
         raise HTTPException(status_code=409, detail="Đợt diễn tập chưa mở báo số")
     if drill.bat_dau_thuc_te is None:
         drill.bat_dau_thuc_te = datetime.utcnow()
@@ -467,7 +468,7 @@ def confirm_unit_result(
 ) -> dict:
     user = _current_user(request)
     drill = _get_drill(session, drill_id)
-    if drill.trang_thai not in {"MO_SI_SO", "DANG_KIEM_DEM"}:
+    if drill.trang_thai not in {"NHAP", "MO_SI_SO", "DANG_KIEM_DEM"}:
         raise HTTPException(status_code=409, detail="Đợt diễn tập chưa mở báo số")
     unit = require_unit_access(user, session, unit_id)
     department_ids = visible_department_ids(user, session, unit_id)

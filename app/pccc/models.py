@@ -42,7 +42,7 @@ class PcccDotDienTap(SQLModel, table=True):
     bat_dau_du_kien: datetime | None = Field(default=None)
     bat_dau_thuc_te: datetime | None = Field(default=None)
     ket_thuc_thuc_te: datetime | None = Field(default=None)
-    trang_thai: str = Field(default="NHAP", max_length=30, index=True)
+    trang_thai: str = Field(default="MO_SI_SO", max_length=30, index=True)
     ghi_chu: str = Field(default="")
     created_by: str = Field(default="", max_length=16)
     created_at: datetime = Field(default_factory=datetime.utcnow)

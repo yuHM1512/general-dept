@@ -193,6 +193,7 @@ async def _require_login(request: Request, call_next):
             next_url = path
             if request.url.query:
                 next_url = f"{path}?{request.url.query}"
+            request.session["post_login_next"] = next_url  # type: ignore[attr-defined]
             return RedirectResponse(url=f"/login?next={quote(next_url)}", status_code=303)
         _refresh_current_user(request)
 
@@ -346,8 +347,13 @@ def login_page(
     # Ensure tables exist so login can work even on a fresh DB.
     create_db_and_tables()
 
+    saved_next = request.session.get("post_login_next")  # type: ignore[attr-defined]
+    next_url = next or saved_next or "/rcp"
+    if not next_url.startswith("/") or next_url.startswith("//"):
+        next_url = "/rcp"
+
     if _current_user(request):
-        return RedirectResponse(url=next or "/", status_code=303)
+        return RedirectResponse(url=next_url, status_code=303)
 
     return templates.TemplateResponse(
         "login_rcp.html",
@@ -356,7 +362,7 @@ def login_page(
             "app_name": settings.app_name,
             "now_year": datetime.utcnow().year,
             "target_salary_vnd_fmt": _fmt_vnd(settings.target_salary_vnd),
-            "next_url": next or "/rcp",
+            "next_url": next_url,
             "error": None,
         },
     )
@@ -378,6 +384,10 @@ def login_submit(
     session: Session = Depends(get_session),
 ):
     create_db_and_tables()
+    saved_next = request.session.get("post_login_next")  # type: ignore[attr-defined]
+    next_url = next or saved_next or "/"
+    if not next_url.startswith("/") or next_url.startswith("//"):
+        next_url = "/"
 
     code = (ma_nv or "").strip().upper()
     if not code:
@@ -388,7 +398,7 @@ def login_submit(
                 "app_name": settings.app_name,
                 "now_year": datetime.utcnow().year,
                 "target_salary_vnd_fmt": _fmt_vnd(settings.target_salary_vnd),
-                "next_url": next or "/rcp",
+                "next_url": next_url,
                 "error": "Vui lòng nhập mã nhân viên.",
             },
             status_code=400,
@@ -403,15 +413,16 @@ def login_submit(
                 "app_name": settings.app_name,
                 "now_year": datetime.utcnow().year,
                 "target_salary_vnd_fmt": _fmt_vnd(settings.target_salary_vnd),
-                "next_url": next or "/rcp",
+                "next_url": next_url,
                 "error": "Mã nhân viên không hợp lệ hoặc chưa được cấp quyền.",
             },
             status_code=401,
         )
 
     request.session["user"] = _employee_user_payload(employee)  # type: ignore[attr-defined]
+    request.session.pop("post_login_next", None)  # type: ignore[attr-defined]
 
-    return RedirectResponse(url=next or "/", status_code=303)
+    return RedirectResponse(url=next_url, status_code=303)
 
 
 @app.post("/rcp/login")
