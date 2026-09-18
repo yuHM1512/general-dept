@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlmodel import Session, select
 
 from app.db import get_session
@@ -23,6 +23,7 @@ from app.pccc.schemas import (
     PcccDrillCreate,
     PcccDrillOut,
     PcccDrillStatusUpdate,
+    PcccDrillUpdate,
     PcccOverviewOut,
     PcccUnitConfirm,
     PcccUnitDetailOut,
@@ -320,6 +321,74 @@ def create_drill(
     session.commit()
     session.refresh(row)
     return drill_out(row)
+
+
+@router.patch("/drills/{drill_id}", response_model=PcccDrillOut)
+def update_drill(
+    drill_id: int,
+    request: Request,
+    payload: PcccDrillUpdate,
+    session: Session = Depends(get_session),
+) -> PcccDrillOut:
+    user = _require_admin(request)
+    drill = _get_drill(session, drill_id)
+    old_value = f"{drill.ten}|{drill.ngay_dien_tap.isoformat()}|{drill.bat_dau_du_kien or ''}|{drill.ghi_chu}"
+    drill.ten = payload.ten.strip()
+    drill.ngay_dien_tap = payload.ngay_dien_tap
+    drill.bat_dau_du_kien = payload.bat_dau_du_kien
+    drill.ghi_chu = payload.ghi_chu.strip()
+    drill.updated_at = datetime.utcnow()
+    new_value = f"{drill.ten}|{drill.ngay_dien_tap.isoformat()}|{drill.bat_dau_du_kien or ''}|{drill.ghi_chu}"
+    session.add(drill)
+    session.add(PcccLichSu(
+        dot_id=drill_id,
+        don_vi_id=None,
+        hanh_dong="SUA_THONG_TIN_DOT",
+        du_lieu_cu=old_value,
+        du_lieu_moi=new_value,
+        changed_by=current_employee_code(user),
+    ))
+    session.commit()
+    session.refresh(drill)
+    return drill_out(drill)
+
+
+@router.delete("/drills/{drill_id}")
+def delete_drill(
+    drill_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+) -> Response:
+    _require_admin(request)
+    drill = _get_drill(session, drill_id)
+    records = session.exec(select(PcccKiemDem).where(PcccKiemDem.dot_id == drill_id)).all()
+    has_reported_data = any(
+        row.si_so_dau_ngay is not None
+        or row.thuc_te_kiem_dem is not None
+        or bool(row.ma_ly_do.strip())
+        or bool(row.ly_do_chi_tiet.strip())
+        for row in records
+    )
+    confirmations = session.exec(
+        select(PcccXacNhanDonVi).where(PcccXacNhanDonVi.dot_id == drill_id)
+    ).all()
+    if has_reported_data or confirmations:
+        raise HTTPException(
+            status_code=409,
+            detail="Đợt đã có dữ liệu báo số, không thể xóa. Hãy kết thúc đợt để lưu lịch sử.",
+        )
+
+    histories = session.exec(select(PcccLichSu).where(PcccLichSu.dot_id == drill_id)).all()
+    for history in histories:
+        session.delete(history)
+    for confirmation in confirmations:
+        session.delete(confirmation)
+    for record in records:
+        session.delete(record)
+    session.flush()
+    session.delete(drill)
+    session.commit()
+    return Response(status_code=204)
 
 
 @router.patch("/drills/{drill_id}/status", response_model=PcccDrillOut)

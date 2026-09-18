@@ -16,6 +16,10 @@ class PcccDrillCreate(BaseModel):
     ghi_chu: str = ""
 
 
+class PcccDrillUpdate(PcccDrillCreate):
+    pass
+
+
 class PcccDrillStatusUpdate(BaseModel):
     trang_thai: str
 

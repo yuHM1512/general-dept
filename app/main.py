@@ -738,7 +738,8 @@ def internal_audit_home(
 
 
 @app.get("/internal-audit/pccc", response_class=HTMLResponse)
-def pccc_page(request: Request) -> HTMLResponse:
+@app.get("/internal-audit/pccc/{drill_id}", response_class=HTMLResponse)
+def pccc_page(request: Request, drill_id: int | None = None) -> HTMLResponse:
     user = _current_user(request) or {}
     return templates.TemplateResponse(
         "pccc.html",
@@ -748,6 +749,7 @@ def pccc_page(request: Request) -> HTMLResponse:
             "now_year": datetime.utcnow().year,
             "user": user,
             "is_admin": _is_admin(request),
+            "drill_id": drill_id,
         },
     )
 

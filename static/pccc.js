@@ -7,6 +7,8 @@
   const adminHomeButton = document.getElementById("admin-home-button");
   const offlineBanner = document.getElementById("offline-banner");
 
+  const BASE_PATH = "/internal-audit/pccc";
+
   const state = {
     screen: "loading",
     drill: null,
@@ -22,6 +24,18 @@
     assignments: [],
     drills: [],
   };
+
+  function buildUrl() {
+    if (!state.drill) return BASE_PATH;
+    return `${BASE_PATH}/${state.drill.id}`;
+  }
+
+  function pushUrl(replace = false) {
+    const url = buildUrl();
+    if (url === location.pathname) return;
+    if (replace) history.replaceState({ drillId: state.drill?.id, screen: state.screen }, "", url);
+    else history.pushState({ drillId: state.drill?.id, screen: state.screen }, "", url);
+  }
 
   const statusLabels = {
     NHAP: "Đang mở báo số",
@@ -100,21 +114,31 @@
     localStorage.removeItem(draftKey("actual"));
   }
 
+  function drillIdFromUrl() {
+    const match = location.pathname.match(/\/internal-audit\/pccc\/(\d+)/);
+    return match ? Number(match[1]) : null;
+  }
+
   async function init() {
     adminHomeButton.hidden = !boot.isAdmin;
+    const requestedId = boot.drillId || drillIdFromUrl();
     try {
       const [drill, units, drills] = await Promise.all([
         api("/api/pccc/drills/active"),
         api("/api/pccc/units"),
-        api("/api/pccc/drills?active_only=true"),
+        boot.isAdmin ? api("/api/pccc/drills") : api("/api/pccc/drills?active_only=true"),
       ]);
-      state.drill = drill;
       state.units = units || [];
       state.drills = drills || [];
+      if (requestedId) {
+        state.drill = state.drills.find((d) => d.id === requestedId) || drill;
+      } else {
+        state.drill = drill;
+      }
       if (boot.isAdmin) {
         state.screen = "admin";
         await loadAdmin(false);
-      } else if (!drill) {
+      } else if (!state.drill) {
         state.screen = "no-drill";
         render();
       } else if (!state.units.length) {
@@ -124,6 +148,7 @@
         state.unitId = state.units[0].id;
         await loadUnit("overview");
       }
+      pushUrl(true);
     } catch (error) {
       state.screen = "error";
       renderError(error.message);
@@ -147,6 +172,7 @@
         state.detail.records.map((row) => [row.bo_phan_id, { code: row.ma_ly_do || "", detail: row.ly_do_chi_tiet || "" }]),
       );
       state.screen = screen;
+      pushUrl();
       render();
     } catch (error) {
       state.screen = "error";
@@ -178,6 +204,7 @@
       state.overview = await api(`/api/pccc/drills/${state.drill.id}/overview`);
       state.drill = state.overview.dot;
       state.screen = "admin";
+      pushUrl();
       render();
     } catch (error) {
       state.screen = "error";
@@ -228,14 +255,16 @@
       const counts = row.si_so_dau_ngay === null
         ? `Tham khảo: ${number(row.si_so_tham_khao)}`
         : `Sĩ số: ${number(row.si_so_dau_ngay)}${row.thuc_te_kiem_dem !== null ? ` · Kiểm đếm: ${number(row.thuc_te_kiem_dem)}` : ""}`;
-      return `<div class="data-row"><div class="data-copy"><div class="data-name">${e(row.bo_phan_ten)}</div><div class="data-meta">${counts}</div></div>${badge(label, icon, kind)}</div>`;
+      const note = row.ly_do_chi_tiet ? `<div class="data-note">${e(row.ly_do_chi_tiet)}</div>` : "";
+      return `<div class="data-row"><div class="data-copy"><div class="data-name">${e(row.bo_phan_ten)}</div><div class="data-meta">${counts}</div>${note}</div>${badge(label, icon, kind)}</div>`;
     }).join("");
 
     const isOpen = ["NHAP", "MO_SI_SO", "DANG_KIEM_DEM"].includes(d.dot.trang_thai);
     const baselineComplete = d.records.length > 0 && d.records.every((row) => row.si_so_dau_ngay !== null);
+    const actualComplete = d.records.length > 0 && d.records.every((row) => row.thuc_te_kiem_dem !== null);
     let cta = `<button class="primary-button" disabled><span class="material-symbols-outlined">schedule</span>Chưa mở báo số</button>`;
-    if (isOpen && d.da_xac_nhan) {
-      cta = `<button class="primary-button" data-action="success"><span class="material-symbols-outlined">verified</span>Xem kết quả đã gửi</button>`;
+    if (isOpen && (d.da_xac_nhan || actualComplete)) {
+      cta = `<button class="primary-button" data-action="success"><span class="material-symbols-outlined">verified</span>Xem kết quả${d.da_xac_nhan ? " đã gửi" : ""}</button>`;
     } else if (isOpen) {
       cta = `<button class="secondary-button staff-action-button" data-action="baseline"><span class="material-symbols-outlined">group_add</span>Khai sĩ số đầu ngày</button><button class="primary-button staff-action-button" data-action="actual" ${baselineComplete ? "" : "disabled"} title="${baselineComplete ? "" : "Cần khai đủ sĩ số đầu ngày trước"}"><span class="material-symbols-outlined">fact_check</span>Kiểm đếm thực tế</button>`;
     } else if (d.dot.trang_thai === "DA_KET_THUC") {
@@ -467,8 +496,17 @@
     const filter = document.getElementById("admin-filter");
     if (filter) filter.value = state.adminFilter;
     if (["NHAP", "MO_SI_SO", "DANG_KIEM_DEM"].includes(o.dot.trang_thai)) {
-      app.querySelector(".section-heading").insertAdjacentHTML("afterend", '<button class="admin-end-button" type="button" data-action="drill-status" data-status="DA_KET_THUC"><span class="material-symbols-outlined" aria-hidden="true">stop_circle</span>Kết thúc</button>');
+      app.querySelector(".section-heading").insertAdjacentHTML("afterend", `<div class="drill-action-row"><button class="admin-end-button" type="button" data-action="drill-status" data-status="DA_KET_THUC"><span class="material-symbols-outlined" aria-hidden="true">stop_circle</span>Kết thúc</button><button class="ghost-button" type="button" data-action="edit-drill"><span class="material-symbols-outlined" aria-hidden="true">edit</span>Sửa</button><button class="ghost-button danger" type="button" data-action="delete-drill"><span class="material-symbols-outlined" aria-hidden="true">delete</span>Xóa</button></div>`);
     }
+  }
+
+  function renderEditDrill() {
+    updateAdminNavigation("drills");
+    const d = state.drill;
+    const dateVal = d.ngay_dien_tap;
+    const timeVal = d.bat_dau_du_kien ? new Date(d.bat_dau_du_kien).toTimeString().slice(0, 5) : "";
+    app.innerHTML = `<section class="screen"><div class="sub-header"><div class="sub-header-line"><button class="icon-button" data-action="admin" aria-label="Quay lại"><span class="material-symbols-outlined">arrow_back</span></button><h2>Sửa thông tin đợt</h2></div></div>
+      <form id="edit-drill-form" class="empty-form"><label>Tên đợt<input class="quiet-input" name="ten" value="${e(d.ten)}" required/></label><label>Ngày diễn tập<input class="quiet-input" name="ngay_dien_tap" type="date" value="${dateVal}" required/></label><label>Giờ dự kiến<input class="quiet-input" name="bat_dau_du_kien" type="time" value="${timeVal}"/></label><label>Ghi chú<textarea class="quiet-input" name="ghi_chu" rows="3">${e(d.ghi_chu)}</textarea></label><div class="action-inner"><button class="secondary-button" type="button" data-action="admin">Hủy</button><button class="primary-button" type="submit"><span class="material-symbols-outlined">save</span>Lưu thay đổi</button></div></form></section>`;
   }
 
   function renderEmpty(kind) {
@@ -491,6 +529,7 @@
     else if (state.screen === "success") renderSuccess();
     else if (state.screen === "admin") renderAdmin();
     else if (state.screen === "new-drill") renderAdmin();
+    else if (state.screen === "edit-drill") renderEditDrill();
     else if (state.screen === "assignments") renderAssignments();
     else if (["no-access", "no-drill"].includes(state.screen)) renderEmpty(state.screen);
   }
@@ -538,6 +577,22 @@
       state.detail = await api(`/api/pccc/drills/${state.drill.id}/units/${state.unitId}`);
       state.screen = "success";
       render();
+    } catch (error) {
+      showToast(error.message, "error");
+      setBusy(button, false);
+    }
+  }
+
+  async function deleteDrill(button) {
+    if (!state.drill) return;
+    if (!window.confirm(`Xóa đợt "${state.drill.ten}"?\nChỉ xóa được đợt chưa có dữ liệu sĩ số/kiểm đếm.`)) return;
+    setBusy(button, true);
+    try {
+      await api(`/api/pccc/drills/${state.drill.id}`, { method: "DELETE" });
+      state.drill = null;
+      state.overview = null;
+      await loadAdmin(false);
+      showToast("Đã xóa đợt diễn tập");
     } catch (error) {
       showToast(error.message, "error");
       setBusy(button, false);
@@ -618,7 +673,9 @@
     } else if (action === "admin-unit") {
       state.unitId = Number(target.dataset.id);
       await loadUnit("overview");
-    } else if (action === "drill-status") await changeDrillStatus(target, target.dataset.status);
+    } else if (action === "edit-drill") { state.screen = "edit-drill"; render(); }
+    else if (action === "delete-drill") await deleteDrill(target);
+    else if (action === "drill-status") await changeDrillStatus(target, target.dataset.status);
     else if (action === "export") exportOverview();
     else if (action === "retry") { state.screen = "loading"; app.innerHTML = `<section class="loading-state"><div class="skeleton skeleton-hero"></div></section>`; await init(); }
   });
@@ -646,6 +703,7 @@
       const selected = state.drills.find((item) => item.id === Number(event.target.value));
       if (!selected || selected.id === state.drill?.id) return;
       state.drill = selected;
+      pushUrl();
       await loadUnit("overview");
     } else if (event.target.id === "assignment-unit") {
       syncAssignmentDepartments();
@@ -676,6 +734,29 @@
       } catch (error) { showToast(error.message, "error"); setBusy(button, false); }
       return;
     }
+    if (event.target.id === "edit-drill-form") {
+      event.preventDefault();
+      const button = event.target.querySelector("button[type=submit]");
+      const form = new FormData(event.target);
+      const date = form.get("ngay_dien_tap");
+      const time = form.get("bat_dau_du_kien");
+      const payload = {
+        ten: form.get("ten"),
+        ngay_dien_tap: date,
+        bat_dau_du_kien: time ? `${date}T${time}:00` : null,
+        ghi_chu: form.get("ghi_chu") || "",
+      };
+      setBusy(button, true);
+      try {
+        state.drill = await api(`/api/pccc/drills/${state.drill.id}`, { method: "PATCH", body: JSON.stringify(payload) });
+        await loadAdmin(false);
+        showToast("Đã cập nhật thông tin đợt");
+      } catch (error) {
+        showToast(error.message, "error");
+        setBusy(button, false);
+      }
+      return;
+    }
     if (event.target.id !== "create-drill-form") return;
     event.preventDefault();
     const button = event.target.querySelector("button[type=submit]");
@@ -691,6 +772,7 @@
     setBusy(button, true);
     try {
       state.drill = await api("/api/pccc/drills", { method: "POST", body: JSON.stringify(payload) });
+      pushUrl();
       await loadAdmin(false);
       showToast("Đã tạo đợt diễn tập");
     } catch (error) {
@@ -707,7 +789,7 @@
     render();
   });
   document.getElementById("drill-picker")?.addEventListener("change", async (event) => {
-    const selected = state.drills.find(drill => drill.id === Number(event.target.value));
+    const selected = state.drills.find((drill) => drill.id === Number(event.target.value));
     if (!selected) return;
     state.drill = selected;
     state.detail = null;
@@ -717,6 +799,23 @@
   window.addEventListener("offline", () => { offlineBanner.hidden = false; });
   window.addEventListener("online", () => { offlineBanner.hidden = true; showToast("Đã kết nối lại mạng"); });
   offlineBanner.hidden = navigator.onLine;
+
+  window.addEventListener("popstate", async (event) => {
+    const drillId = event.state?.drillId || drillIdFromUrl();
+    if (drillId && drillId !== state.drill?.id) {
+      const target = state.drills.find((d) => d.id === drillId);
+      if (target) {
+        state.drill = target;
+        if (boot.isAdmin) await loadAdmin(false);
+        else if (state.unitId) await loadUnit("overview");
+      }
+    } else if (!drillId) {
+      if (boot.isAdmin) {
+        state.drill = state.drills[0] || null;
+        await loadAdmin(false);
+      }
+    }
+  });
 
   init();
 })();

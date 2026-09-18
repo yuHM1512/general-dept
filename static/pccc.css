@@ -266,6 +266,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .data-copy { min-width: 0; }
 .data-name { font-size: 14px; font-weight: 700; line-height: 1.35; }
 .data-meta { margin-top: 3px; color: var(--on-surface-variant); font-size: 11px; line-height: 1.4; }
+.data-note { margin-top: 4px; color: var(--warning, #b86800); font-size: 11px; font-style: italic; line-height: 1.4; }
 
 .status {
   flex: 0 0 auto;
@@ -420,6 +421,10 @@ nav.admin-toolbar > select { flex: 1 1 100%; max-width: 100%; min-width: 0; }
 .admin-nav-button .material-symbols-outlined { font-size:21px; }
 .admin-end-button { margin:0 0 20px auto; display:flex; align-items:center; gap:8px; border:1px solid #efc5c0; border-radius:10px; padding:10px 16px; color:var(--error); background:#fff7f6; font-weight:600; cursor:pointer; min-height:44px; }
 .admin-end-button:hover { background:var(--error-container); }
+.drill-action-row { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; align-items:center; }
+.drill-action-row .admin-end-button { margin:0; }
+.ghost-button.danger { color:var(--error); }
+.ghost-button.danger:hover { background:var(--error-container,#fff0ee); }
 
 .toast {
   position: fixed;
