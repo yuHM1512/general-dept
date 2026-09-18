@@ -103,12 +103,14 @@
   async function init() {
     adminHomeButton.hidden = !boot.isAdmin;
     try {
-      const [drill, units] = await Promise.all([
+      const [drill, units, drills] = await Promise.all([
         api("/api/pccc/drills/active"),
         api("/api/pccc/units"),
+        api("/api/pccc/drills?active_only=true"),
       ]);
       state.drill = drill;
       state.units = units || [];
+      state.drills = drills || [];
       if (boot.isAdmin) {
         state.screen = "admin";
         await loadAdmin(false);
@@ -207,6 +209,20 @@
       ? `<select id="unit-picker" class="chip" aria-label="Chọn đơn vị">${state.units.map((unit) => `<option value="${unit.id}" ${unit.id === state.unitId ? "selected" : ""}>${e(unit.ten)}</option>`).join("")}</select>`
       : `<span class="chip"><span class="material-symbols-outlined">apartment</span>${e(d.don_vi.ten)}</span>`;
     const statusKind = d.dot.trang_thai === "DANG_KIEM_DEM" ? "success" : "primary";
+    const drillPicker = !boot.isAdmin && state.drills.length > 1
+      ? `<section class="drill-selector" aria-labelledby="drill-selector-title">
+          <div class="drill-selector-head">
+            <span class="drill-selector-icon material-symbols-outlined" aria-hidden="true">event_available</span>
+            <div><div class="drill-selector-label" id="drill-selector-title">Chọn đợt diễn tập</div><div class="drill-selector-hint">Có ${state.drills.length} đợt đang mở — hãy chọn đúng đợt cần báo số</div></div>
+          </div>
+          <div class="drill-select-wrap">
+            <select id="staff-drill-picker" class="drill-select" aria-label="Chọn đợt diễn tập">
+              ${state.drills.map((drill) => `<option value="${drill.id}" ${drill.id === d.dot.id ? "selected" : ""}>${e(drill.ten)} — ${dateText(drill.ngay_dien_tap)}</option>`).join("")}
+            </select>
+            <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+          </div>
+        </section>`
+      : "";
     const rows = d.records.map((row) => {
       const [label, icon, kind] = statusBadge(row);
       const counts = row.si_so_dau_ngay === null
@@ -227,6 +243,7 @@
     }
 
     app.innerHTML = `<section class="screen">
+      ${drillPicker}
       <div class="section-heading"><span class="eyebrow">Đợt đang hoạt động</span><h2>${e(d.dot.ten)}</h2></div>
       <div class="chip-row"><span class="chip"><span class="material-symbols-outlined">event</span>${dateText(d.dot.ngay_dien_tap)}</span>${unitPicker}<span class="chip ${statusKind}">${e(statusLabels[d.dot.trang_thai] || d.dot.trang_thai)}</span></div>
       <div class="hero-card"><div class="hero-label">Tiến độ kiểm đếm</div><div class="hero-value">${completed}/${d.department_count}</div><div class="hero-caption">bộ phận trong phạm vi của bạn đã kiểm đếm</div><div class="progress-track"><div class="progress-bar" style="width:${pct}%"></div></div></div>
@@ -624,6 +641,11 @@
   app.addEventListener("change", async (event) => {
     if (event.target.id === "unit-picker") {
       state.unitId = Number(event.target.value);
+      await loadUnit("overview");
+    } else if (event.target.id === "staff-drill-picker") {
+      const selected = state.drills.find((item) => item.id === Number(event.target.value));
+      if (!selected || selected.id === state.drill?.id) return;
+      state.drill = selected;
       await loadUnit("overview");
     } else if (event.target.id === "assignment-unit") {
       syncAssignmentDepartments();

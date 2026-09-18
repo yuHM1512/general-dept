@@ -141,6 +141,53 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .section-heading p { margin: 8px 0 0; color: var(--on-surface-variant); line-height: 1.5; }
 
+.drill-selector {
+  margin: 0 0 22px;
+  padding: 18px;
+  border: 2px solid rgba(0, 66, 117, .18);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff, #edf5ff);
+  box-shadow: 0 12px 30px rgba(0, 66, 117, .1);
+}
+.drill-selector-head { display: flex; align-items: center; gap: 12px; }
+.drill-selector-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--primary);
+  color: white;
+}
+.drill-selector-label { color: var(--primary); font-family: Manrope, sans-serif; font-size: 17px; font-weight: 800; }
+.drill-selector-hint { margin-top: 3px; color: var(--on-surface-variant); font-size: 12px; line-height: 1.4; }
+.drill-select-wrap { position: relative; margin-top: 14px; }
+.drill-select {
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 48px 12px 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  appearance: none;
+  background: var(--surface-lowest);
+  color: var(--on-surface);
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.drill-select:focus { border-color: var(--primary); outline: 3px solid rgba(0, 66, 117, .18); }
+.drill-select-wrap > .material-symbols-outlined {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  color: var(--primary);
+  pointer-events: none;
+}
+
 .chip-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
 .chip-row::-webkit-scrollbar { display: none; }
 .chip {
@@ -410,6 +457,8 @@ nav.admin-toolbar > select { flex: 1 1 100%; max-width: 100%; min-width: 0; }
   .kpi-grid { gap: 12px; }
   .sticky-actions { padding-inline: 28px; }
   .toast { left: auto; width: 420px; margin: 0; }
+  .drill-selector { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(360px, 1.2fr); align-items: center; gap: 20px; padding: 20px 22px; }
+  .drill-select-wrap { margin-top: 0; }
 }
 
 @media (min-width: 1040px) {
