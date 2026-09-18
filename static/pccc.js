@@ -141,7 +141,7 @@
       }
       if (boot.isAdmin) {
         state.screen = "admin";
-        await loadAdmin(false);
+        await loadAdmin(false, true);
       } else if (!state.drill) {
         state.screen = "no-drill";
         render();
@@ -184,9 +184,9 @@
     }
   }
 
-  async function loadAdmin(showLoading = true) {
+  async function loadAdmin(showLoading = true, skipDrillsFetch = false) {
     try {
-      state.drills = await api("/api/pccc/drills");
+      if (!skipDrillsFetch) state.drills = await api("/api/pccc/drills");
       if (!state.drill && state.drills.length) state.drill = state.drills[0];
       const picker = document.getElementById("drill-picker");
       if (picker) {
@@ -822,13 +822,19 @@
     if (document.hidden || !navigator.onLine) { scheduleRefresh(); return; }
     try {
       if (state.screen === "admin" && state.drill) {
-        state.overview = await api(`/api/pccc/drills/${state.drill.id}/overview`);
-        state.drill = state.overview.dot;
-        renderAdmin();
+        const fresh = await api(`/api/pccc/drills/${state.drill.id}/overview`);
+        if (JSON.stringify(fresh) !== JSON.stringify(state.overview)) {
+          state.overview = fresh;
+          state.drill = fresh.dot;
+          renderAdmin();
+        }
       } else if ((state.screen === "overview" || state.screen === "success") && state.drill && state.unitId) {
-        state.detail = await api(`/api/pccc/drills/${state.drill.id}/units/${state.unitId}`);
-        state.drill = state.detail.dot;
-        render();
+        const fresh = await api(`/api/pccc/drills/${state.drill.id}/units/${state.unitId}`);
+        if (JSON.stringify(fresh) !== JSON.stringify(state.detail)) {
+          state.detail = fresh;
+          state.drill = fresh.dot;
+          render();
+        }
       }
     } catch (_) { /* silent — next tick retries */ }
     scheduleRefresh();
