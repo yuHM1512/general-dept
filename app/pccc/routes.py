@@ -368,6 +368,7 @@ def delete_drill(
     histories = session.exec(select(PcccLichSu).where(PcccLichSu.dot_id == drill_id)).all()
     for history in histories:
         session.delete(history)
+    session.flush()
     for confirmation in confirmations:
         session.delete(confirmation)
     for record in records:
