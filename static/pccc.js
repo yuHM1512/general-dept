@@ -593,7 +593,7 @@
 
   async function deleteDrill(button) {
     if (!state.drill) return;
-    if (!window.confirm(`Xóa đợt "${state.drill.ten}"?\nChỉ xóa được đợt chưa có dữ liệu sĩ số/kiểm đếm.`)) return;
+    if (!window.confirm(`Xóa đợt "${state.drill.ten}"?\nToàn bộ dữ liệu sĩ số, kiểm đếm và lịch sử của đợt này sẽ bị xóa vĩnh viễn.`)) return;
     setBusy(button, true);
     try {
       await api(`/api/pccc/drills/${state.drill.id}`, { method: "DELETE" });

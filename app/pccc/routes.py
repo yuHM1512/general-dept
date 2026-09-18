@@ -362,22 +362,9 @@ def delete_drill(
     _require_admin(request)
     drill = _get_drill(session, drill_id)
     records = session.exec(select(PcccKiemDem).where(PcccKiemDem.dot_id == drill_id)).all()
-    has_reported_data = any(
-        row.si_so_dau_ngay is not None
-        or row.thuc_te_kiem_dem is not None
-        or bool(row.ma_ly_do.strip())
-        or bool(row.ly_do_chi_tiet.strip())
-        for row in records
-    )
     confirmations = session.exec(
         select(PcccXacNhanDonVi).where(PcccXacNhanDonVi.dot_id == drill_id)
     ).all()
-    if has_reported_data or confirmations:
-        raise HTTPException(
-            status_code=409,
-            detail="Đợt đã có dữ liệu báo số, không thể xóa. Hãy kết thúc đợt để lưu lịch sử.",
-        )
-
     histories = session.exec(select(PcccLichSu).where(PcccLichSu.dot_id == drill_id)).all()
     for history in histories:
         session.delete(history)

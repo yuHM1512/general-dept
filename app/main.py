@@ -436,12 +436,13 @@ def rcp_login_submit(
 
 
 @app.get("/logout")
-def logout(request: Request) -> RedirectResponse:
+def logout(request: Request, next: str | None = Query(default=None)) -> RedirectResponse:
     try:
         request.session.clear()  # type: ignore[attr-defined]
     except Exception:
         pass
-    return RedirectResponse(url="/login?next=/", status_code=303)
+    target = next or "/"
+    return RedirectResponse(url=f"/login?next={quote(target)}", status_code=303)
 
 
 @app.get("/rcp/logout")
