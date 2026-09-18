@@ -55,9 +55,13 @@
   const dateText = (value) => value
     ? new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(`${value}T00:00:00`))
     : "—";
-  const timeText = (value) => value
-    ? new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value))
-    : "—";
+  const TZ = "Asia/Ho_Chi_Minh";
+  const timeText = (value) => {
+    if (!value) return "—";
+    const raw = String(value);
+    const dt = new Date(raw.includes("T") && !raw.endsWith("Z") && !raw.includes("+") ? raw + "Z" : raw);
+    return new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric", timeZone: TZ }).format(dt);
+  };
 
   async function api(path, options = {}) {
     const headers = { ...(options.headers || {}) };
