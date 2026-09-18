@@ -417,10 +417,12 @@
   }
 
   function overviewStatus(item) {
+    if (item.trang_thai === "DA_XAC_NHAN" || item.trang_thai === "DU" || item.trang_thai === "CO_CHENH_LECH") {
+      if (item.chenh_lech === 0) return ["Đủ", "check_circle", "success"];
+      if (item.chenh_lech < 0) return [`Thiếu ${Math.abs(item.chenh_lech)}`, "warning", "error"];
+      return [`Thừa ${item.chenh_lech}`, "error", "warning"];
+    }
     const mapping = {
-      DA_XAC_NHAN: ["Đã xác nhận", "verified", "success"],
-      CO_CHENH_LECH: ["Có chênh lệch", "warning", "error"],
-      DU: ["Đủ", "check_circle", "success"],
       DANG_KIEM_DEM: ["Đang kiểm đếm", "pending", "info"],
       DA_CO_SI_SO: ["Có sĩ số", "schedule", "neutral"],
       CHUA_KHAI_BAO: ["Chưa khai báo", "circle", "neutral"],
@@ -492,9 +494,10 @@
     const units = o.units.filter((item) => state.adminFilter === "ALL" || item.trang_thai === state.adminFilter);
     const rows = units.map((item) => {
       const [label, icon, kind] = overviewStatus(item);
-      return `<button class="data-row clickable" data-action="admin-unit" data-id="${item.don_vi_id}" type="button"><div class="data-copy" style="text-align:left"><div class="data-name">${e(item.don_vi_ten)}</div><div class="data-meta">Sĩ số: ${number(item.tong_si_so_dau_ngay)} · Kiểm đếm: ${number(item.tong_thuc_te_kiem_dem)}${item.xac_nhan_at ? ` · ${timeText(item.xac_nhan_at)}` : ""}</div></div>${badge(label, icon, kind)}</button>`;
+      const ratio = `<strong>${number(item.tong_thuc_te_kiem_dem)}/${number(item.tong_si_so_dau_ngay)}</strong>`;
+      return `<button class="data-row clickable" data-action="admin-unit" data-id="${item.don_vi_id}" type="button"><div class="data-copy" style="text-align:left"><div class="data-name">${e(item.don_vi_ten)}</div><div class="data-meta">${ratio}${item.xac_nhan_at ? ` · ${timeText(item.xac_nhan_at)}` : ""}</div></div>${badge(label, icon, kind)}</button>`;
     }).join("");
-    app.innerHTML = `<section class="screen"><div class="section-heading"><span class="eyebrow">Admin</span><h2>Dashboard kiểm đếm</h2><p>${e(o.dot.ten)} · ${dateText(o.dot.ngay_dien_tap)}</p></div><div class="admin-toolbar"><select id="admin-filter" class="quiet-input"><option value="ALL">Tất cả trạng thái</option><option value="CHUA_KHAI_BAO">Chưa khai báo</option><option value="DA_CO_SI_SO">Có sĩ số</option><option value="DANG_KIEM_DEM">Đang kiểm đếm</option><option value="CO_CHENH_LECH">Có chênh lệch</option><option value="DA_XAC_NHAN">Đã xác nhận</option></select><span class="chip ${o.dot.trang_thai === "DANG_KIEM_DEM" ? "success" : "primary"}">${e(statusLabels[o.dot.trang_thai])}</span></div>
+    app.innerHTML = `<section class="screen"><div class="section-heading"><span class="eyebrow">Admin</span><h2>Dashboard kiểm đếm</h2><p>${e(o.dot.ten)} · ${dateText(o.dot.ngay_dien_tap)}</p></div><div class="admin-toolbar"><select id="admin-filter" class="quiet-input"><option value="ALL">Tất cả trạng thái</option><option value="CHUA_KHAI_BAO">Chưa khai báo</option><option value="DA_CO_SI_SO">Có sĩ số</option><option value="DANG_KIEM_DEM">Đang kiểm đếm</option><option value="DU">Đủ</option><option value="CO_CHENH_LECH">Thiếu / Thừa</option><option value="DA_XAC_NHAN">Đã xác nhận</option></select><span class="chip ${o.dot.trang_thai === "DANG_KIEM_DEM" ? "success" : "primary"}">${e(statusLabels[o.dot.trang_thai])}</span></div>
       <div class="admin-layout"><div class="kpi-grid admin-kpis"><div class="kpi-card"><div class="kpi-label">Tổng sĩ số</div><div class="kpi-value">${number(o.tong_si_so_dau_ngay)}</div></div><div class="kpi-card"><div class="kpi-label">Thực tế</div><div class="kpi-value success">${number(o.tong_thuc_te_kiem_dem)}</div></div><div class="kpi-card"><div class="kpi-label">Chênh lệch</div><div class="kpi-value ${o.chenh_lech ? "error" : "success"}">${o.chenh_lech > 0 ? "+" : ""}${number(o.chenh_lech)}</div></div><div class="kpi-card"><div class="kpi-label">Hoàn tất</div><div class="kpi-value">${o.unit_confirmed_count}/${o.unit_count}</div></div></div><div><div class="list-title" style="margin-top:0">Đơn vị (${units.length}/${o.unit_count})</div><div class="data-list admin-list">${rows || `<div class="notice info">Không có đơn vị ở trạng thái đã chọn.</div>`}</div></div></div>
       <div class="sticky-actions"><div class="action-inner"><button class="secondary-button" data-action="export"><span class="material-symbols-outlined">download</span>Xuất CSV</button>${o.dot.trang_thai === "DA_KET_THUC" ? `<button class="primary-button" disabled><span class="material-symbols-outlined">verified</span>Đợt đã kết thúc</button>` : `<button class="primary-button" disabled><span class="material-symbols-outlined">sensors</span>Đợt đang mở</button>`}</div></div></section>`;
     const filter = document.getElementById("admin-filter");
