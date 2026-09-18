@@ -502,9 +502,9 @@
       <div class="sticky-actions"><div class="action-inner"><button class="secondary-button" data-action="export"><span class="material-symbols-outlined">download</span>Xuất CSV</button>${o.dot.trang_thai === "DA_KET_THUC" ? `<button class="primary-button" disabled><span class="material-symbols-outlined">verified</span>Đợt đã kết thúc</button>` : `<button class="primary-button" disabled><span class="material-symbols-outlined">sensors</span>Đợt đang mở</button>`}</div></div></section>`;
     const filter = document.getElementById("admin-filter");
     if (filter) filter.value = state.adminFilter;
-    if (["NHAP", "MO_SI_SO", "DANG_KIEM_DEM"].includes(o.dot.trang_thai)) {
-      app.querySelector(".section-heading").insertAdjacentHTML("afterend", `<div class="drill-action-row"><button class="admin-end-button" type="button" data-action="drill-status" data-status="DA_KET_THUC"><span class="material-symbols-outlined" aria-hidden="true">stop_circle</span>Kết thúc</button><button class="ghost-button" type="button" data-action="edit-drill"><span class="material-symbols-outlined" aria-hidden="true">edit</span>Sửa</button><button class="ghost-button danger" type="button" data-action="delete-drill"><span class="material-symbols-outlined" aria-hidden="true">delete</span>Xóa</button></div>`);
-    }
+    const isOpen = ["NHAP", "MO_SI_SO", "DANG_KIEM_DEM"].includes(o.dot.trang_thai);
+    const endBtn = isOpen ? `<button class="admin-end-button" type="button" data-action="drill-status" data-status="DA_KET_THUC"><span class="material-symbols-outlined" aria-hidden="true">stop_circle</span>Kết thúc</button>` : "";
+    app.querySelector(".section-heading").insertAdjacentHTML("afterend", `<div class="drill-action-row">${endBtn}<button class="ghost-button" type="button" data-action="edit-drill"><span class="material-symbols-outlined" aria-hidden="true">edit</span>Sửa</button><button class="ghost-button danger" type="button" data-action="delete-drill"><span class="material-symbols-outlined" aria-hidden="true">delete</span>Xóa</button></div>`);
   }
 
   function renderEditDrill() {
