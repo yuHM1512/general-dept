@@ -536,6 +536,7 @@
     else if (state.screen === "edit-drill") renderEditDrill();
     else if (state.screen === "assignments") renderAssignments();
     else if (["no-access", "no-drill"].includes(state.screen)) renderEmpty(state.screen);
+    scheduleRefresh();
   }
 
   async function saveBaseline(button) {
@@ -803,6 +804,36 @@
   window.addEventListener("offline", () => { offlineBanner.hidden = false; });
   window.addEventListener("online", () => { offlineBanner.hidden = true; showToast("Đã kết nối lại mạng"); });
   offlineBanner.hidden = navigator.onLine;
+
+  const REFRESH_INTERVAL = 30_000;
+  let refreshTimer = null;
+
+  function scheduleRefresh() {
+    clearTimeout(refreshTimer);
+    const liveScreens = new Set(["admin", "overview", "success"]);
+    if (!liveScreens.has(state.screen) || !state.drill) return;
+    refreshTimer = setTimeout(autoRefresh, REFRESH_INTERVAL);
+  }
+
+  async function autoRefresh() {
+    if (document.hidden || !navigator.onLine) { scheduleRefresh(); return; }
+    try {
+      if (state.screen === "admin" && state.drill) {
+        state.overview = await api(`/api/pccc/drills/${state.drill.id}/overview`);
+        state.drill = state.overview.dot;
+        renderAdmin();
+      } else if ((state.screen === "overview" || state.screen === "success") && state.drill && state.unitId) {
+        state.detail = await api(`/api/pccc/drills/${state.drill.id}/units/${state.unitId}`);
+        state.drill = state.detail.dot;
+        render();
+      }
+    } catch (_) { /* silent — next tick retries */ }
+    scheduleRefresh();
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) scheduleRefresh();
+  });
 
   window.addEventListener("popstate", async (event) => {
     const drillId = event.state?.drillId || drillIdFromUrl();
