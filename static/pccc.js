@@ -268,9 +268,9 @@
     const actualComplete = d.records.length > 0 && d.records.every((row) => row.thuc_te_kiem_dem !== null);
     let cta = `<button class="primary-button" disabled><span class="material-symbols-outlined">schedule</span>Chưa mở báo số</button>`;
     if (isOpen && (d.da_xac_nhan || actualComplete)) {
-      cta = `<button class="primary-button" data-action="success"><span class="material-symbols-outlined">verified</span>Xem kết quả${d.da_xac_nhan ? " đã gửi" : ""}</button>`;
+      cta = `<button class="secondary-button staff-action-button" data-action="baseline"><span class="material-symbols-outlined">edit</span>Sửa sĩ số</button><button class="primary-button staff-action-button" data-action="success"><span class="material-symbols-outlined">verified</span>Xem kết quả${d.da_xac_nhan ? " đã gửi" : ""}</button>`;
     } else if (isOpen) {
-      cta = `<button class="secondary-button staff-action-button" data-action="baseline"><span class="material-symbols-outlined">group_add</span>Khai sĩ số đầu ngày</button><button class="primary-button staff-action-button" data-action="actual" ${baselineComplete ? "" : "disabled"} title="${baselineComplete ? "" : "Cần khai đủ sĩ số đầu ngày trước"}"><span class="material-symbols-outlined">fact_check</span>Kiểm đếm thực tế</button>`;
+      cta = `<button class="secondary-button staff-action-button" data-action="baseline"><span class="material-symbols-outlined">group_add</span>${baselineComplete ? "Sửa sĩ số" : "Khai sĩ số đầu ngày"}</button><button class="primary-button staff-action-button" data-action="actual" ${baselineComplete ? "" : "disabled"} title="${baselineComplete ? "" : "Cần khai đủ sĩ số đầu ngày trước"}"><span class="material-symbols-outlined">fact_check</span>Kiểm đếm thực tế</button>`;
     } else if (d.dot.trang_thai === "DA_KET_THUC") {
       cta = `<button class="primary-button" data-action="success"><span class="material-symbols-outlined">history</span>Xem kết quả</button>`;
     }
@@ -808,7 +808,7 @@
   window.addEventListener("online", () => { offlineBanner.hidden = true; showToast("Đã kết nối lại mạng"); });
   offlineBanner.hidden = navigator.onLine;
 
-  const REFRESH_INTERVAL = 30_000;
+  const REFRESH_INTERVAL = 10_000;
   let refreshTimer = null;
 
   function scheduleRefresh() {
