@@ -300,10 +300,10 @@
     const draft = baselineValues();
     const total = Object.values(state.baseline).reduce((sum, value) => sum + Number(value || 0), 0);
     const cards = state.detail.records.map((row) => `<article class="entry-card">
-      <div class="entry-head"><div><div class="entry-title">${e(row.bo_phan_ten)}</div><div class="entry-subtitle">Sĩ số tham khảo: ${number(row.si_so_tham_khao)}</div></div>${row.da_xac_nhan ? badge("Đã khóa", "lock", "neutral") : ""}</div>
+      <div class="entry-head"><div><div class="entry-title">${e(row.bo_phan_ten)}</div><div class="entry-subtitle">Sĩ số tham khảo: ${number(row.si_so_tham_khao)}</div></div></div>
       <div class="stepper">
         <button type="button" data-action="adjust-baseline" data-id="${row.bo_phan_id}" data-delta="-1" aria-label="Giảm sĩ số ${e(row.bo_phan_ten)}">−</button>
-        <input class="number-input baseline-input" data-id="${row.bo_phan_id}" type="number" inputmode="numeric" min="0" value="${Number(state.baseline[row.bo_phan_id] ?? 0)}" aria-label="Sĩ số ${e(row.bo_phan_ten)}" ${row.da_xac_nhan ? "disabled" : ""}/>
+        <input class="number-input baseline-input" data-id="${row.bo_phan_id}" type="number" inputmode="numeric" min="0" value="${Number(state.baseline[row.bo_phan_id] ?? 0)}" aria-label="Sĩ số ${e(row.bo_phan_ten)}"/>
         <button type="button" data-action="adjust-baseline" data-id="${row.bo_phan_id}" data-delta="1" aria-label="Tăng sĩ số ${e(row.bo_phan_ten)}">+</button>
       </div>
     </article>`).join("");

@@ -332,7 +332,7 @@ def save_counts(
         )
     ).all()
     for row in rows:
-        if row.xac_nhan_at is not None:
+        if row.xac_nhan_at is not None and mode != "baseline":
             raise HTTPException(
                 status_code=409,
                 detail="Kết quả bộ phận đã được xác nhận; admin cần mở lại trước khi sửa",
