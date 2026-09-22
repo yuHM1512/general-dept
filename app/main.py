@@ -2352,6 +2352,7 @@ def ia_new(
 def ia_checklist(
     request: Request,
     bo_phan_id: int | None = Query(default=None),
+    loai: str = Query(default="DAY_DU"),
     session: Session = Depends(get_session),
 ) -> HTMLResponse:
     create_db_and_tables()
@@ -2364,8 +2365,10 @@ def ia_checklist(
         raise HTTPException(status_code=404, detail="Bộ phận không tồn tại")
 
     don_vi = session.get(AuditDonVi, bo_phan.don_vi_id)
-    sections = _build_checklist_sections(bo_phan_id, "DAY_DU", session)
+    sections = _build_checklist_sections(bo_phan_id, loai, session)
     total_criteria = sum(len(s["criteria"]) for s in sections)
+
+    loai_labels = {"5S": "5S", "TRUC_QUAN": "Trực quan", "DAY_DU": "Đầy đủ"}
 
     return templates.TemplateResponse(
         "ia_checklist.html",
@@ -2380,6 +2383,8 @@ def ia_checklist(
                 "don_vi_ten": don_vi.ma if don_vi else "",
                 "don_vi_id": bo_phan.don_vi_id,
             },
+            "loai": loai,
+            "loai_label": loai_labels.get(loai, loai),
             "sections": sections,
             "total_criteria": total_criteria,
         },
@@ -2394,6 +2399,7 @@ async def ia_submit(
     create_db_and_tables()
     form = await request.form()
     bo_phan_id = int(form.get("bo_phan_id", 0))
+    loai = str(form.get("loai", "DAY_DU"))
 
     if not bo_phan_id:
         raise HTTPException(status_code=400, detail="Thiếu bo_phan_id")
@@ -2440,7 +2446,7 @@ async def ia_submit(
     phieu = IaPhieuKiemTra(
         dot_id=dot.id,
         bo_phan_id=bo_phan_id,
-        loai="DAY_DU",
+        loai=loai,
         tong_loi=tong_loi,
         nguoi_kiem_tra=nguoi_kiem_tra,
         completed_at=now,

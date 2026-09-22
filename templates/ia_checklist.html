@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Kiểm tra nội bộ – {{ bo_phan.don_vi_ten }} {{ bo_phan.ten }}</title>
+<title>Kiểm tra nội bộ {{ loai_label }} – {{ bo_phan.don_vi_ten }} {{ bo_phan.ten }}</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -66,7 +66,7 @@ tailwind.config = {
       <a href="/internal-audit/ia" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</a>
       <div>
         <span class="font-label-md text-label-md text-on-surface-variant">{{ bo_phan.don_vi_ten }} • {{ bo_phan.ten }}</span>
-        <h1 class="text-[18px] md:text-[22px] font-headline-md font-bold text-primary tracking-tight">Kiểm tra nội bộ</h1>
+        <h1 class="text-[18px] md:text-[22px] font-headline-md font-bold text-primary tracking-tight">Kiểm tra nội bộ – {{ loai_label }}</h1>
       </div>
     </div>
     <div class="hidden md:flex flex-col items-end">
@@ -82,6 +82,7 @@ tailwind.config = {
 
 <form id="audit-form" method="POST" action="/internal-audit/ia/submit" enctype="multipart/form-data">
   <input type="hidden" name="bo_phan_id" value="{{ bo_phan.id }}">
+  <input type="hidden" name="loai" value="{{ loai }}">
 
   <main class="max-w-4xl mx-auto px-4 md:px-margin py-lg pb-40">
 
