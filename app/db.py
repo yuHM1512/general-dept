@@ -97,14 +97,15 @@ def _apply_light_migrations() -> None:
                     conn.execute(text("UPDATE rcp_payrollrow SET don_vi = ttbp WHERE don_vi = ''"))
             if "co_so" not in cols:
                 conn.execute(text("ALTER TABLE rcp_payrollrow ADD COLUMN co_so TEXT NOT NULL DEFAULT ''"))
-                if "ttbp" in cols:
-                    conn.execute(
-                        text(
-                            "UPDATE rcp_payrollrow "
-                            "SET co_so = CASE WHEN ttbp = 'DT' THEN 'Duy Trung' ELSE 'Mẹ Nhu' END "
-                            "WHERE co_so = ''"
-                        )
-                    )
+
+            # Re-derive co_so from don_vi (DT → Duy Trung, else → Mẹ Nhu)
+            conn.execute(
+                text(
+                    "UPDATE rcp_payrollrow "
+                    "SET co_so = CASE WHEN TRIM(don_vi) = 'DT' THEN 'Duy Trung' ELSE 'Mẹ Nhu' END "
+                    "WHERE co_so != CASE WHEN TRIM(don_vi) = 'DT' THEN 'Duy Trung' ELSE 'Mẹ Nhu' END"
+                )
+            )
 
             conn.execute(
                 text(
