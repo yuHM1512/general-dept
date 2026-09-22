@@ -29,6 +29,7 @@ from app.audit_models import (
     AuditDonVi, AuditBoPhan, AuditLinhVuc, AuditBien, AuditTieuChi, AuditApDung,
     AuditDotKiemTra, AuditPhieuKiemTra, AuditChiTietDiem, AuditHdkp, AuditReminderLog,
 )
+from app.ia_models import IaDotKiemTra, IaPhieuKiemTra, IaChiTiet, IaCap
 from app.survey_models import SurveyResponse, SurveySyncJob
 from app.survey_schemas import (
     SurveyComparisonResponse,
@@ -2206,6 +2207,521 @@ def audit_result(
             "ket_luan_color": ket_luan_map.get(phieu.ket_luan or "", "primary"),
         },
     )
+
+
+# ─── Internal Audit (IA) — violation-based audit ────────────────────────────
+
+@app.get("/internal-audit/ia", response_class=HTMLResponse)
+def ia_home(
+    request: Request,
+    page: int = Query(default=1),
+    don_vi_id: int = Query(default=0),
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+    PAGE_SIZE = 20
+    user = _current_user(request)
+    visible_bp_ids = _audit_visible_bo_phan_ids(user, session)
+
+    all_phieus_q = select(IaPhieuKiemTra)
+    if visible_bp_ids is not None:
+        if visible_bp_ids:
+            all_phieus_q = all_phieus_q.where(IaPhieuKiemTra.bo_phan_id.in_(list(visible_bp_ids)))
+        else:
+            all_phieus_q = all_phieus_q.where(IaPhieuKiemTra.id == -1)
+    all_phieus = session.exec(all_phieus_q).all()
+    tong_phieu = len(all_phieus)
+    tong_loi_all = sum(p.tong_loi or 0 for p in all_phieus)
+
+    q = select(IaPhieuKiemTra).order_by(IaPhieuKiemTra.created_at.desc())
+    if visible_bp_ids is not None:
+        if visible_bp_ids:
+            q = q.where(IaPhieuKiemTra.bo_phan_id.in_(list(visible_bp_ids)))
+        else:
+            q = q.where(IaPhieuKiemTra.id == -1)
+    phieus = session.exec(q).all()
+
+    if don_vi_id:
+        bp_ids = {bp.id for bp in session.exec(
+            select(AuditBoPhan).where(AuditBoPhan.don_vi_id == don_vi_id)
+        ).all()}
+        phieus = [p for p in phieus if p.bo_phan_id in bp_ids]
+
+    total_rows = len(phieus)
+    total_pages = max(1, (total_rows + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = max(1, min(page, total_pages))
+    phieus_page = phieus[(page - 1) * PAGE_SIZE: page * PAGE_SIZE]
+
+    bp_cache: dict = {}
+    dv_cache: dict = {}
+
+    def _get_bp(bp_id):
+        if bp_id not in bp_cache:
+            bp_cache[bp_id] = session.get(AuditBoPhan, bp_id)
+        return bp_cache[bp_id]
+
+    def _get_dv(dv_id):
+        if dv_id not in dv_cache:
+            dv_cache[dv_id] = session.get(AuditDonVi, dv_id)
+        return dv_cache[dv_id]
+
+    rows = []
+    for p in phieus_page:
+        bp = _get_bp(p.bo_phan_id)
+        dv = _get_dv(bp.don_vi_id) if bp else None
+        dot = session.get(IaDotKiemTra, p.dot_id) if p.dot_id else None
+        rows.append({
+            "id": p.id,
+            "bo_phan_ten": bp.ten if bp else "",
+            "don_vi_ten": dv.ten if dv else "",
+            "don_vi_ma": dv.ma if dv else "",
+            "tong_loi": p.tong_loi or 0,
+            "ngay": p.created_at.strftime("%d/%m/%Y") if p.created_at else "",
+            "ky": dot.ky if dot else "",
+            "nguoi_kiem_tra": p.nguoi_kiem_tra or "",
+        })
+
+    visible_don_vi_ids = _audit_visible_don_vi_ids(user, session)
+    don_vi_q = select(AuditDonVi).order_by(AuditDonVi.id)
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            don_vi_q = don_vi_q.where(AuditDonVi.id.in_(list(visible_don_vi_ids)))
+        else:
+            don_vi_q = don_vi_q.where(AuditDonVi.id == -1)
+    don_vi_list = session.exec(don_vi_q).all()
+
+    return templates.TemplateResponse(
+        "ia_home.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": user,
+            "stats": {"tong_phieu": tong_phieu, "tong_loi": tong_loi_all},
+            "rows": rows,
+            "don_vi_list": [{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list],
+            "filter": {"don_vi_id": don_vi_id},
+            "pagination": {"page": page, "total_pages": total_pages, "total_rows": total_rows},
+        },
+    )
+
+
+@app.get("/internal-audit/ia/new", response_class=HTMLResponse)
+def ia_new(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+    user = _current_user(request)
+    visible_don_vi_ids = _audit_visible_don_vi_ids(user, session)
+
+    don_vi_q = select(AuditDonVi).order_by(AuditDonVi.id)
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            don_vi_q = don_vi_q.where(AuditDonVi.id.in_(list(visible_don_vi_ids)))
+        else:
+            don_vi_q = don_vi_q.where(AuditDonVi.id == -1)
+    don_vi_list = session.exec(don_vi_q).all()
+
+    from app.audit_seed import CURRENT_FORM_BO_PHAN_IDS
+    org: list[dict] = []
+    for dv in don_vi_list:
+        bps = session.exec(
+            select(AuditBoPhan).where(AuditBoPhan.don_vi_id == dv.id).order_by(AuditBoPhan.id)
+        ).all()
+        bps = [bp for bp in bps if bp.id in CURRENT_FORM_BO_PHAN_IDS]
+        if bps:
+            org.append({
+                "id": dv.id, "ma": dv.ma, "ten": dv.ten,
+                "bo_phans": [{"id": bp.id, "ten": bp.ten} for bp in bps],
+            })
+
+    return templates.TemplateResponse(
+        "ia_new.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": user,
+            "org": org,
+        },
+    )
+
+
+@app.get("/internal-audit/ia/checklist", response_class=HTMLResponse)
+def ia_checklist(
+    request: Request,
+    bo_phan_id: int | None = Query(default=None),
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+
+    if bo_phan_id is None:
+        return RedirectResponse(url="/internal-audit/ia/new", status_code=303)
+
+    bo_phan = session.get(AuditBoPhan, bo_phan_id)
+    if not bo_phan:
+        raise HTTPException(status_code=404, detail="Bộ phận không tồn tại")
+
+    don_vi = session.get(AuditDonVi, bo_phan.don_vi_id)
+    sections = _build_checklist_sections(bo_phan_id, "DAY_DU", session)
+    total_criteria = sum(len(s["criteria"]) for s in sections)
+
+    return templates.TemplateResponse(
+        "ia_checklist.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+            "bo_phan": {
+                "id": bo_phan.id,
+                "ten": bo_phan.ten,
+                "don_vi_ten": don_vi.ma if don_vi else "",
+                "don_vi_id": bo_phan.don_vi_id,
+            },
+            "sections": sections,
+            "total_criteria": total_criteria,
+        },
+    )
+
+
+@app.post("/internal-audit/ia/submit")
+async def ia_submit(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> RedirectResponse:
+    create_db_and_tables()
+    form = await request.form()
+    bo_phan_id = int(form.get("bo_phan_id", 0))
+
+    if not bo_phan_id:
+        raise HTTPException(status_code=400, detail="Thiếu bo_phan_id")
+
+    violations: dict[int, int] = {}
+    descriptions: dict[int, str] = {}
+    note_images: dict[int, list[UploadFile]] = {}
+    for key, val in form.multi_items():
+        if key.startswith("violations_"):
+            tc_id = int(key[11:])
+            try:
+                violations[tc_id] = max(0, int(str(val).strip() or "0"))
+            except (ValueError, TypeError):
+                violations[tc_id] = 0
+        elif key.startswith("desc_"):
+            tc_id = int(key[5:])
+            if str(val).strip():
+                descriptions[tc_id] = str(val).strip()
+        elif key.startswith("image_") and hasattr(val, "filename") and hasattr(val, "read"):
+            tc_id = int(key[6:])
+            if val.filename:
+                note_images.setdefault(tc_id, []).append(val)
+
+    tong_loi = sum(violations.values())
+
+    user = _current_user(request)
+    nguoi_kiem_tra = user.get("ma_nv", "") if user else ""
+    now = datetime.utcnow()
+    ky = f"{now.year}-{now.month:02d}"
+
+    dot = session.exec(
+        select(IaDotKiemTra).where(IaDotKiemTra.ky == ky)
+    ).first()
+    if not dot:
+        dot = IaDotKiemTra(
+            ky=ky,
+            ngay_kiem_tra=now.date(),
+            nguoi_kiem_tra=nguoi_kiem_tra or None,
+        )
+        session.add(dot)
+        session.commit()
+        session.refresh(dot)
+
+    phieu = IaPhieuKiemTra(
+        dot_id=dot.id,
+        bo_phan_id=bo_phan_id,
+        loai="DAY_DU",
+        tong_loi=tong_loi,
+        nguoi_kiem_tra=nguoi_kiem_tra,
+        completed_at=now,
+    )
+    session.add(phieu)
+    session.commit()
+    session.refresh(phieu)
+
+    saved_images: dict[int, list[str]] = {}
+    if note_images:
+        for tc_id, files in note_images.items():
+            saved_images[tc_id] = await _save_audit_note_images(phieu.id, tc_id, files, max_files=10)
+
+    for tc_id, so_loi in violations.items():
+        chi_tiet = IaChiTiet(
+            phieu_id=phieu.id,
+            tieu_chi_id=tc_id,
+            so_loi=so_loi,
+            mo_ta=descriptions.get(tc_id),
+            hinh_anh=json.dumps(saved_images.get(tc_id, []), ensure_ascii=False) if saved_images.get(tc_id) else None,
+        )
+        session.add(chi_tiet)
+        session.flush()
+
+        if so_loi > 0:
+            session.add(IaCap(
+                chi_tiet_id=chi_tiet.id,
+                phieu_id=phieu.id,
+                tieu_chi_id=tc_id,
+                created_by=nguoi_kiem_tra,
+                updated_by=nguoi_kiem_tra,
+            ))
+    session.commit()
+
+    return RedirectResponse(url=f"/internal-audit/ia/result/{phieu.id}", status_code=303)
+
+
+@app.get("/internal-audit/ia/result/{phieu_id}", response_class=HTMLResponse)
+def ia_result(
+    request: Request,
+    phieu_id: int,
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+    phieu = session.get(IaPhieuKiemTra, phieu_id)
+    if not phieu:
+        raise HTTPException(status_code=404, detail="Phiếu không tồn tại")
+
+    bo_phan = session.get(AuditBoPhan, phieu.bo_phan_id)
+    don_vi = session.get(AuditDonVi, bo_phan.don_vi_id) if bo_phan else None
+    visible_don_vi_ids = _audit_visible_don_vi_ids(_current_user(request), session)
+    if visible_don_vi_ids is not None and (not don_vi or don_vi.id not in visible_don_vi_ids):
+        raise HTTPException(status_code=403, detail="Không có quyền xem phiếu của đơn vị này")
+
+    detail_rows = session.exec(
+        select(IaChiTiet).where(IaChiTiet.phieu_id == phieu_id)
+    ).all()
+    detail_by_tc = {d.tieu_chi_id: d for d in detail_rows}
+
+    all_bien_map = {b.id: b for b in session.exec(select(AuditBien)).all()}
+
+    loai_filter: list[str] = []
+    if phieu.loai in ("5S", "DAY_DU"):
+        loai_filter.append("5S")
+    if phieu.loai in ("TRUC_QUAN", "DAY_DU"):
+        loai_filter.append("TRUC_QUAN")
+
+    sections_result = []
+    violation_items = []
+    for lv in session.exec(
+        select(AuditLinhVuc)
+        .where(AuditLinhVuc.loai.in_(loai_filter))
+        .order_by(AuditLinhVuc.loai, AuditLinhVuc.thu_tu)
+    ).all():
+        all_tc_lv = session.exec(
+            select(AuditTieuChi).where(AuditTieuChi.linh_vuc_id == lv.id)
+        ).all()
+        scored_tc = [tc for tc in all_tc_lv if tc.id in detail_by_tc]
+        if not scored_tc:
+            continue
+
+        sect_loi = 0
+        for tc in scored_tc:
+            d = detail_by_tc.get(tc.id)
+            if not d:
+                continue
+            sect_loi += d.so_loi
+            bien_ten = ""
+            if tc.bien_id:
+                b = all_bien_map.get(tc.bien_id)
+                bien_ten = b.ten_goi if b else ""
+            if d.so_loi > 0:
+                hinh_anh = _audit_note_image_urls(d.hinh_anh)
+                violation_items.append({
+                    "chi_tiet_id": d.id,
+                    "linh_vuc": lv.ten,
+                    "bien_ten": bien_ten,
+                    "noi_dung": tc.noi_dung,
+                    "so_loi": d.so_loi,
+                    "mo_ta": d.mo_ta or "",
+                    "hinh_anh": hinh_anh,
+                })
+
+        sections_result.append({
+            "ma": lv.ma,
+            "ten": lv.ten,
+            "loai": lv.loai,
+            "tong_loi": sect_loi,
+            "so_tieu_chi": len(scored_tc),
+        })
+
+    cap_rows = session.exec(
+        select(IaCap).where(IaCap.phieu_id == phieu_id)
+    ).all()
+
+    return templates.TemplateResponse(
+        "ia_result.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": _current_user(request),
+            "phieu": {
+                "id": phieu.id,
+                "tong_loi": phieu.tong_loi or 0,
+                "nguoi_kiem_tra": phieu.nguoi_kiem_tra or "",
+                "ngay": phieu.completed_at.strftime("%d/%m/%Y") if phieu.completed_at else "",
+            },
+            "bo_phan": {
+                "id": bo_phan.id if bo_phan else 0,
+                "ten": bo_phan.ten if bo_phan else "",
+                "don_vi_ten": don_vi.ma if don_vi else "",
+            },
+            "sections": sections_result,
+            "violation_items": violation_items,
+            "cap_count": len(cap_rows),
+        },
+    )
+
+
+@app.get("/internal-audit/ia/cap", response_class=HTMLResponse)
+def ia_cap_list(
+    request: Request,
+    don_vi_id: int = Query(default=0),
+    tinh_trang: str = Query(default=""),
+    session: Session = Depends(get_session),
+) -> HTMLResponse:
+    create_db_and_tables()
+    user = _current_user(request)
+    visible_bp_ids = _audit_visible_bo_phan_ids(user, session)
+
+    q = select(IaCap).order_by(IaCap.created_at.desc())
+    caps = session.exec(q).all()
+
+    bp_cache: dict = {}
+    dv_cache: dict = {}
+
+    def _get_bp(bp_id):
+        if bp_id not in bp_cache:
+            bp_cache[bp_id] = session.get(AuditBoPhan, bp_id)
+        return bp_cache[bp_id]
+
+    def _get_dv(dv_id):
+        if dv_id not in dv_cache:
+            dv_cache[dv_id] = session.get(AuditDonVi, dv_id)
+        return dv_cache[dv_id]
+
+    rows = []
+    for cap in caps:
+        phieu = session.get(IaPhieuKiemTra, cap.phieu_id)
+        if not phieu:
+            continue
+        bp = _get_bp(phieu.bo_phan_id)
+        if visible_bp_ids is not None and (not bp or bp.id not in visible_bp_ids):
+            continue
+        dv = _get_dv(bp.don_vi_id) if bp else None
+        if don_vi_id and (not dv or dv.id != don_vi_id):
+            continue
+        if tinh_trang and cap.tinh_trang != tinh_trang:
+            continue
+
+        tc = session.get(AuditTieuChi, cap.tieu_chi_id)
+        chi_tiet = session.get(IaChiTiet, cap.chi_tiet_id)
+        bien_ten = ""
+        if tc and tc.bien_id:
+            b = session.get(AuditBien, tc.bien_id)
+            bien_ten = b.ten_goi if b else ""
+
+        rows.append({
+            "id": cap.id,
+            "phieu_id": cap.phieu_id,
+            "don_vi_ma": dv.ma if dv else "",
+            "bo_phan_ten": bp.ten if bp else "",
+            "bien_ten": bien_ten,
+            "noi_dung": tc.noi_dung if tc else "",
+            "so_loi": chi_tiet.so_loi if chi_tiet else 0,
+            "mo_ta": chi_tiet.mo_ta if chi_tiet else "",
+            "hanh_dong_kp": cap.hanh_dong_kp,
+            "nguoi_thuc_hien": cap.nguoi_thuc_hien,
+            "thoi_han": cap.thoi_han.isoformat() if cap.thoi_han else "",
+            "tinh_trang": cap.tinh_trang,
+            "ngay_tao": cap.created_at.strftime("%d/%m/%Y") if cap.created_at else "",
+        })
+
+    visible_don_vi_ids = _audit_visible_don_vi_ids(user, session)
+    don_vi_q = select(AuditDonVi).order_by(AuditDonVi.id)
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            don_vi_q = don_vi_q.where(AuditDonVi.id.in_(list(visible_don_vi_ids)))
+        else:
+            don_vi_q = don_vi_q.where(AuditDonVi.id == -1)
+    don_vi_list = session.exec(don_vi_q).all()
+
+    return templates.TemplateResponse(
+        "ia_cap.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            "now_year": datetime.utcnow().year,
+            "user": user,
+            "is_admin": _is_admin(request),
+            "rows": rows,
+            "don_vi_list": [{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list],
+            "filter": {"don_vi_id": don_vi_id, "tinh_trang": tinh_trang},
+        },
+    )
+
+
+@app.patch("/api/ia/cap/{cap_id}")
+async def ia_cap_update(
+    request: Request,
+    cap_id: int,
+    session: Session = Depends(get_session),
+):
+    create_db_and_tables()
+    cap = session.get(IaCap, cap_id)
+    if not cap:
+        raise HTTPException(status_code=404, detail="CAP không tồn tại")
+
+    body = await request.json()
+
+    user = _current_user(request)
+    ma_nv = user.get("ma_nv", "") if user else ""
+
+    if "hanh_dong_kp" in body:
+        cap.hanh_dong_kp = str(body["hanh_dong_kp"])
+    if "nguoi_thuc_hien" in body:
+        cap.nguoi_thuc_hien = str(body["nguoi_thuc_hien"])
+    if "thoi_han" in body:
+        try:
+            cap.thoi_han = date.fromisoformat(body["thoi_han"]) if body["thoi_han"] else None
+        except (ValueError, TypeError):
+            pass
+    if "tinh_trang" in body:
+        cap.tinh_trang = str(body["tinh_trang"])
+    cap.updated_by = ma_nv
+    cap.updated_at = datetime.utcnow()
+    session.add(cap)
+    session.commit()
+    return {"ok": True, "id": cap.id}
+
+
+@app.delete("/api/ia/phieu/{phieu_id}")
+def ia_delete_phieu(
+    request: Request,
+    phieu_id: int,
+    session: Session = Depends(get_session),
+):
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Only admin can delete")
+
+    create_db_and_tables()
+    phieu = session.get(IaPhieuKiemTra, phieu_id)
+    if not phieu:
+        raise HTTPException(status_code=404, detail="Phiếu không tồn tại")
+
+    session.exec(delete(IaCap).where(IaCap.phieu_id == phieu_id))
+    session.exec(delete(IaChiTiet).where(IaChiTiet.phieu_id == phieu_id))
+    session.delete(phieu)
+    session.commit()
+    return {"ok": True, "deleted_id": phieu_id}
 
 
 @app.get("/data")

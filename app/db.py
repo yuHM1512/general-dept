@@ -9,6 +9,7 @@ import app.audit_models as _audit_models  # noqa: F401 – registers audit table
 import app.survey_models as _survey_models  # noqa: F401 – registers survey tables in SQLModel.metadata
 import app.mtcl.models as _mtcl_models  # noqa: F401 – registers MTCL tables in SQLModel.metadata
 import app.pccc.models as _pccc_models  # noqa: F401 – registers PCCC tables in SQLModel.metadata
+import app.ia_models as _ia_models  # noqa: F401 – registers IA tables in SQLModel.metadata
 
 engine = create_engine(
     settings.database_url,
