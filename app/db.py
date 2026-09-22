@@ -300,6 +300,11 @@ def _apply_light_migrations() -> None:
             ))
             conn.execute(text("ALTER SEQUENCE mtcl_depart_id_seq OWNED BY mtcl_depart.id"))
 
+        if "sd_so_do_details" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("sd_so_do_details")}
+            if "cap" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_details ADD COLUMN cap INTEGER"))
+
         if "pccc_kiem_dem" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("pccc_kiem_dem")}
             if "xac_nhan_by" not in cols:
