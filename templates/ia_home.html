@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kiểm tra nội bộ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{extend:{
+    colors:{
+      "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+      "on-primary-container":"#82afe9","surface":"#F9F9FA",
+      "surface-container-lowest":"#FFFFFF","surface-container-low":"#f3f3f8",
+      "surface-container":"#ededf2","surface-container-high":"#EBEBEB",
+      "outline-variant":"#C1C7D2","outline":"#727780",
+      "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+      "secondary":"#1b6d24","on-secondary":"#ffffff",
+      "tertiary":"#00312a","error":"#ba1a1a","error-container":"#ffdad6",
+      "background":"#f9f9fe",
+    },
+    spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+    borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
+    fontSize:{
+      "body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],
+      "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+      "label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+    },
+  }},
+}
+</script>
+<style>
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+  select{appearance:none;-webkit-appearance:none}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+
+<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center gap-md">
+  <a href="/internal-audit" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</a>
+  <div class="flex-1">
+    <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Nội bộ</p>
+    <h1 class="text-[20px] font-headline-md font-bold text-primary tracking-tight leading-tight">Kiểm tra nội bộ</h1>
+  </div>
+  <a href="/internal-audit/ia/new"
+     class="flex items-center gap-sm bg-gradient-to-r from-primary to-primary-container text-on-primary px-5 py-2.5 rounded-full font-bold font-headline-md text-[14px] shadow-lg shadow-primary/15 active:scale-95 transition-all">
+    <span class="material-symbols-outlined text-[18px]">add</span>
+    Kiểm tra mới
+  </a>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 md:px-margin pt-lg pb-28">
+
+  <!-- Stats cards -->
+  <div class="grid grid-cols-2 gap-md mb-xl">
+    <div class="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/10 shadow-sm">
+      <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">Tổng phiếu</p>
+      <p class="text-[28px] font-headline-md font-bold text-primary">{{ stats.tong_phieu }}</p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/10 shadow-sm">
+      <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">Tổng lỗi</p>
+      <p class="text-[28px] font-headline-md font-bold text-error">{{ stats.tong_loi }}</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap items-center gap-md mb-lg">
+    <div class="flex items-center gap-sm">
+      <span class="material-symbols-outlined text-outline text-[18px]">filter_list</span>
+      <div class="relative">
+        <select id="don-vi-filter" onchange="applyFilter()"
+                class="bg-surface-container-lowest border border-outline-variant/20 rounded-full px-md py-sm pr-8 text-[13px] font-label-md cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/30">
+          <option value="">Tất cả đơn vị</option>
+          {% for dv in don_vi_list %}
+          <option value="{{ dv.id }}" {{ 'selected' if filter.don_vi_id == dv.id }}>{{ dv.ma }}</option>
+          {% endfor %}
+        </select>
+        <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[16px]">expand_more</span>
+      </div>
+    </div>
+    <a href="/internal-audit/ia/cap" class="ml-auto flex items-center gap-xs text-[13px] font-semibold text-primary hover:underline">
+      <span class="material-symbols-outlined text-[16px]">assignment_turned_in</span>
+      Quản lý CAP
+    </a>
+  </div>
+
+  <!-- Table -->
+  {% if rows %}
+  <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="bg-surface-container-low/50 text-on-surface-variant font-label-md text-label-md uppercase tracking-widest">
+            <th class="px-lg py-md">Đơn vị</th>
+            <th class="px-lg py-md">Bộ phận</th>
+            <th class="px-lg py-md text-center">Số lỗi</th>
+            <th class="px-lg py-md">Kỳ</th>
+            <th class="px-lg py-md">Ngày</th>
+            <th class="px-lg py-md">Người KT</th>
+            <th class="px-lg py-md"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant/10">
+          {% for r in rows %}
+          <tr class="hover:bg-surface-container-low/30 transition-colors">
+            <td class="px-lg py-md font-semibold text-[14px]">{{ r.don_vi_ma }}</td>
+            <td class="px-lg py-md text-[14px]">{{ r.bo_phan_ten }}</td>
+            <td class="px-lg py-md text-center">
+              {% if r.tong_loi > 0 %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold bg-error/10 text-error">{{ r.tong_loi }}</span>
+              {% else %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold bg-secondary/10 text-secondary">0</span>
+              {% endif %}
+            </td>
+            <td class="px-lg py-md text-[13px] text-on-surface-variant">{{ r.ky }}</td>
+            <td class="px-lg py-md text-[13px] text-on-surface-variant">{{ r.ngay }}</td>
+            <td class="px-lg py-md text-[13px] text-on-surface-variant">{{ r.nguoi_kiem_tra }}</td>
+            <td class="px-lg py-md">
+              <a href="/internal-audit/ia/result/{{ r.id }}" class="material-symbols-outlined text-primary hover:bg-primary/10 p-1 rounded-full text-[20px] transition-colors">visibility</a>
+              {% if user and user.role == 'admin' %}
+              <button onclick="deletePhieu({{ r.id }})" class="material-symbols-outlined text-error hover:bg-error/10 p-1 rounded-full text-[20px] transition-colors ml-1">delete</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if pagination.total_pages > 1 %}
+  <div class="flex justify-center gap-sm mt-lg">
+    {% for p in range(1, pagination.total_pages + 1) %}
+    <a href="?page={{ p }}&don_vi_id={{ filter.don_vi_id }}"
+       class="px-3 py-1 rounded-full text-[13px] font-bold {{ 'bg-primary text-white' if p == pagination.page else 'text-on-surface-variant hover:bg-surface-container-high' }} transition-colors">{{ p }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="text-center py-xxl">
+    <span class="material-symbols-outlined text-[48px] text-outline/40 mb-md block">inventory_2</span>
+    <p class="text-on-surface-variant font-body-md">Chưa có phiếu kiểm tra nào.</p>
+    <a href="/internal-audit/ia/new" class="inline-flex items-center gap-sm mt-lg px-6 py-3 bg-primary text-white rounded-full font-bold text-[14px] hover:bg-primary-container transition-colors">
+      <span class="material-symbols-outlined text-[18px]">add</span>
+      Tạo phiếu mới
+    </a>
+  </div>
+  {% endif %}
+
+</main>
+
+<script>
+function applyFilter() {
+  const dvId = document.getElementById('don-vi-filter').value;
+  const params = new URLSearchParams();
+  if (dvId) params.set('don_vi_id', dvId);
+  window.location.href = '/internal-audit/ia' + (params.toString() ? '?' + params : '');
+}
+
+function deletePhieu(id) {
+  if (!confirm('Xoá phiếu kiểm tra này?')) return;
+  fetch('/api/ia/phieu/' + id, {method: 'DELETE'})
+    .then(r => r.json())
+    .then(d => { if (d.ok) location.reload(); else alert('Lỗi: ' + (d.detail || 'Không xoá được')); })
+    .catch(() => alert('Lỗi kết nối'));
+}
+</script>
+</body>
+</html>
