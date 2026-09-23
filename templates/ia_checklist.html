@@ -130,13 +130,23 @@ tailwind.config = {
                       </button>
                     </div>
                   </div>
-                  <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
-                    <span class="material-symbols-outlined text-[16px]">add_photo_alternate</span>
-                    Ảnh
-                    <input type="file" name="image_{{ tc.id }}" accept="image/*" multiple class="hidden" onchange="updateImageCount(this, {{ tc.id }})">
-                  </label>
-                  <p id="image-count-{{ tc.id }}" class="text-[11px] text-on-surface-variant"></p>
+                  <div class="flex flex-wrap items-center gap-sm">
+                    <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">upload</span>
+                      Tải ảnh
+                      <input type="file" name="image_{{ tc.id }}" accept="image/*" multiple
+                             data-image-tc="{{ tc.id }}" class="hidden" onchange="updateImageSelection({{ tc.id }})">
+                    </label>
+                    <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-tertiary/5 text-tertiary border border-tertiary/20 text-[12px] font-semibold cursor-pointer hover:bg-tertiary/10 transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">photo_camera</span>
+                      Chụp ảnh
+                      <input type="file" name="image_{{ tc.id }}" accept="image/*" capture="environment"
+                             data-image-tc="{{ tc.id }}" class="hidden" onchange="updateImageSelection({{ tc.id }})">
+                    </label>
+                    <p id="image-count-{{ tc.id }}" class="text-[11px] text-on-surface-variant"></p>
+                  </div>
                 </div>
+                <div id="image-preview-{{ tc.id }}" class="hidden flex flex-wrap gap-sm mt-sm"></div>
                 <div id="desc-wrap-{{ tc.id }}" class="hidden mt-sm">
                   <textarea name="desc_{{ tc.id }}" id="desc_{{ tc.id }}"
                             placeholder="Mô tả lỗi vi phạm..."
@@ -231,13 +241,24 @@ tailwind.config = {
                         </div>
 
                         <!-- Image upload button -->
-                        <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
-                          <span class="material-symbols-outlined text-[16px]">add_photo_alternate</span>
-                          Ảnh
-                          <input type="file" name="image_{{ tc.id }}" accept="image/*" multiple class="hidden" onchange="updateImageCount(this, {{ tc.id }})">
-                        </label>
-                        <p id="image-count-{{ tc.id }}" class="text-[11px] text-on-surface-variant"></p>
+                        <div class="flex flex-wrap items-center gap-sm">
+                          <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">upload</span>
+                            Tải ảnh
+                            <input type="file" name="image_{{ tc.id }}" accept="image/*" multiple
+                                   data-image-tc="{{ tc.id }}" class="hidden" onchange="updateImageSelection({{ tc.id }})">
+                          </label>
+                          <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-tertiary/5 text-tertiary border border-tertiary/20 text-[12px] font-semibold cursor-pointer hover:bg-tertiary/10 transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">photo_camera</span>
+                            Chụp ảnh
+                            <input type="file" name="image_{{ tc.id }}" accept="image/*" capture="environment"
+                                   data-image-tc="{{ tc.id }}" class="hidden" onchange="updateImageSelection({{ tc.id }})">
+                          </label>
+                          <p id="image-count-{{ tc.id }}" class="text-[11px] text-on-surface-variant"></p>
+                        </div>
                       </div>
+
+                      <div id="image-preview-{{ tc.id }}" class="hidden flex flex-wrap gap-sm mt-sm"></div>
 
                       <!-- Description field — shown when violations > 0 -->
                       <div id="desc-wrap-{{ tc.id }}" class="hidden mt-sm">
@@ -386,16 +407,56 @@ function updateTotals() {
   });
 }
 
-function updateImageCount(input, tcId) {
-  const p = document.getElementById('image-count-' + tcId);
-  if (input.files.length > 0) {
-    p.textContent = input.files.length + ' ảnh đã chọn';
+const imagePreviewUrls = {};
+
+function updateImageSelection(tcId) {
+  const inputs = document.querySelectorAll('[data-image-tc="' + tcId + '"]');
+  const files = [];
+  inputs.forEach(input => files.push(...Array.from(input.files || [])));
+
+  const count = document.getElementById('image-count-' + tcId);
+  const preview = document.getElementById('image-preview-' + tcId);
+  (imagePreviewUrls[tcId] || []).forEach(url => URL.revokeObjectURL(url));
+  imagePreviewUrls[tcId] = [];
+  preview.innerHTML = '';
+
+  if (files.length > 10) {
+    count.textContent = 'Tối đa 10 ảnh/tiêu chí';
+    count.classList.add('text-error');
   } else {
-    p.textContent = '';
+    count.textContent = files.length ? files.length + ' ảnh đã chọn' : '';
+    count.classList.remove('text-error');
   }
+
+  files.slice(0, 10).forEach(file => {
+    const url = URL.createObjectURL(file);
+    imagePreviewUrls[tcId].push(url);
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Ảnh minh chứng đã chọn';
+    img.className = 'h-16 w-16 rounded object-cover border border-outline-variant/30';
+    preview.appendChild(img);
+  });
+  preview.classList.toggle('hidden', files.length === 0);
+
+  const accContent = preview.closest('.accordion-content');
+  if (accContent) accContent.style.maxHeight = accContent.scrollHeight + 'px';
 }
 
 document.getElementById('audit-form').addEventListener('submit', function(e) {
+  const tooManyImages = Array.from(document.querySelectorAll('[data-tc]')).some(el => {
+    const tcId = el.dataset.tc;
+    let total = 0;
+    document.querySelectorAll('[data-image-tc="' + tcId + '"]').forEach(input => {
+      total += (input.files || []).length;
+    });
+    return total > 10;
+  });
+  if (tooManyImages) {
+    e.preventDefault();
+    alert('Mỗi tiêu chí được tải lên tối đa 10 ảnh.');
+    return;
+  }
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Đang lưu...';
