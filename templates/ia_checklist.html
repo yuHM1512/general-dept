@@ -444,15 +444,10 @@ function updateImageSelection(tcId) {
   imagePreviewUrls[tcId] = [];
   preview.innerHTML = '';
 
-  if (entries.length > 10) {
-    count.textContent = 'Tối đa 10 ảnh/tiêu chí';
-    count.classList.add('text-error');
-  } else {
-    count.textContent = entries.length ? entries.length + ' ảnh đã chọn' : '';
-    count.classList.remove('text-error');
-  }
+  count.textContent = entries.length ? entries.length + ' ảnh đã chọn' : '';
+  count.classList.remove('text-error');
 
-  entries.slice(0, 10).forEach(({file, inputIndex, fileIndex}) => {
+  entries.forEach(({file, inputIndex, fileIndex}) => {
     const url = URL.createObjectURL(file);
     imagePreviewUrls[tcId].push(url);
     const wrapper = document.createElement('div');
@@ -486,19 +481,6 @@ function autoResizeTextarea(textarea) {
 }
 
 document.getElementById('audit-form').addEventListener('submit', function(e) {
-  const tooManyImages = Array.from(document.querySelectorAll('[data-tc]')).some(el => {
-    const tcId = el.dataset.tc;
-    let total = 0;
-    document.querySelectorAll('[data-image-tc="' + tcId + '"]').forEach(input => {
-      total += (input.files || []).length;
-    });
-    return total > 10;
-  });
-  if (tooManyImages) {
-    e.preventDefault();
-    alert('Mỗi tiêu chí được tải lên tối đa 10 ảnh.');
-    return;
-  }
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Đang lưu...';
