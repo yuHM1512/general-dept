@@ -962,15 +962,14 @@ async def _save_ia_note_images(
     phieu_id: int,
     tieu_chi_id: int,
     files: list,
-    max_files: int = 10,
 ) -> list[str]:
     """Validate and store IA evidence separately from 5S audit images."""
-    if not files or max_files <= 0:
+    if not files:
         return []
     upload_dir = static_dir / "ia_notes" / str(phieu_id)
     upload_dir.mkdir(parents=True, exist_ok=True)
     saved: list[str] = []
-    for file in files[:max_files]:
+    for file in files:
         suffix = Path(file.filename or "").suffix.lower()
         if suffix not in _AUDIT_NOTE_IMAGE_EXTS:
             continue
@@ -2499,7 +2498,7 @@ async def ia_submit(
     saved_images: dict[int, list[str]] = {}
     if note_images:
         for tc_id, files in note_images.items():
-            saved_images[tc_id] = await _save_ia_note_images(phieu.id, tc_id, files, max_files=10)
+            saved_images[tc_id] = await _save_ia_note_images(phieu.id, tc_id, files)
 
     for tc_id, so_loi in violations.items():
         chi_tiet = IaChiTiet(
