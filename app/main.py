@@ -2510,16 +2510,6 @@ async def ia_submit(
             hinh_anh=json.dumps(saved_images.get(tc_id, []), ensure_ascii=False) if saved_images.get(tc_id) else None,
         )
         session.add(chi_tiet)
-        session.flush()
-
-        if so_loi > 0:
-            session.add(IaCap(
-                chi_tiet_id=chi_tiet.id,
-                phieu_id=phieu.id,
-                tieu_chi_id=tc_id,
-                created_by=nguoi_kiem_tra,
-                updated_by=nguoi_kiem_tra,
-            ))
     session.commit()
 
     return RedirectResponse(url=f"/internal-audit/ia/result/{phieu.id}", status_code=303)
@@ -2599,10 +2589,6 @@ def ia_result(
             "so_tieu_chi": len(scored_tc),
         })
 
-    cap_rows = session.exec(
-        select(IaCap).where(IaCap.phieu_id == phieu_id)
-    ).all()
-
     return templates.TemplateResponse(
         "ia_result.html",
         {
@@ -2623,7 +2609,6 @@ def ia_result(
             },
             "sections": sections_result,
             "violation_items": violation_items,
-            "cap_count": len(cap_rows),
         },
     )
 
