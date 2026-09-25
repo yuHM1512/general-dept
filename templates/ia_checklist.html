@@ -150,7 +150,8 @@ tailwind.config = {
                 <div id="desc-wrap-{{ tc.id }}" class="hidden mt-sm">
                   <textarea name="desc_{{ tc.id }}" id="desc_{{ tc.id }}"
                             placeholder="Mô tả lỗi vi phạm..."
-                            class="w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+                            class="w-full min-h-[72px] overflow-hidden text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50"
+                            rows="2" oninput="autoResizeTextarea(this)"></textarea>
                 </div>
               </div>
               {% endfor %}
@@ -264,7 +265,8 @@ tailwind.config = {
                       <div id="desc-wrap-{{ tc.id }}" class="hidden mt-sm">
                         <textarea name="desc_{{ tc.id }}" id="desc_{{ tc.id }}"
                                   placeholder="Mô tả lỗi vi phạm..."
-                                  class="w-full text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50" rows="2"></textarea>
+                                  class="w-full min-h-[72px] overflow-hidden text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50"
+                                  rows="2" oninput="autoResizeTextarea(this)"></textarea>
                       </div>
                     </div>
                     {% endfor %}
@@ -345,6 +347,7 @@ function onViolationChange(tcId) {
   const descWrap = document.getElementById('desc-wrap-' + tcId);
   if (val > 0) {
     descWrap.classList.remove('hidden');
+    autoResizeTextarea(document.getElementById('desc_' + tcId));
     inp.closest('.flex').classList.add('ring-1', 'ring-error/30');
   } else {
     descWrap.classList.add('hidden');
@@ -409,10 +412,31 @@ function updateTotals() {
 
 const imagePreviewUrls = {};
 
-function updateImageSelection(tcId) {
+function getSelectedImages(tcId) {
+  const entries = [];
+  document.querySelectorAll('[data-image-tc="' + tcId + '"]').forEach((input, inputIndex) => {
+    Array.from(input.files || []).forEach((file, fileIndex) => {
+      entries.push({file, inputIndex, fileIndex});
+    });
+  });
+  return entries;
+}
+
+function removeSelectedImage(tcId, inputIndex, fileIndex) {
   const inputs = document.querySelectorAll('[data-image-tc="' + tcId + '"]');
-  const files = [];
-  inputs.forEach(input => files.push(...Array.from(input.files || [])));
+  const input = inputs[inputIndex];
+  if (!input) return;
+
+  const transfer = new DataTransfer();
+  Array.from(input.files || []).forEach((file, index) => {
+    if (index !== fileIndex) transfer.items.add(file);
+  });
+  input.files = transfer.files;
+  updateImageSelection(tcId);
+}
+
+function updateImageSelection(tcId) {
+  const entries = getSelectedImages(tcId);
 
   const count = document.getElementById('image-count-' + tcId);
   const preview = document.getElementById('image-preview-' + tcId);
@@ -420,26 +444,44 @@ function updateImageSelection(tcId) {
   imagePreviewUrls[tcId] = [];
   preview.innerHTML = '';
 
-  if (files.length > 10) {
+  if (entries.length > 10) {
     count.textContent = 'Tối đa 10 ảnh/tiêu chí';
     count.classList.add('text-error');
   } else {
-    count.textContent = files.length ? files.length + ' ảnh đã chọn' : '';
+    count.textContent = entries.length ? entries.length + ' ảnh đã chọn' : '';
     count.classList.remove('text-error');
   }
 
-  files.slice(0, 10).forEach(file => {
+  entries.slice(0, 10).forEach(({file, inputIndex, fileIndex}) => {
     const url = URL.createObjectURL(file);
     imagePreviewUrls[tcId].push(url);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative';
     const img = document.createElement('img');
     img.src = url;
     img.alt = 'Ảnh minh chứng đã chọn';
     img.className = 'h-16 w-16 rounded object-cover border border-outline-variant/30';
-    preview.appendChild(img);
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-error text-white shadow-md hover:scale-105 transition-transform';
+    removeButton.setAttribute('aria-label', 'Xóa ảnh đã chọn');
+    removeButton.innerHTML = '<span class="material-symbols-outlined text-[15px]">close</span>';
+    removeButton.addEventListener('click', () => removeSelectedImage(tcId, inputIndex, fileIndex));
+    wrapper.appendChild(img);
+    wrapper.appendChild(removeButton);
+    preview.appendChild(wrapper);
   });
-  preview.classList.toggle('hidden', files.length === 0);
+  preview.classList.toggle('hidden', entries.length === 0);
 
   const accContent = preview.closest('.accordion-content');
+  if (accContent) accContent.style.maxHeight = accContent.scrollHeight + 'px';
+}
+
+function autoResizeTextarea(textarea) {
+  if (!textarea) return;
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.max(72, textarea.scrollHeight) + 'px';
+  const accContent = textarea.closest('.accordion-content');
   if (accContent) accContent.style.maxHeight = accContent.scrollHeight + 'px';
 }
 
