@@ -2216,6 +2216,7 @@ def ia_home(
     request: Request,
     page: int = Query(default=1),
     don_vi_id: int = Query(default=0),
+    ket_luan: str = Query(default=""),
     session: Session = Depends(get_session),
 ) -> HTMLResponse:
     create_db_and_tables()
@@ -2232,6 +2233,31 @@ def ia_home(
     all_phieus = session.exec(all_phieus_q).all()
     tong_phieu = len(all_phieus)
     tong_loi_all = sum(p.tong_loi or 0 for p in all_phieus)
+    khong_vi_pham = sum(1 for p in all_phieus if (p.tong_loi or 0) == 0)
+    co_vi_pham = sum(1 for p in all_phieus if (p.tong_loi or 0) > 0)
+
+    # Count pending HĐKP
+    visible_don_vi_ids = _audit_visible_don_vi_ids(user, session)
+    from sqlalchemy import text as _text
+    hdkp_stats_where = ["cd.so_loi > 0"]
+    hdkp_params: dict = {}
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            hdkp_stats_where.append("dv.id = ANY(:visible_don_vi_ids)")
+            hdkp_params["visible_don_vi_ids"] = list(visible_don_vi_ids)
+        else:
+            hdkp_stats_where.append("1 = 0")
+    hdkp_stats_where_sql = " AND ".join(hdkp_stats_where)
+    all_caps_raw = session.execute(_text("""
+        SELECT COALESCE(h.tinh_trang, 'Chưa tiếp nhận') AS ts
+        FROM ia_chi_tiet cd
+        JOIN ia_phieu_kiem_tra p ON p.id = cd.phieu_id
+        JOIN audit_5s_bo_phan bp ON bp.id = p.bo_phan_id
+        JOIN audit_5s_don_vi dv ON dv.id = bp.don_vi_id
+        LEFT JOIN ia_cap h ON h.chi_tiet_id = cd.id
+        WHERE """ + hdkp_stats_where_sql + """
+    """), hdkp_params).mappings().fetchall()
+    chua_xu_ly = sum(1 for r in all_caps_raw if r["ts"] == "Chưa tiếp nhận")
 
     q = select(IaPhieuKiemTra).order_by(IaPhieuKiemTra.created_at.desc())
     if visible_bp_ids is not None:
@@ -2246,6 +2272,11 @@ def ia_home(
             select(AuditBoPhan).where(AuditBoPhan.don_vi_id == don_vi_id)
         ).all()}
         phieus = [p for p in phieus if p.bo_phan_id in bp_ids]
+
+    if ket_luan == "khong_vi_pham":
+        phieus = [p for p in phieus if (p.tong_loi or 0) == 0]
+    elif ket_luan == "co_vi_pham":
+        phieus = [p for p in phieus if (p.tong_loi or 0) > 0]
 
     total_rows = len(phieus)
     total_pages = max(1, (total_rows + PAGE_SIZE - 1) // PAGE_SIZE)
@@ -2275,13 +2306,14 @@ def ia_home(
             "bo_phan_ten": bp.ten if bp else "",
             "don_vi_ten": dv.ten if dv else "",
             "don_vi_ma": dv.ma if dv else "",
+            "loai": p.loai,
+            "loai_label": _LOAI_LABEL.get(p.loai, p.loai),
             "tong_loi": p.tong_loi or 0,
             "ngay": p.created_at.strftime("%d/%m/%Y") if p.created_at else "",
             "ky": dot.ky if dot else "",
             "nguoi_kiem_tra": p.nguoi_kiem_tra or "",
         })
 
-    visible_don_vi_ids = _audit_visible_don_vi_ids(user, session)
     don_vi_q = select(AuditDonVi).order_by(AuditDonVi.id)
     if visible_don_vi_ids is not None:
         if visible_don_vi_ids:
@@ -2297,10 +2329,16 @@ def ia_home(
             "app_name": settings.app_name,
             "now_year": datetime.utcnow().year,
             "user": user,
-            "stats": {"tong_phieu": tong_phieu, "tong_loi": tong_loi_all},
+            "stats": {
+                "tong_phieu": tong_phieu,
+                "tong_loi": tong_loi_all,
+                "khong_vi_pham": khong_vi_pham,
+                "co_vi_pham": co_vi_pham,
+                "chua_xu_ly": chua_xu_ly,
+            },
             "rows": rows,
             "don_vi_list": [{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list],
-            "filter": {"don_vi_id": don_vi_id},
+            "filter": {"don_vi_id": don_vi_id, "ket_luan": ket_luan},
             "pagination": {"page": page, "total_pages": total_pages, "total_rows": total_rows},
         },
     )
@@ -2587,92 +2625,315 @@ def ia_result(
     )
 
 
-@app.get("/internal-audit/ia/cap", response_class=HTMLResponse)
-def ia_cap_list(
+@app.get("/internal-audit/ia/hdkp", response_class=HTMLResponse)
+def ia_hdkp(
     request: Request,
-    don_vi_id: int = Query(default=0),
-    tinh_trang: str = Query(default=""),
     session: Session = Depends(get_session),
+    don_vi_id: str = "",
+    bo_phan_id: str = "",
+    tinh_trang: str = "",
 ) -> HTMLResponse:
     create_db_and_tables()
     user = _current_user(request)
-    visible_bp_ids = _audit_visible_bo_phan_ids(user, session)
+    if not user:
+        return RedirectResponse(url="/login?next=/internal-audit/ia/hdkp", status_code=303)
 
-    q = select(IaCap).order_by(IaCap.created_at.desc())
-    caps = session.exec(q).all()
-
-    bp_cache: dict = {}
-    dv_cache: dict = {}
-
-    def _get_bp(bp_id):
-        if bp_id not in bp_cache:
-            bp_cache[bp_id] = session.get(AuditBoPhan, bp_id)
-        return bp_cache[bp_id]
-
-    def _get_dv(dv_id):
-        if dv_id not in dv_cache:
-            dv_cache[dv_id] = session.get(AuditDonVi, dv_id)
-        return dv_cache[dv_id]
-
-    rows = []
-    for cap in caps:
-        phieu = session.get(IaPhieuKiemTra, cap.phieu_id)
-        if not phieu:
-            continue
-        bp = _get_bp(phieu.bo_phan_id)
-        if visible_bp_ids is not None and (not bp or bp.id not in visible_bp_ids):
-            continue
-        dv = _get_dv(bp.don_vi_id) if bp else None
-        if don_vi_id and (not dv or dv.id != don_vi_id):
-            continue
-        if tinh_trang and cap.tinh_trang != tinh_trang:
-            continue
-
-        tc = session.get(AuditTieuChi, cap.tieu_chi_id)
-        chi_tiet = session.get(IaChiTiet, cap.chi_tiet_id)
-        bien_ten = ""
-        if tc and tc.bien_id:
-            b = session.get(AuditBien, tc.bien_id)
-            bien_ten = b.ten_goi if b else ""
-
-        rows.append({
-            "id": cap.id,
-            "phieu_id": cap.phieu_id,
-            "don_vi_ma": dv.ma if dv else "",
-            "bo_phan_ten": bp.ten if bp else "",
-            "bien_ten": bien_ten,
-            "noi_dung": tc.noi_dung if tc else "",
-            "so_loi": chi_tiet.so_loi if chi_tiet else 0,
-            "mo_ta": chi_tiet.mo_ta if chi_tiet else "",
-            "hanh_dong_kp": cap.hanh_dong_kp,
-            "nguoi_thuc_hien": cap.nguoi_thuc_hien,
-            "thoi_han": cap.thoi_han.isoformat() if cap.thoi_han else "",
-            "tinh_trang": cap.tinh_trang,
-            "ngay_tao": cap.created_at.strftime("%d/%m/%Y") if cap.created_at else "",
-        })
+    from sqlalchemy import text as _text
 
     visible_don_vi_ids = _audit_visible_don_vi_ids(user, session)
-    don_vi_q = select(AuditDonVi).order_by(AuditDonVi.id)
+    where_clauses = ["cd.so_loi > 0"]
+    params: dict = {}
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            where_clauses.append("dv.id = ANY(:visible_don_vi_ids)")
+            params["visible_don_vi_ids"] = list(visible_don_vi_ids)
+        else:
+            where_clauses.append("1 = 0")
+    if bo_phan_id:
+        where_clauses.append("bp.id = :bo_phan_id")
+        params["bo_phan_id"] = int(bo_phan_id)
+    elif don_vi_id:
+        where_clauses.append("dv.id = :don_vi_id")
+        params["don_vi_id"] = int(don_vi_id)
+    if tinh_trang:
+        if tinh_trang == "Chưa tiếp nhận":
+            where_clauses.append("(h.tinh_trang IS NULL OR h.tinh_trang = 'Chưa tiếp nhận')")
+        else:
+            where_clauses.append("h.tinh_trang = :tinh_trang")
+            params["tinh_trang"] = tinh_trang
+
+    where_sql = " AND ".join(where_clauses)
+    rows = session.execute(_text(f"""
+        SELECT
+            cd.id                                               AS chi_tiet_id,
+            cd.phieu_id,
+            COALESCE(p.completed_at, p.created_at)::date       AS phieu_ngay,
+            bp.ten                                              AS bo_phan_ten,
+            dv.ten                                              AS don_vi_ten,
+            dv.ma                                               AS don_vi_ma,
+            dv.id                                               AS don_vi_id,
+            lv.loai                                             AS loai,
+            tc.noi_dung                                         AS tieu_chi_noi_dung,
+            cd.so_loi                                           AS so_loi,
+            COALESCE(cd.mo_ta, '')                              AS ghi_chu,
+            cd.hinh_anh                                         AS hinh_anh,
+            b.ten_goi                                           AS bien_ten,
+            h.id                                                AS hdkp_id,
+            COALESCE(h.hanh_dong_kp, '')                        AS hanh_dong_kp,
+            COALESCE(h.nguoi_thuc_hien, '')                     AS nguoi_thuc_hien,
+            h.thoi_han,
+            COALESCE(h.tinh_trang, 'Chưa tiếp nhận')            AS tinh_trang,
+            COALESCE(h.created_by, '')                          AS created_by,
+            COALESCE(h.updated_by, '')                          AS updated_by,
+            h.updated_at                                        AS hdkp_updated_at
+        FROM ia_chi_tiet cd
+        JOIN ia_phieu_kiem_tra p  ON p.id  = cd.phieu_id
+        JOIN audit_5s_bo_phan  bp ON bp.id = p.bo_phan_id
+        JOIN audit_5s_don_vi   dv ON dv.id = bp.don_vi_id
+        JOIN audit_5s_tieu_chi tc ON tc.id = cd.tieu_chi_id
+        JOIN audit_5s_linh_vuc lv ON lv.id = tc.linh_vuc_id
+        LEFT JOIN audit_5s_bien b  ON b.id  = tc.bien_id
+        LEFT JOIN ia_cap       h  ON h.chi_tiet_id = cd.id
+        WHERE {where_sql}
+        ORDER BY phieu_ngay DESC, bp.ten, cd.id
+    """), params).mappings().fetchall()
+
+    items = []
+    for r in rows:
+        items.append({
+            "id":                 r["chi_tiet_id"],
+            "phieu_id":           r["phieu_id"],
+            "phieu_ngay":         r["phieu_ngay"].strftime("%d/%m/%Y") if r["phieu_ngay"] else "",
+            "bo_phan_ten":        r["bo_phan_ten"],
+            "don_vi_ten":         r["don_vi_ten"],
+            "don_vi_ma":          r["don_vi_ma"],
+            "loai":               r["loai"],
+            "loai_label":         _LOAI_LABEL.get(r["loai"], r["loai"]),
+            "tieu_chi_noi_dung":  r["tieu_chi_noi_dung"],
+            "so_loi":             r["so_loi"] or 0,
+            "ghi_chu":            r["ghi_chu"],
+            "hinh_anh":           _audit_note_image_urls(r["hinh_anh"]),
+            "bien_ten":           r["bien_ten"] or "",
+            "hanh_dong_kp":       r["hanh_dong_kp"],
+            "nguoi_thuc_hien":    r["nguoi_thuc_hien"],
+            "thoi_han":           r["thoi_han"].isoformat() if r["thoi_han"] else "",
+            "tinh_trang":         r["tinh_trang"],
+            "created_by":         r["created_by"],
+            "updated_by":         r["updated_by"],
+            "hdkp_updated_at":    r["hdkp_updated_at"].strftime("%d/%m/%Y %H:%M") if r["hdkp_updated_at"] else "",
+        })
+
+    # Stats
+    stats_where = ["cd.so_loi > 0"]
+    stats_params: dict = {}
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            stats_where.append("dv.id = ANY(:visible_don_vi_ids)")
+            stats_params["visible_don_vi_ids"] = list(visible_don_vi_ids)
+        else:
+            stats_where.append("1 = 0")
+    stats_where_sql = " AND ".join(stats_where)
+    all_rows = session.execute(_text("""
+        SELECT COALESCE(h.tinh_trang, 'Chưa tiếp nhận') AS ts
+        FROM ia_chi_tiet cd
+        JOIN ia_phieu_kiem_tra p ON p.id = cd.phieu_id
+        JOIN audit_5s_bo_phan bp ON bp.id = p.bo_phan_id
+        JOIN audit_5s_don_vi dv ON dv.id = bp.don_vi_id
+        LEFT JOIN ia_cap h ON h.chi_tiet_id = cd.id
+        WHERE """ + stats_where_sql + """
+    """), stats_params).mappings().fetchall()
+    chua = sum(1 for r in all_rows if r["ts"] == "Chưa tiếp nhận")
+    dang  = sum(1 for r in all_rows if r["ts"] == "Đang thực hiện")
+    xong  = sum(1 for r in all_rows if r["ts"] == "Hoàn thành")
+    total = len(all_rows)
+    pct   = round(xong / total * 100) if total else 0
+
+    don_vi_q = select(AuditDonVi).order_by(AuditDonVi.ma)
     if visible_don_vi_ids is not None:
         if visible_don_vi_ids:
             don_vi_q = don_vi_q.where(AuditDonVi.id.in_(list(visible_don_vi_ids)))
         else:
             don_vi_q = don_vi_q.where(AuditDonVi.id == -1)
     don_vi_list = session.exec(don_vi_q).all()
-
-    return templates.TemplateResponse(
-        "ia_cap.html",
-        {
-            "request": request,
-            "app_name": settings.app_name,
-            "now_year": datetime.utcnow().year,
-            "user": user,
-            "is_admin": _is_admin(request),
-            "rows": rows,
-            "don_vi_list": [{"id": dv.id, "ma": dv.ma, "ten": dv.ten} for dv in don_vi_list],
-            "filter": {"don_vi_id": don_vi_id, "tinh_trang": tinh_trang},
-        },
+    bo_phan_list = (
+        session.exec(
+            select(AuditBoPhan)
+            .where(AuditBoPhan.don_vi_id == int(don_vi_id))
+            .order_by(AuditBoPhan.ten)
+        ).all()
+        if don_vi_id and (visible_don_vi_ids is None or int(don_vi_id) in visible_don_vi_ids) else []
     )
+    all_bp_q = select(AuditBoPhan).order_by(AuditBoPhan.ten)
+    if visible_don_vi_ids is not None:
+        if visible_don_vi_ids:
+            all_bp_q = all_bp_q.where(AuditBoPhan.don_vi_id.in_(list(visible_don_vi_ids)))
+        else:
+            all_bp_q = all_bp_q.where(AuditBoPhan.id == -1)
+    all_bp = session.exec(all_bp_q).all()
+    don_vi_with_bp = [
+        {
+            "id": dv.id,
+            "ma": dv.ma,
+            "bo_phan": [{"id": bp.id, "ten": bp.ten} for bp in all_bp if bp.don_vi_id == dv.id],
+        }
+        for dv in don_vi_list
+    ]
+    return templates.TemplateResponse("ia_hdkp.html", {
+        "request":        request,
+        "user":           user,
+        "items":          items,
+        "stats":          {"chua_xu_ly": chua, "dang_xu_ly": dang, "hoan_thanh": xong, "hoan_thanh_pct": pct},
+        "don_vi_list":    don_vi_list,
+        "don_vi_with_bp": don_vi_with_bp,
+        "bo_phan_list":   bo_phan_list,
+        "filter":         {"don_vi_id": don_vi_id, "bo_phan_id": bo_phan_id, "tinh_trang": tinh_trang},
+    })
+
+
+@app.get("/internal-audit/ia/cap", response_class=HTMLResponse)
+def ia_cap_redirect(
+    request: Request,
+    don_vi_id: str = "",
+    bo_phan_id: str = "",
+    tinh_trang: str = "",
+) -> RedirectResponse:
+    params = []
+    if don_vi_id:
+        params.append(f"don_vi_id={don_vi_id}")
+    if bo_phan_id:
+        params.append(f"bo_phan_id={bo_phan_id}")
+    if tinh_trang:
+        params.append(f"tinh_trang={tinh_trang}")
+    query = f"?{'&'.join(params)}" if params else ""
+    return RedirectResponse(url=f"/internal-audit/ia/hdkp{query}", status_code=301)
+
+
+@app.patch("/api/ia/hdkp")
+def upsert_ia_hdkp(request: Request, payload: dict, session: Session = Depends(get_session)):
+    """Upsert IA HĐKP record for a violation criterion. key = chi_tiet_id."""
+    from sqlalchemy import text as _text
+    from datetime import date as _date
+
+    cid = int(payload.get("chi_tiet_id", 0) or payload.get("id", 0) or payload.get("chi_tiet_diem_id", 0))
+    if not cid:
+        raise HTTPException(status_code=422, detail="chi_tiet_id required")
+
+    # Resolve phieu_id + tieu_chi_id for the row
+    ref = session.execute(
+        _text("""
+            SELECT cd.phieu_id, cd.tieu_chi_id, dv.id AS don_vi_id
+            FROM ia_chi_tiet cd
+            JOIN ia_phieu_kiem_tra p ON p.id = cd.phieu_id
+            JOIN audit_5s_bo_phan bp ON bp.id = p.bo_phan_id
+            JOIN audit_5s_don_vi dv ON dv.id = bp.don_vi_id
+            WHERE cd.id = :id
+        """),
+        {"id": cid},
+    ).mappings().fetchone()
+    if not ref:
+        raise HTTPException(status_code=404, detail="ia_chi_tiet not found")
+    visible_don_vi_ids = _audit_visible_don_vi_ids(_current_user(request), session)
+    if visible_don_vi_ids is not None and ref["don_vi_id"] not in visible_don_vi_ids:
+        raise HTTPException(status_code=403, detail="Not allowed for this don_vi")
+    user = _current_user(request) or {}
+    actor_ma_nv = str(user.get("ma_nv") or "").strip().upper()
+
+    thoi_han_val = payload.get("thoi_han") or None
+    if thoi_han_val:
+        try:
+            thoi_han_val = _date.fromisoformat(thoi_han_val)
+        except ValueError:
+            thoi_han_val = None
+
+    session.execute(_text("""
+        INSERT INTO ia_cap
+            (chi_tiet_id, phieu_id, tieu_chi_id,
+             hanh_dong_kp, nguoi_thuc_hien, thoi_han, tinh_trang,
+             created_by, updated_by, created_at, updated_at)
+        VALUES
+            (:cid, :pid, :tid,
+             :hd, :ntt, :thn, :tt,
+             :actor, :actor, NOW(), NOW())
+        ON CONFLICT (chi_tiet_id) DO UPDATE SET
+            hanh_dong_kp    = COALESCE(NULLIF(:hd,  ''), ia_cap.hanh_dong_kp),
+            nguoi_thuc_hien = COALESCE(NULLIF(:ntt, ''), ia_cap.nguoi_thuc_hien),
+            thoi_han        = CASE WHEN :thn IS NOT NULL THEN :thn ELSE ia_cap.thoi_han END,
+            tinh_trang      = COALESCE(NULLIF(:tt,  ''), ia_cap.tinh_trang),
+            created_by      = COALESCE(NULLIF(ia_cap.created_by, ''), NULLIF(:actor, ''), ia_cap.created_by),
+            updated_by      = COALESCE(NULLIF(:actor, ''), ia_cap.updated_by),
+            updated_at      = NOW()
+    """), {
+        "cid": cid,
+        "pid": ref["phieu_id"],
+        "tid": ref["tieu_chi_id"],
+        "hd":  payload.get("hanh_dong_kp", ""),
+        "ntt": payload.get("nguoi_thuc_hien", ""),
+        "thn": thoi_han_val,
+        "tt":  payload.get("tinh_trang", ""),
+        "actor": actor_ma_nv,
+    })
+    session.commit()
+    return {"ok": True}
+
+
+@app.patch("/api/ia/hdkp/score")
+def update_ia_hdkp_score(request: Request, payload: dict, session: Session = Depends(get_session)):
+    """Update violation count or notes for an IA detail so it can leave or update the HDKP queue."""
+    cid = int(payload.get("chi_tiet_id", 0) or payload.get("id", 0) or payload.get("chi_tiet_diem_id", 0))
+    try:
+        new_violations = int(payload.get("so_loi", payload.get("diem", 0)))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Số lỗi không hợp lệ")
+    if not cid:
+        raise HTTPException(status_code=422, detail="chi_tiet_id required")
+    if new_violations < 0:
+        raise HTTPException(status_code=422, detail="Số lỗi không thể âm")
+
+    detail = session.get(IaChiTiet, cid)
+    if not detail:
+        raise HTTPException(status_code=404, detail="ia_chi_tiet not found")
+
+    phieu = session.get(IaPhieuKiemTra, detail.phieu_id)
+    bo_phan = session.get(AuditBoPhan, phieu.bo_phan_id) if phieu else None
+    visible_don_vi_ids = _audit_visible_don_vi_ids(_current_user(request), session)
+    if visible_don_vi_ids is not None and (not bo_phan or bo_phan.don_vi_id not in visible_don_vi_ids):
+        raise HTTPException(status_code=403, detail="Not allowed for this don_vi")
+
+    user = _current_user(request) or {}
+    actor_ma_nv = str(user.get("ma_nv") or "").strip().upper()
+    changed_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    old_violations = detail.so_loi
+    note_msg = f"Đã sửa số lỗi: {old_violations} -> {new_violations}"
+    if actor_ma_nv:
+        note_msg += f" bởi {actor_ma_nv}"
+    note_msg += f" lúc {changed_at}"
+    extra_note = str(payload.get("ghi_chu") or "").strip()
+    if extra_note:
+        note_msg += f". Ghi chú: {extra_note}"
+
+    current_note = (detail.mo_ta or "").strip()
+    detail.mo_ta = f"{current_note}\n{note_msg}" if current_note else note_msg
+    detail.so_loi = new_violations
+    session.add(detail)
+
+    # If new_violations == 0, remove the IaCap record
+    if new_violations == 0:
+        cap = session.exec(
+            select(IaCap).where(IaCap.chi_tiet_id == cid)
+        ).first()
+        if cap:
+            session.delete(cap)
+
+    # Recalculate tong_loi on IaPhieuKiemTra
+    if phieu:
+        all_details = session.exec(
+            select(IaChiTiet).where(IaChiTiet.phieu_id == phieu.id)
+        ).all()
+        phieu.tong_loi = sum(d.so_loi for d in all_details if d.id != detail.id) + new_violations
+        session.add(phieu)
+
+    session.commit()
+    return {"ok": True}
 
 
 @app.patch("/api/ia/cap/{cap_id}")

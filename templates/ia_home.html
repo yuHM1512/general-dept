@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Kiểm tra nội bộ</title>
+<title>Quản lý kiểm tra nội bộ</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -19,6 +19,7 @@ tailwind.config = {
       "outline-variant":"#C1C7D2","outline":"#727780",
       "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
       "secondary":"#1b6d24","on-secondary":"#ffffff",
+      "secondary-container":"#a0f499","on-secondary-container":"#207128",
       "tertiary":"#00312a","error":"#ba1a1a","error-container":"#ffdad6",
       "background":"#f9f9fe",
     },
@@ -26,106 +27,227 @@ tailwind.config = {
     borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
     fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
     fontSize:{
-      "body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],
+      "body-md":   ["16px",{"lineHeight":"24px","fontWeight":"400"}],
       "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
-      "label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+      "label-md":  ["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
     },
   }},
 }
 </script>
 <style>
   .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  select{appearance:none;-webkit-appearance:none}
+  .pill-active{background:#002c50;color:#fff}
+  .pill-inactive{background:transparent;color:#42474f}
+  .pill-inactive:hover{background:#ededf2}
   ::-webkit-scrollbar{width:4px}
   ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
-  select{appearance:none;-webkit-appearance:none}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .reveal{animation:fadeUp .4s cubic-bezier(.16,1,.3,1) forwards}
 </style>
 </head>
 <body class="bg-background text-on-surface font-body-md min-h-screen">
 
-<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center gap-md">
-  <a href="/internal-audit" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</a>
-  <div class="flex-1">
-    <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Nội bộ</p>
-    <h1 class="text-[20px] font-headline-md font-bold text-primary tracking-tight leading-tight">Kiểm tra nội bộ</h1>
+<!-- Header -->
+<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center justify-between gap-md">
+  <div class="flex items-center gap-md min-w-0">
+    <a href="/internal-audit" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150 shrink-0">arrow_back</a>
+    <div class="min-w-0">
+      <p class="font-label-md text-label-md text-on-surface-variant truncate">Đánh giá nội bộ</p>
+      <h1 class="text-[18px] md:text-[22px] font-headline-md font-bold text-primary tracking-tight leading-tight">Kiểm tra nội bộ</h1>
+    </div>
   </div>
-  <a href="/internal-audit/ia/new"
-     class="flex items-center gap-sm bg-gradient-to-r from-primary to-primary-container text-on-primary px-5 py-2.5 rounded-full font-bold font-headline-md text-[14px] shadow-lg shadow-primary/15 active:scale-95 transition-all">
-    <span class="material-symbols-outlined text-[18px]">add</span>
-    Kiểm tra mới
-  </a>
+  <div class="flex items-center gap-sm shrink-0">
+    <a href="/internal-audit/ia/new"
+       class="flex items-center gap-xs bg-primary text-white px-md py-sm rounded-full font-label-md text-[13px] font-bold shadow hover:bg-primary-container active:scale-95 transition-all">
+      <span class="material-symbols-outlined text-[18px]">add</span>
+      <span class="hidden sm:inline">Kiểm tra mới</span>
+    </a>
+  </div>
 </header>
 
-<main class="max-w-5xl mx-auto px-4 md:px-margin pt-lg pb-28">
+<!-- Body: module sidebar + content -->
+<div class="flex">
 
-  <!-- Stats cards -->
-  <div class="grid grid-cols-2 gap-md mb-xl">
-    <div class="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/10 shadow-sm">
-      <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">Tổng phiếu</p>
-      <p class="text-[28px] font-headline-md font-bold text-primary">{{ stats.tong_phieu }}</p>
+  <!-- Module sidebar (desktop only) -->
+  <aside class="hidden md:flex flex-col w-56 shrink-0 bg-surface-container-lowest border-r border-outline-variant/20 sticky top-[69px] overflow-y-auto" style="height:calc(100vh - 69px)">
+    <!-- Module label -->
+    <div class="px-lg py-md border-b border-outline-variant/20">
+      <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant mb-xs">Đánh giá nội bộ</p>
+      <p class="font-headline-md font-bold text-[15px] text-primary leading-snug">Kiểm tra nội bộ</p>
     </div>
-    <div class="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/10 shadow-sm">
-      <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">Tổng lỗi</p>
-      <p class="text-[28px] font-headline-md font-bold text-error">{{ stats.tong_loi }}</p>
+    <!-- Nav tabs -->
+    <nav class="p-sm flex flex-col gap-xs mt-sm">
+      <a href="/internal-audit/ia"
+        class="flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] font-bold transition-colors bg-primary/10 text-primary">
+        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">fact_check</span>
+        Kết quả
+      </a>
+      <a href="/internal-audit/ia/hdkp"
+        class="flex items-center gap-sm px-md py-sm rounded-xl font-label-md text-[13px] font-medium transition-colors text-on-surface-variant hover:bg-surface-container">
+        <span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">assignment_late</span>
+        HĐKP
+      </a>
+    </nav>
+    <!-- Spacer -->
+    <div class="flex-1"></div>
+    <!-- Đánh giá legend at bottom -->
+    <div class="p-md border-t border-outline-variant/20">
+      <p class="font-label-md text-[10px] uppercase tracking-widest text-on-surface-variant text-center mb-sm">Đánh giá</p>
+      <div class="flex flex-col gap-xs">
+        <div class="rounded-xl py-md px-sm flex flex-col items-center gap-xs text-center" style="background:#00FF7F">
+          <span class="material-symbols-outlined text-[22px]" style="color:#1F2937;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">check_circle</span>
+          <p class="font-bold text-[12px] leading-tight" style="color:#1F2937">Không vi phạm</p>
+          <p class="text-[11px]" style="color:#1F2937">0 lỗi</p>
+        </div>
+        <div class="rounded-xl py-md px-sm flex flex-col items-center gap-xs text-center" style="background:#CE2525">
+          <span class="material-symbols-outlined text-[22px] text-white" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">cancel</span>
+          <p class="font-bold text-[12px] text-white leading-tight">Có vi phạm</p>
+          <p class="text-[11px] text-white">&ge; 1 lỗi</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Content area -->
+  <div class="flex-1 min-w-0">
+<main class="px-4 md:px-lg pt-xl pb-24 max-w-5xl">
+
+  <!-- Stat cards -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-md md:gap-lg mb-xl reveal">
+    <div class="bg-surface-container-lowest rounded-xl p-md md:p-lg shadow-sm border border-outline-variant/10">
+      <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-sm">Tổng phiếu</p>
+      <p class="font-headline-md font-bold text-primary text-[28px] md:text-[32px] leading-none">{{ stats.tong_phieu }}</p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-md md:p-lg shadow-sm border border-outline-variant/10">
+      <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-sm">Tổng số lỗi</p>
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none {% if stats.tong_loi == 0 %}text-[#00AA55]{% else %}text-[#CE2525]{% endif %}">
+        {{ stats.tong_loi }}
+      </p>
+    </div>
+    <div class="rounded-xl p-md md:p-lg shadow-sm" style="background:#f0fff8;border:1px solid #00FF7F50">
+      <p class="font-label-md text-label-md uppercase tracking-widest mb-sm" style="color:#00994d">Không vi phạm</p>
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none" style="color:#00994d">{{ stats.khong_vi_pham }}</p>
+    </div>
+    <div class="rounded-xl p-md md:p-lg shadow-sm" style="background:#fff0f0;border:1px solid #CE252550">
+      <p class="font-label-md text-label-md uppercase tracking-widest mb-sm" style="color:#CE2525">Có vi phạm</p>
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none" style="color:#CE2525">{{ stats.co_vi_pham }}</p>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl p-md md:p-lg shadow-sm border border-outline-variant/10">
+      <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-sm">HĐKP cần xử lý</p>
+      <p class="font-headline-md font-bold text-[28px] md:text-[32px] leading-none {% if stats.chua_xu_ly == 0 %}text-[#00AA55]{% else %}text-[#FF8C00]{% endif %}">
+        {{ stats.chua_xu_ly }}
+      </p>
     </div>
   </div>
 
-  <!-- Filters -->
-  <div class="flex flex-wrap items-center gap-md mb-lg">
-    <div class="flex items-center gap-sm">
-      <span class="material-symbols-outlined text-outline text-[18px]">filter_list</span>
+  <!-- Filter bar -->
+  <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 p-md mb-lg reveal">
+    <form method="GET" action="/internal-audit/ia" class="flex flex-wrap gap-sm items-center">
+      <!-- Pill tabs for ket_luan -->
+      <div class="flex bg-surface-container-low rounded-full p-0.5 border border-outline-variant/20 gap-0.5 flex-wrap">
+        <button type="submit" name="ket_luan" value=""
+          class="px-md py-xs rounded-full font-label-md text-[12px] font-medium transition-all {{ 'pill-active' if filter.ket_luan == '' else 'pill-inactive' }}">
+          Tất cả
+        </button>
+        <button type="submit" name="ket_luan" value="khong_vi_pham"
+          class="px-md py-xs rounded-full font-label-md text-[12px] font-bold transition-all {% if filter.ket_luan == 'khong_vi_pham' %}ring-2 ring-offset-1 ring-[#00CC66]{% endif %}"
+          style="background:#00FF7F;color:#1F2937">
+          Không vi phạm (0 lỗi)
+        </button>
+        <button type="submit" name="ket_luan" value="co_vi_pham"
+          class="px-md py-xs rounded-full font-label-md text-[12px] font-bold transition-all {% if filter.ket_luan == 'co_vi_pham' %}ring-2 ring-offset-1 ring-[#CE2525]{% endif %}"
+          style="background:#CE2525;color:#ffffff">
+          Có vi phạm (&ge; 1 lỗi)
+        </button>
+      </div>
+
+      <!-- Don vi dropdown -->
       <div class="relative">
-        <select id="don-vi-filter" onchange="applyFilter()"
-                class="bg-surface-container-lowest border border-outline-variant/20 rounded-full px-md py-sm pr-8 text-[13px] font-label-md cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/30">
-          <option value="">Tất cả đơn vị</option>
+        <select name="don_vi_id" onchange="this.form.submit()"
+                class="bg-surface-container-low border border-outline-variant/30 rounded-full pl-md pr-8 py-xs text-on-surface font-label-md text-[12px] focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer">
+          <option value="0" {% if filter.don_vi_id == 0 %}selected{% endif %}>Tất cả đơn vị</option>
           {% for dv in don_vi_list %}
-          <option value="{{ dv.id }}" {{ 'selected' if filter.don_vi_id == dv.id }}>{{ dv.ma }}</option>
+          <option value="{{ dv.id }}" {% if filter.don_vi_id == dv.id %}selected{% endif %}>{{ dv.ma }}</option>
           {% endfor %}
         </select>
         <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[16px]">expand_more</span>
       </div>
-    </div>
-    <a href="/internal-audit/ia/cap" class="ml-auto flex items-center gap-xs text-[13px] font-semibold text-primary hover:underline">
-      <span class="material-symbols-outlined text-[16px]">assignment_turned_in</span>
-      Quản lý CAP
-    </a>
+
+      {% if filter.don_vi_id or filter.ket_luan %}
+      <a href="/internal-audit/ia" class="flex items-center gap-xs text-on-surface-variant font-label-md text-[12px] hover:text-primary transition-colors">
+        <span class="material-symbols-outlined text-[16px]">close</span>
+        Xóa lọc
+      </a>
+      {% endif %}
+
+      <span class="ml-auto font-label-md text-label-md text-on-surface-variant hidden sm:block">
+        {{ pagination.total_rows }} kết quả
+      </span>
+    </form>
   </div>
 
-  <!-- Table -->
-  {% if rows %}
-  <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm overflow-hidden">
+  <!-- Desktop table -->
+  <div class="hidden md:block bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden mb-lg reveal">
     <div class="overflow-x-auto">
-      <table class="w-full text-left">
+      <table class="w-full border-collapse min-w-[640px]">
         <thead>
-          <tr class="bg-surface-container-low/50 text-on-surface-variant font-label-md text-label-md uppercase tracking-widest">
-            <th class="px-lg py-md">Đơn vị</th>
-            <th class="px-lg py-md">Bộ phận</th>
-            <th class="px-lg py-md text-center">Số lỗi</th>
-            <th class="px-lg py-md">Kỳ</th>
-            <th class="px-lg py-md">Ngày</th>
-            <th class="px-lg py-md">Người KT</th>
-            <th class="px-lg py-md"></th>
+          <tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md border-b border-outline-variant/20">
+            <th class="py-md px-sm text-left font-medium w-8">#</th>
+            <th class="py-md px-md text-left font-medium">Khu vực</th>
+            <th class="py-md px-sm text-center font-medium">Loại</th>
+            <th class="py-md px-sm text-center font-medium">Số lỗi</th>
+            <th class="py-md px-sm text-center font-medium">Kết quả</th>
+            <th class="py-md px-sm text-center font-medium">Ngày</th>
+            <th class="py-md px-sm text-center font-medium w-20">Thao tác</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-outline-variant/10">
-          {% for r in rows %}
-          <tr class="hover:bg-surface-container-low/30 transition-colors">
-            <td class="px-lg py-md font-semibold text-[14px]">{{ r.don_vi_ma }}</td>
-            <td class="px-lg py-md text-[14px]">{{ r.bo_phan_ten }}</td>
-            <td class="px-lg py-md text-center">
-              {% if r.tong_loi > 0 %}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold bg-error/10 text-error">{{ r.tong_loi }}</span>
-              {% else %}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold bg-secondary/10 text-secondary">0</span>
-              {% endif %}
+        <tbody>
+          {% for row in rows %}
+          <tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50 transition-colors group">
+            <td class="py-md px-sm font-label-md text-label-md text-on-surface-variant text-center">{{ row.id }}</td>
+            <td class="py-md px-md">
+              <p class="font-body-md font-semibold text-on-surface">{{ row.bo_phan_ten }}</p>
+              <p class="font-label-md text-label-md text-on-surface-variant">{{ row.don_vi_ten }}</p>
             </td>
-            <td class="px-lg py-md text-[13px] text-on-surface-variant">{{ r.ky }}</td>
-            <td class="px-lg py-md text-[13px] text-on-surface-variant">{{ r.ngay }}</td>
-            <td class="px-lg py-md text-[13px] text-on-surface-variant">{{ r.nguoi_kiem_tra }}</td>
-            <td class="px-lg py-md">
-              <a href="/internal-audit/ia/result/{{ r.id }}" class="material-symbols-outlined text-primary hover:bg-primary/10 p-1 rounded-full text-[20px] transition-colors">visibility</a>
-              {% if user and user.role == 'admin' %}
-              <button onclick="deletePhieu({{ r.id }})" class="material-symbols-outlined text-error hover:bg-error/10 p-1 rounded-full text-[20px] transition-colors ml-1">delete</button>
-              {% endif %}
+            <td class="py-md px-sm text-center">
+              <span class="font-label-md text-[12px] font-bold py-xs rounded-full whitespace-nowrap inline-block min-w-[88px] text-white {% if row.loai == '5S' %}bg-[#005A9C]{% elif row.loai == 'TRUC_QUAN' %}bg-[#00312a]{% else %}bg-[#5B21B6]{% endif %}">
+                {{ row.loai_label }}
+              </span>
+            </td>
+            <td class="py-md px-sm text-center">
+              <span class="font-headline-md font-bold text-[18px] {% if row.tong_loi == 0 %}text-[#00AA55]{% else %}text-[#CE2525]{% endif %}">
+                {{ row.tong_loi }}
+              </span>
+            </td>
+            <td class="py-md px-sm text-center">
+              <span class="font-label-md text-[12px] font-bold py-xs rounded-full whitespace-nowrap inline-block min-w-[120px] {% if row.tong_loi == 0 %}bg-[#00FF7F] text-[#1F2937]{% else %}bg-[#CE2525] text-white{% endif %}">
+                {% if row.tong_loi == 0 %}Không vi phạm{% else %}{{ row.tong_loi }} lỗi vi phạm{% endif %}
+              </span>
+            </td>
+            <td class="py-md px-sm text-center font-label-md text-label-md text-on-surface-variant">{{ row.ngay }}</td>
+            <td class="py-md px-sm text-center">
+              <div class="flex items-center justify-center gap-xs">
+                <a href="/internal-audit/ia/result/{{ row.id }}"
+                   class="material-symbols-outlined text-outline hover:text-primary transition-colors text-[20px]"
+                   title="Xem"
+                   style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
+                {% if user and user.role == 'admin' %}
+                <button type="button"
+                        data-phieu-id="{{ row.id }}"
+                        class="js-delete-audit material-symbols-outlined text-outline hover:text-error transition-colors text-[20px]"
+                        title="Xóa kết quả"
+                        style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">delete</button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="py-xxl text-center text-on-surface-variant font-body-md">
+              <span class="material-symbols-outlined text-[40px] block mb-sm text-outline">fact_check</span>
+              Chưa có phiếu kiểm tra nào.
+              <a href="/internal-audit/ia/new" class="text-primary hover:underline ml-sm">Tạo mới</a>
             </td>
           </tr>
           {% endfor %}
@@ -134,43 +256,97 @@ tailwind.config = {
     </div>
   </div>
 
-  {% if pagination.total_pages > 1 %}
-  <div class="flex justify-center gap-sm mt-lg">
-    {% for p in range(1, pagination.total_pages + 1) %}
-    <a href="?page={{ p }}&don_vi_id={{ filter.don_vi_id }}"
-       class="px-3 py-1 rounded-full text-[13px] font-bold {{ 'bg-primary text-white' if p == pagination.page else 'text-on-surface-variant hover:bg-surface-container-high' }} transition-colors">{{ p }}</a>
+  <!-- Mobile card list -->
+  <div class="md:hidden space-y-sm mb-lg reveal">
+    {% for row in rows %}
+    <div class="bg-surface-container-lowest rounded-xl p-md shadow-sm border border-outline-variant/10 relative">
+      <!-- Violation badge top-right -->
+      <span class="absolute top-md right-md font-headline-md font-bold text-[18px] {% if row.tong_loi == 0 %}text-[#00AA55]{% else %}text-[#CE2525]{% endif %}">
+        {{ row.tong_loi }} lỗi
+      </span>
+      <p class="font-label-md text-label-md text-on-surface-variant mb-xs">{{ row.ngay }} &bull; #{{ row.id }}</p>
+      <p class="font-body-md font-bold text-on-surface pr-16">{{ row.bo_phan_ten }}</p>
+      <p class="font-label-md text-label-md text-on-surface-variant">{{ row.don_vi_ten }}</p>
+      <div class="mt-sm flex items-center gap-sm">
+        <span class="font-label-md text-[11px] font-bold px-sm py-xs rounded-full {% if row.tong_loi == 0 %}bg-[#00FF7F] text-[#1F2937]{% else %}bg-[#CE2525] text-white{% endif %}">
+          {% if row.tong_loi == 0 %}Không vi phạm{% else %}{{ row.tong_loi }} lỗi{% endif %}
+        </span>
+        <span class="font-label-md text-[11px] px-sm py-xs rounded-full bg-surface-container text-on-surface-variant">
+          {{ row.loai_label }}
+        </span>
+        <div class="ml-auto flex items-center gap-xs">
+          <a href="/internal-audit/ia/result/{{ row.id }}" class="material-symbols-outlined text-outline hover:text-primary transition-colors text-[20px]"
+             title="Xem"
+             style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">visibility</a>
+          {% if user and user.role == 'admin' %}
+          <button type="button"
+                  data-phieu-id="{{ row.id }}"
+                  class="js-delete-audit material-symbols-outlined text-outline hover:text-error transition-colors text-[20px]"
+                  title="Xóa kết quả"
+                  style="font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24">delete</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="text-center py-xxl text-on-surface-variant font-body-md">
+      <span class="material-symbols-outlined text-[40px] block mb-sm text-outline">fact_check</span>
+      Chưa có phiếu kiểm tra nào.
+    </div>
     {% endfor %}
   </div>
-  {% endif %}
 
-  {% else %}
-  <div class="text-center py-xxl">
-    <span class="material-symbols-outlined text-[48px] text-outline/40 mb-md block">inventory_2</span>
-    <p class="text-on-surface-variant font-body-md">Chưa có phiếu kiểm tra nào.</p>
-    <a href="/internal-audit/ia/new" class="inline-flex items-center gap-sm mt-lg px-6 py-3 bg-primary text-white rounded-full font-bold text-[14px] hover:bg-primary-container transition-colors">
-      <span class="material-symbols-outlined text-[18px]">add</span>
-      Tạo phiếu mới
+  <!-- Pagination -->
+  {% if pagination.total_pages > 1 %}
+  <div class="flex items-center justify-center gap-sm pb-4 reveal">
+    {% if pagination.page > 1 %}
+    <a href="?page={{ pagination.page - 1 }}&ket_luan={{ filter.ket_luan }}&don_vi_id={{ filter.don_vi_id }}"
+       class="flex items-center gap-xs px-md py-sm rounded-full border border-outline-variant/30 font-label-md text-[13px] text-on-surface-variant hover:bg-surface-container-high transition-colors">
+      <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+      Trước
     </a>
+    {% endif %}
+    <span class="font-label-md text-label-md text-on-surface-variant px-md">
+      {{ pagination.page }} / {{ pagination.total_pages }}
+    </span>
+    {% if pagination.page < pagination.total_pages %}
+    <a href="?page={{ pagination.page + 1 }}&ket_luan={{ filter.ket_luan }}&don_vi_id={{ filter.don_vi_id }}"
+       class="flex items-center gap-xs px-md py-sm rounded-full border border-outline-variant/30 font-label-md text-[13px] text-on-surface-variant hover:bg-surface-container-high transition-colors">
+      Tiếp
+      <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+    </a>
+    {% endif %}
   </div>
   {% endif %}
 
 </main>
+  </div><!-- /content area -->
+</div><!-- /body flex -->
+
+<!-- Mobile FAB -->
+<a href="/internal-audit/ia/new"
+   class="fixed bottom-6 right-6 md:hidden w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all z-50">
+  <span class="material-symbols-outlined text-[24px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">add</span>
+</a>
 
 <script>
-function applyFilter() {
-  const dvId = document.getElementById('don-vi-filter').value;
-  const params = new URLSearchParams();
-  if (dvId) params.set('don_vi_id', dvId);
-  window.location.href = '/internal-audit/ia' + (params.toString() ? '?' + params : '');
+async function deleteAuditPhieu(phieuId) {
+  if (!confirm('Xóa kết quả đánh giá #' + phieuId + '? HĐKP liên quan cũng sẽ bị xóa.')) return;
+  try {
+    const res = await fetch('/api/ia/phieu/' + phieuId, {method: 'DELETE'});
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || 'Không thể xóa kết quả.');
+    }
+    window.location.reload();
+  } catch (err) {
+    alert(err.message || 'Không thể xóa kết quả.');
+  }
 }
 
-function deletePhieu(id) {
-  if (!confirm('Xoá phiếu kiểm tra này?')) return;
-  fetch('/api/ia/phieu/' + id, {method: 'DELETE'})
-    .then(r => r.json())
-    .then(d => { if (d.ok) location.reload(); else alert('Lỗi: ' + (d.detail || 'Không xoá được')); })
-    .catch(() => alert('Lỗi kết nối'));
-}
+document.querySelectorAll('.js-delete-audit').forEach((button) => {
+  button.addEventListener('click', () => deleteAuditPhieu(button.dataset.phieuId));
+});
 </script>
 </body>
 </html>
