@@ -962,6 +962,46 @@ async def _save_audit_note_images(
     return saved
 
 
+def _ia_note_image_urls(raw: str | None) -> list[str]:
+    """Return trusted IA image URLs, including the legacy shared location."""
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    allowed_prefixes = ("/static/ia_notes/", "/static/audit_notes/")
+    return [str(url) for url in data if str(url).startswith(allowed_prefixes)]
+
+
+async def _save_ia_note_images(
+    phieu_id: int,
+    tieu_chi_id: int,
+    files: list,
+) -> list[str]:
+    """Validate and store IA evidence separately from 5S audit images."""
+    if not files:
+        return []
+    upload_dir = static_dir / "ia_notes" / str(phieu_id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    saved: list[str] = []
+    for file in files:
+        suffix = Path(file.filename or "").suffix.lower()
+        if suffix not in _AUDIT_NOTE_IMAGE_EXTS:
+            continue
+        content_type = (getattr(file, "content_type", "") or "").lower()
+        if content_type and not content_type.startswith("image/"):
+            continue
+        data = await file.read()
+        if not data or len(data) > 8 * 1024 * 1024:
+            continue
+        filename = f"tc_{tieu_chi_id}_{uuid4().hex}{suffix}"
+        dest = upload_dir / filename
+        dest.write_bytes(data)
+        saved.append(f"/static/ia_notes/{phieu_id}/{filename}")
+    return saved
+
+
 def _delete_audit_note_files(urls: list[str]) -> None:
     base = (static_dir / "audit_notes").resolve()
     for url in urls:
@@ -2512,7 +2552,7 @@ async def ia_submit(
     saved_images: dict[int, list[str]] = {}
     if note_images:
         for tc_id, files in note_images.items():
-            saved_images[tc_id] = await _save_audit_note_images(phieu.id, tc_id, files, max_files=10)
+            saved_images[tc_id] = await _save_ia_note_images(phieu.id, tc_id, files)
 
     for tc_id, so_loi in violations.items():
         chi_tiet = IaChiTiet(
@@ -2523,16 +2563,6 @@ async def ia_submit(
             hinh_anh=json.dumps(saved_images.get(tc_id, []), ensure_ascii=False) if saved_images.get(tc_id) else None,
         )
         session.add(chi_tiet)
-        session.flush()
-
-        if so_loi > 0:
-            session.add(IaCap(
-                chi_tiet_id=chi_tiet.id,
-                phieu_id=phieu.id,
-                tieu_chi_id=tc_id,
-                created_by=nguoi_kiem_tra,
-                updated_by=nguoi_kiem_tra,
-            ))
     session.commit()
 
     return RedirectResponse(url=f"/internal-audit/ia/result/{phieu.id}", status_code=303)
@@ -2593,7 +2623,7 @@ def ia_result(
                 b = all_bien_map.get(tc.bien_id)
                 bien_ten = b.ten_goi if b else ""
             if d.so_loi > 0:
-                hinh_anh = _audit_note_image_urls(d.hinh_anh)
+                hinh_anh = _ia_note_image_urls(d.hinh_anh)
                 violation_items.append({
                     "chi_tiet_id": d.id,
                     "linh_vuc": lv.ten,
@@ -2611,10 +2641,6 @@ def ia_result(
             "tong_loi": sect_loi,
             "so_tieu_chi": len(scored_tc),
         })
-
-    cap_rows = session.exec(
-        select(IaCap).where(IaCap.phieu_id == phieu_id)
-    ).all()
 
     return templates.TemplateResponse(
         "ia_result.html",
@@ -2636,7 +2662,6 @@ def ia_result(
             },
             "sections": sections_result,
             "violation_items": violation_items,
-            "cap_count": len(cap_rows),
         },
     )
 
@@ -3004,6 +3029,10 @@ def ia_delete_phieu(
     session.exec(delete(IaChiTiet).where(IaChiTiet.phieu_id == phieu_id))
     session.delete(phieu)
     session.commit()
+
+    note_image_dir = static_dir / "ia_notes" / str(phieu_id)
+    if note_image_dir.exists() and note_image_dir.is_dir():
+        shutil.rmtree(note_image_dir)
     return {"ok": True, "deleted_id": phieu_id}
 
 

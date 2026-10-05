@@ -153,6 +153,8 @@ tailwind.config = {
     background:#fff;
     border-radius:0.75rem;
     box-shadow:0 8px 20px rgba(0,44,80,.06);
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
   }
   .org-card::before{
     content:'';
@@ -164,27 +166,32 @@ tailwind.config = {
     background:var(--org-line);
     transform:translateX(-50%);
   }
+  .org-card:hover, .org-card:focus-visible{
+    transform:translateY(-3px);
+    box-shadow:0 14px 28px rgba(0,44,80,.16);
+    outline:none;
+  }
   .org-card .org-name{
-    padding:12px 14px;
-    border-radius:0.75rem 0.75rem 0 0;
+    padding:16px 14px 14px;
+    border-radius:0.75rem;
     box-shadow:none;
     background:linear-gradient(205deg,#032f6f,#3a7ac1);
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-height:92px;
   }
   .org-card .org-name h4{
     margin:0;font-family:Manrope,sans-serif;font-size:14px;line-height:1.35;font-weight:800;color:#fff;
   }
-  .org-body-box{
-    background:#fff;
-    border-radius:0 0 0.75rem 0.75rem;
-    padding:12px 14px 14px;
-    box-shadow:none;
-    flex:1;
+  .org-card-cta{
+    margin:8px 0 0;
+    display:inline-flex;align-items:center;justify-content:center;gap:4px;
+    font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    color:rgba(255,255,255,.78);
   }
-  .org-body-box .org-body{
-    margin:0;
-    font-size:12px;line-height:1.55;color:#42474f;
-    white-space:pre-wrap;
-  }
+  .org-card-cta .material-symbols-outlined{font-size:14px}
 
   /* ---------- Form fields ---------- */
   .field-input{
@@ -201,7 +208,336 @@ tailwind.config = {
     header, aside, .no-print { display: none !important; }
     body { background: white; }
     main { max-width: 100%; padding: 0; }
+    .dv-overlay { display: none !important; }
   }
+
+  /* ---------- Department detail panel ---------- */
+  .dv-overlay{
+    position:fixed;inset:0;z-index:70;
+    background:rgba(26,28,29,.45);
+    display:none;align-items:flex-end;justify-content:center;
+    padding:12px;
+  }
+  .dv-overlay.open{display:flex}
+  .dv-modal{
+    width:min(1400px,100%);
+    height:min(94vh,960px);
+    max-height:min(94vh,960px);
+    background:#fff;
+    border-radius:0.75rem;
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    min-height:0;
+    box-shadow:0 24px 48px rgba(0,44,80,.24);
+  }
+  @media (min-width:768px){
+    .dv-overlay{align-items:center;padding:24px}
+  }
+  .dv-head{
+    background:linear-gradient(135deg,#002c50,#005A9C);
+    color:#fff;padding:16px 18px;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  }
+  .dv-head h3{
+    margin:0;font-family:Manrope,sans-serif;font-weight:800;font-size:18px;line-height:1.3;
+  }
+  .dv-head p{margin:4px 0 0;font-size:12px;color:rgba(255,255,255,.72)}
+  .dv-close{
+    width:36px;height:36px;border:0;border-radius:50%;
+    background:rgba(255,255,255,.14);color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .dv-tabs{display:flex;gap:6px;padding:10px;background:#f3f3f8;overflow-x:auto}
+  .dv-tab{
+    flex:1;min-width:max-content;border:0;border-radius:0.75rem;
+    padding:10px 12px;font-size:12px;font-weight:700;letter-spacing:.02em;
+    color:#42474f;background:transparent;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .dv-tab.active{background:#002c50;color:#fff}
+  .dv-body{flex:1;min-height:0;overflow:auto;padding:16px 12px 24px;background:#F9F9FA}
+  .dv-body.dv-body-chart{padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .dv-org-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
+  .dv-canvas-area{position:relative;flex:1;min-height:0;display:flex}
+  .dv-pan{
+    flex:1;min-height:0;overflow:auto;
+    cursor:grab;
+    padding:16px 20px 28px;
+    overscroll-behavior:contain;
+  }
+  .dv-legend-panel{
+    position:absolute;top:12px;right:12px;z-index:5;
+    display:flex;flex-direction:column;gap:6px;
+    background:#fff;border:1px solid #E3E5E8;border-radius:0.75rem;
+    padding:10px 12px;min-width:160px;max-width:240px;
+    box-shadow:0 8px 20px rgba(0,44,80,.12);
+    pointer-events:auto;
+  }
+  .dv-legend-row{display:flex;align-items:center;gap:8px}
+  .dv-legend-line{width:22px;height:3px;border-radius:2px;flex-shrink:0}
+  .dv-legend-text{flex:1;font-size:12px;font-weight:600;color:#1A1C1D;word-break:break-word}
+  .dv-legend-remove{
+    flex-shrink:0;width:18px;height:18px;border:0;border-radius:50%;
+    background:transparent;color:#8a8f98;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .dv-legend-remove:hover{background:#f3f3f8;color:#d32f2f}
+  .dv-legend-remove[data-note-edit]:hover{color:#005A9C}
+  .dv-legend-row-editing{align-items:stretch}
+  .dv-legend-edit-form{display:flex;flex-direction:column;gap:6px;width:100%}
+  .dv-legend-edit-colors{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+  .dv-legend-edit-input{font-size:12px;padding:4px 8px}
+  .dv-legend-edit-actions{display:flex;gap:4px}
+  .dv-legend-edit-actions .dv-tool{padding:4px 10px;font-size:11px}
+  /* Inline link trên nội dung có sẵn */
+  .dv-has-link{color:#005A9C;text-decoration:none;cursor:pointer}
+  .dv-has-link:hover{text-decoration:underline}
+  .dv-link-icon{font-size:12px!important;vertical-align:middle;margin-left:2px;opacity:.7}
+  /* vai trò chip có link */
+  a.dv-vai-tro-chip.dv-has-link{color:#005A9C;border-color:#005A9C;background:rgba(0,90,156,.06)}
+  /* Fallback: link không khớp nội dung */
+  .dv-node-links{display:flex;flex-direction:column;gap:1px;padding:2px 8px 4px;overflow:hidden}
+  .dv-node-link{display:flex;align-items:center;gap:2px;font-size:11px;color:#005A9C;text-decoration:none;max-width:100%;overflow:hidden}
+  .dv-node-link:hover{text-decoration:underline}
+  .dv-node-link .material-symbols-outlined{font-size:13px;flex-shrink:0}
+  .dv-node-link span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Context menu */
+  .dv-ctx-menu{position:fixed;z-index:10000;min-width:200px;max-width:320px;background:#fff;border-radius:0.75rem;box-shadow:0 8px 24px rgba(0,44,80,.18);padding:6px 0;font-size:13px;color:#1A1C1D}
+  .dv-ctx-title{padding:6px 14px;font-weight:600;font-size:12px;color:#42474f;border-bottom:1px solid #f0f0f3;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dv-ctx-item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 14px;border:0;background:transparent;cursor:pointer;font-size:13px;color:#1A1C1D;text-align:left}
+  .dv-ctx-item:hover{background:#f3f3f8}
+  .dv-ctx-item .material-symbols-outlined{font-size:18px;color:#005A9C}
+  .dv-ctx-sep{height:1px;background:#f0f0f3;margin:2px 0}
+  .dv-ctx-link-row{display:flex;align-items:center;gap:4px;padding:4px 14px}
+  .dv-ctx-link-url{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#005A9C;text-decoration:none}
+  .dv-ctx-link-url:hover{text-decoration:underline}
+  .dv-ctx-link-btn{flex-shrink:0;width:24px;height:24px;border:0;border-radius:50%;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#8a8f98}
+  .dv-ctx-link-btn:hover{background:#f3f3f8;color:#005A9C}
+  .dv-ctx-link-del:hover{color:#d32f2f}
+  .dv-ctx-link-btn .material-symbols-outlined{font-size:16px}
+  /* Link modal */
+  .dv-link-modal-overlay{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}
+  .dv-link-modal-box{background:#fff;border-radius:0.75rem;padding:20px 24px;min-width:340px;max-width:440px;box-shadow:0 12px 32px rgba(0,44,80,.2)}
+  .dv-link-modal-box h3{margin:0 0 14px;font-size:15px;font-weight:700;color:#002c50}
+  .dv-link-modal-box label{display:block;font-size:12px;font-weight:600;color:#42474f;margin-bottom:10px}
+  .dv-link-modal-box input{display:block;width:100%;margin-top:4px;padding:7px 10px;border:1px solid #d0d5dd;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box}
+  .dv-link-modal-box input:focus{border-color:#005A9C;box-shadow:0 0 0 2px rgba(0,90,156,.15)}
+  .dv-link-suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .dv-link-sug-chip{padding:4px 10px;border:1px solid #d0d5dd;border-radius:16px;background:#f9f9fa;font-size:12px;color:#42474f;cursor:pointer;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;transition:all .15s}
+  .dv-link-sug-chip:hover{background:#005A9C;color:#fff;border-color:#005A9C}
+  .dv-link-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+  .dv-link-modal-actions button{padding:7px 18px;border:1px solid #d0d5dd;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#42474f}
+  .dv-link-modal-actions button:last-child{background:#005A9C;color:#fff;border-color:#005A9C}
+  .dv-link-modal-actions button:last-child:hover{background:#004a80}
+  .dv-link-modal-actions button:first-child:hover{background:#f3f3f8}
+  .dv-pan.is-panning{cursor:grabbing;user-select:none}
+  .dv-pan.dv-locked{cursor:default}
+  .dv-pan.dv-locked .dv-pos{cursor:default;pointer-events:auto}
+  .dv-pan.dv-locked .dv-arrow-handle,
+  .dv-pan.dv-locked .dv-arrow-mid,
+  .dv-pan.dv-locked .dv-arrow-hit{pointer-events:none}
+  .dv-pan-hint{
+    position:sticky;top:0;z-index:2;
+    margin:0 0 10px;
+    display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;
+    font-size:12px;font-weight:600;color:#42474f;
+    background:#fff;padding:6px 10px;border-radius:0.75rem;
+    box-shadow:0 4px 12px rgba(0,44,80,.08);
+  }
+  .dv-legend{
+    display:inline-flex;align-items:center;gap:8px;
+    margin-left:8px;font-size:12px;font-weight:600;color:#42474f;
+  }
+  .dv-legend i{
+    width:18px;height:3px;border-radius:2px;display:inline-block;
+  }
+  .dv-legend i.cap{background:#1A1C1D}
+  .dv-legend i.baocao{background:#1a73e8}
+  .dv-legend i.hotro{background:#e67e22}
+  .dv-empty{text-align:center;padding:36px 16px;color:#42474f}
+  .dv-mtcl{
+    background:#fff;border-radius:0.75rem;padding:16px 18px;
+    box-shadow:0 8px 20px rgba(0,44,80,.06);
+    white-space:pre-wrap;font-size:14px;line-height:1.6;color:#1A1C1D;
+  }
+
+  /* ---------- Org canvas (kéo thả tự do) ---------- */
+  .dv-chart{
+    --dv-card:260px;
+    position:relative;
+    width:max-content;
+    min-width:100%;
+    min-height:640px;
+    padding:24px;
+  }
+  .dv-chart.dv-grid-on{
+    background-image:
+      linear-gradient(to right, rgba(0,44,80,.10) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,44,80,.10) 1px, transparent 1px);
+    background-size:24px 24px;
+    background-position:24px 24px;
+  }
+  .dv-lines{
+    position:absolute;left:0;top:0;
+    overflow:visible;pointer-events:none;z-index:1;
+  }
+  /* Bản thân <svg> luôn pointer-events:none để không chặn kéo khối bên dưới;
+     chỉ path/circle của mũi tên tự bật lại pointer-events cho riêng nó. */
+  .dv-arrow-hit{pointer-events:stroke;cursor:move}
+  .dv-arrow-handle{pointer-events:all;cursor:grab;touch-action:none}
+  .dv-arrow-handle:active{cursor:grabbing}
+  .dv-arrow-mid{pointer-events:all;cursor:copy;touch-action:none}
+  .dv-arrow-mid:active{cursor:grabbing}
+  .dv-pos{
+    width:var(--dv-card);
+    background:#fff;
+    border-radius:0.75rem;
+    overflow:hidden;
+    box-shadow:0 10px 24px rgba(0,44,80,.10);
+    position:absolute;
+    z-index:2;
+    cursor:grab;
+    touch-action:none;
+    user-select:none;
+  }
+  .dv-pos.is-dragging{cursor:grabbing;box-shadow:0 16px 32px rgba(0,44,80,.22)}
+  .dv-pos.is-node-selected{outline:3px solid #1b6d24;outline-offset:2px}
+  .dv-pos-head{
+    background:#002c50;
+    color:#fff;
+    padding:8px 14px 10px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:8px;
+    pointer-events:none;
+  }
+  .dv-pos-people{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .dv-pos-person{
+    display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;
+    font-family:Manrope,sans-serif;font-weight:800;font-size:13px;line-height:1.35;
+  }
+  .dv-pos-person .dv-code{color:rgba(255,255,255,.7);font-size:11px;font-weight:700;letter-spacing:.04em}
+  .dv-cap{
+    flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    background:rgba(255,255,255,.16);padding:3px 8px;border-radius:0.75rem;margin-top:2px;
+  }
+  .dv-role{
+    margin:0;padding:8px 14px 10px;font-size:13px;line-height:1.45;font-weight:700;color:#1A1C1D;
+    border-top:1px solid #f0f1f4;
+    pointer-events:none;
+  }
+  .dv-vai-tro{
+    margin:0;padding:0 14px 10px;font-size:12px;line-height:1.4;font-weight:500;color:#42474f;
+    font-style:italic;
+    pointer-events:none;
+  }
+  .dv-vai-tro-tags{
+    display:flex;flex-wrap:wrap;gap:4px;padding:0 14px 10px;pointer-events:none;
+  }
+  .dv-vai-tro-chip{
+    font-size:11px;font-weight:600;color:#1b6d24;background:#eef6ef;
+    padding:2px 8px;border-radius:0.75rem;
+  }
+  .dv-toolbar{
+    flex-shrink:0;z-index:6;
+    display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+    margin:10px 12px 0;
+    background:#fff;padding:8px 10px;border-radius:0.75rem;
+    box-shadow:0 4px 12px rgba(0,44,80,.08);
+  }
+  .dv-tool{
+    border:0;border-radius:0.75rem;padding:7px 10px;
+    font-size:12px;font-weight:700;color:#42474f;background:#f3f3f8;cursor:pointer;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .dv-tool.active{background:#002c50;color:#fff}
+  .dv-tool:disabled{opacity:.45;cursor:not-allowed}
+  .dv-tool-hint{font-size:12px;font-weight:600;color:#727780;margin-left:4px}
+  .dv-style-picker{
+    display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+    width:100%;margin-top:4px;padding-top:8px;border-top:1px solid #ededf2;
+  }
+  .dv-style-label{font-size:11px;font-weight:700;color:#727780;text-transform:uppercase;letter-spacing:.04em}
+  .dv-color-swatch{
+    width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;
+  }
+  .dv-color-swatch.active{border-color:#002c50;box-shadow:0 0 0 2px #fff inset}
+  .dv-color-custom{
+    width:26px;height:26px;border:0;border-radius:0.375rem;padding:0;cursor:pointer;background:none;
+  }
+  .dv-dash-btn{
+    border:0;border-radius:0.75rem;padding:6px 10px;
+    font-size:12px;font-weight:700;color:#42474f;background:#f3f3f8;cursor:pointer;
+  }
+  .dv-dash-btn.active{background:#002c50;color:#fff}
+  .dv-canvas-empty{
+    position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);
+    margin:0;color:#727780;font-size:14px;font-weight:600;pointer-events:none;
+  }
+  .dv-add-modal{
+    position:fixed;inset:0;z-index:80;background:rgba(26,28,29,.4);
+    display:flex;align-items:center;justify-content:center;padding:16px;
+  }
+  .dv-add-modal[hidden]{display:none!important}
+  .dv-add-card{
+    width:min(440px,100%);max-height:90vh;overflow-y:auto;background:#fff;border-radius:0.75rem;padding:18px 20px;
+    box-shadow:0 20px 40px rgba(0,44,80,.2);display:flex;flex-direction:column;gap:8px;
+  }
+  .dv-add-card h4{margin:0 0 6px;font-family:Manrope,sans-serif;font-weight:800;color:#002c50;font-size:16px}
+  .dv-add-card label{font-size:12px;font-weight:600;color:#42474f}
+  .dv-add-input{
+    width:100%;background:#ededf2;border:2px solid transparent;border-radius:0.5rem;
+    padding:0.45rem 0.7rem;font-size:14px;
+  }
+  .dv-add-input:focus{outline:none;background:#fff;border-color:#005A9C}
+  .dv-add-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .dv-add-row[hidden]{display:none!important}
+  .dv-combo{position:relative}
+  .dv-combo-list{
+    position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;
+    max-height:220px;overflow:auto;margin:0;padding:4px 0;list-style:none;
+    background:#fff;border-radius:0.5rem;box-shadow:0 12px 28px rgba(0,44,80,.18);
+  }
+  .dv-combo-list[hidden]{display:none!important}
+  .dv-combo-item{
+    width:100%;border:0;background:transparent;text-align:left;cursor:pointer;
+    padding:8px 12px;font-size:13px;color:#1A1C1D;display:flex;flex-direction:column;gap:2px;
+  }
+  .dv-combo-item:hover,.dv-combo-item.is-active{background:#e8eef5}
+  .dv-combo-item .dv-combo-sub{font-size:11px;color:#727780}
+  .dv-combo-item.is-other{font-weight:700;color:#005A9C;border-top:1px solid #ededf2;margin-top:2px}
+  .dv-combo-empty{padding:10px 12px;font-size:12px;color:#727780}
+  .dv-checklist{
+    max-height:160px;overflow-y:auto;background:#f7f8fb;border-radius:0.5rem;padding:4px;
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .dv-check-item{
+    display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:0.375rem;
+    font-size:13px;color:#1A1C1D;cursor:pointer;
+  }
+  .dv-check-item:hover{background:#e8eef5}
+  .dv-check-item input[type=checkbox]{flex-shrink:0;width:16px;height:16px;accent-color:#005A9C}
+  .dv-add-actions{display:flex;gap:8px;margin-top:8px}
+  .dv-add-err{min-height:16px;margin:0;font-size:12px;color:#b42318}
+  #dv-note-rows{display:flex;flex-direction:column;gap:10px}
+  .dv-note-row{
+    display:flex;flex-direction:column;gap:8px;
+    background:#f7f8fb;border-radius:0.5rem;padding:10px 12px;
+  }
+  .dv-role-row-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .dv-role-row-head label{margin:0}
+  .dv-role-row-remove{
+    width:22px;height:22px;border:0;border-radius:50%;flex-shrink:0;
+    background:#ededf2;color:#42474f;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .dv-role-row-remove:hover{background:#fde2e1;color:#b42318}
+  .dv-role-add-btn{
+    align-self:flex-start;display:inline-flex;align-items:center;gap:4px;
+    border:0;background:transparent;color:#005A9C;font-size:12px;font-weight:700;cursor:pointer;padding:4px 2px;
+  }
+  .dv-role-add-btn:hover{text-decoration:underline}
+  .dv-note-colors{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 </head>
 <body class="bg-background text-on-surface font-body-md min-h-screen">
@@ -265,7 +601,8 @@ tailwind.config = {
           <p class="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant mb-sm">Sơ đồ theo năm</p>
           <h2 class="text-[24px] md:text-[32px] font-headline-md font-bold text-primary leading-tight">Năm {{ diagram.nam }}</h2>
           <p class="text-on-surface-variant mt-sm text-[14px]">
-            {{ diagram.company_count }} chính sách / mục tiêu công ty · {{ diagram.depart_count }} mục tiêu đơn vị
+            {{ diagram.company_count }} chính sách / mục tiêu công ty · {{ diagram.depart_count }} mục tiêu đơn vị.
+            Nhấn vào tên đơn vị để xem mục tiêu chất lượng, sơ đồ tổ chức và vai trò.
           </p>
         </div>
         <div class="flex flex-wrap gap-sm no-print">
@@ -327,12 +664,13 @@ tailwind.config = {
               <div class="org-joint"></div>
               <div class="org-leaves" style="--cols: {{ ncols }}">
                 {% for dv in diagram.don_vi %}
-                <article class="org-card">
+                <article class="org-card" role="button" tabindex="0"
+                         aria-label="Xem chi tiết {{ dv.mo_ta or dv.ten }}"
+                         onclick="openDepartDetail({{ dv.id_depart }})"
+                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDepartDetail({{ dv.id_depart }})}">
                   <div class="org-name">
                     <h4>{{ dv.mo_ta or dv.ten }}</h4>
-                  </div>
-                  <div class="org-body-box">
-                    <p class="org-body">{% if dv.content %}{{ dv.content }}{% else %}Chưa nhập nội dung{% endif %}</p>
+                    <span class="org-card-cta">Xem chi tiết <span class="material-symbols-outlined">chevron_right</span></span>
                   </div>
                 </article>
                 {% endfor %}
@@ -522,8 +860,36 @@ tailwind.config = {
   </div>
 </div>
 
+<div id="dv-overlay" class="dv-overlay no-print" onclick="if(event.target===this)closeDepartDetail()">
+  <div class="dv-modal" role="dialog" aria-modal="true" aria-labelledby="dv-title">
+    <div class="dv-head">
+      <div class="min-w-0">
+        <h3 id="dv-title">Đơn vị</h3>
+        <p id="dv-sub">Năm {{ diagram.nam }}</p>
+      </div>
+      <button type="button" class="dv-close" onclick="closeDepartDetail()" aria-label="Đóng">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <nav class="dv-tabs">
+      <button type="button" class="dv-tab active" data-panel="mtcl" onclick="showDepartPanel('mtcl')">
+        <span class="material-symbols-outlined text-[16px]">flag</span>Mục tiêu chất lượng
+      </button>
+      <button type="button" class="dv-tab" data-panel="to-chuc" onclick="showDepartPanel('to-chuc')">
+        <span class="material-symbols-outlined text-[16px]">account_tree</span>Sơ đồ tổ chức
+      </button>
+      <!-- <button type="button" class="dv-tab" data-panel="vai-tro" onclick="showDepartPanel('vai-tro')">
+        <span class="material-symbols-outlined text-[16px]">badge</span>Vai trò
+      </button> -->
+    </nav>
+    <div id="dv-body" class="dv-body"></div>
+  </div>
+</div>
+
+<script src="/static/mtcl_org_canvas.js"></script>
 <script>
 const CURRENT_YEAR = {{ diagram.nam }};
+const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 const BASE_PATH = {{ base_path | tojson }};
 const TAB = {{ tab | tojson }};
 
@@ -643,6 +1009,154 @@ async function deleteDepart(id) {
   }
   window.location.reload();
 }
+
+let departDetail = null;
+let departPanel = 'mtcl';
+const departCache = {};
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
+
+function emptyState(message) {
+  return `<div class="dv-empty">
+    <span class="material-symbols-outlined text-[32px] text-outline">info</span>
+    <p class="mt-sm text-[14px]">${esc(message)}</p>
+  </div>`;
+}
+
+window.mtclEsc = esc;
+window.mtclEmptyState = emptyState;
+window.IS_ADMIN = IS_ADMIN;
+window.mtclReloadDepart = async function () {
+  if (!departDetail) return;
+  const idDepart = departDetail.id_depart;
+  const key = `${CURRENT_YEAR}:${idDepart}`;
+  delete departCache[key];
+  // silent: true — làm mới dữ liệu ngầm sau khi thêm/xóa, không chớp màn hình "Đang tải..."
+  // và giữ nguyên vị trí kéo/zoom hiện tại, tránh cảm giác chậm mỗi lần thêm/xóa.
+  await openDepartDetail(idDepart, departPanel, { silent: true });
+};
+
+function renderDepartBody() {
+  const body = document.getElementById('dv-body');
+  body.classList.toggle('dv-body-chart', departPanel === 'to-chuc' || departPanel === 'vai-tro');
+  if (!departDetail) {
+    body.innerHTML = emptyState('Đang tải...');
+    return;
+  }
+  if (departPanel === 'to-chuc') {
+    body.innerHTML = window.mtclRenderOrgCanvas(
+      departDetail.so_do_to_chuc,
+      'Chưa có sơ đồ tổ chức cho đơn vị này.',
+      1,
+      departDetail.id_depart,
+      IS_ADMIN,
+      departDetail.arrows_to_chuc || []
+    );
+    window.mtclMountOrgCanvas();
+    return;
+  }
+  if (departPanel === 'vai-tro') {
+    body.innerHTML = window.mtclRenderOrgCanvas(
+      departDetail.so_do_vai_tro,
+      'Chưa có sơ đồ vai trò cho đơn vị này.',
+      2,
+      departDetail.id_depart,
+      IS_ADMIN,
+      departDetail.arrows_vai_tro || []
+    );
+    window.mtclMountOrgCanvas();
+    return;
+  }
+  if (departDetail.content) {
+    const note = departDetail.note
+      ? `<p class="mt-md text-[12px] italic text-on-surface-variant">${esc(departDetail.note)}</p>`
+      : '';
+    body.innerHTML = `<div class="dv-mtcl">${esc(departDetail.content)}${note}</div>`;
+    return;
+  }
+  body.innerHTML = emptyState('Chưa nhập mục tiêu chất lượng cho đơn vị này.');
+}
+
+function showDepartPanel(panel) {
+  departPanel = panel;
+  document.querySelectorAll('.dv-tab').forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.panel === panel);
+  });
+  renderDepartBody();
+  if (!departDetail) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('don_vi', String(departDetail.id_depart));
+  url.searchParams.set('panel', panel);
+  history.replaceState({}, '', url);
+}
+
+function closeDepartDetail() {
+  document.getElementById('dv-overlay').classList.remove('open');
+  const url = new URL(window.location.href);
+  url.searchParams.delete('don_vi');
+  url.searchParams.delete('panel');
+  history.replaceState({}, '', url);
+}
+
+async function openDepartDetail(idDepart, panel, opts) {
+  const silent = !!(opts && opts.silent);
+  const overlay = document.getElementById('dv-overlay');
+  overlay.classList.add('open');
+  if (!silent) {
+    document.getElementById('dv-title').textContent = 'Đang tải...';
+    document.getElementById('dv-sub').textContent = `Năm ${CURRENT_YEAR}`;
+    departDetail = null;
+    showDepartPanel(panel || 'mtcl');
+  }
+  // Giữ nguyên vị trí kéo/pan hiện tại của canvas sơ đồ qua lần làm mới ngầm.
+  const prevPan = document.getElementById('dv-pan');
+  const prevScroll = prevPan ? { left: prevPan.scrollLeft, top: prevPan.scrollTop } : null;
+  try {
+    const key = `${CURRENT_YEAR}:${idDepart}`;
+    if (!departCache[key]) {
+      const response = await fetch(`/api/mtcl/don-vi/${idDepart}?nam=${CURRENT_YEAR}`);
+      if (!response.ok) throw new Error('not found');
+      departCache[key] = await response.json();
+    }
+    departDetail = departCache[key];
+    document.getElementById('dv-title').textContent = departDetail.mo_ta || departDetail.ten;
+    document.getElementById('dv-sub').textContent = `${departDetail.ten} · Năm ${departDetail.nam}`;
+    showDepartPanel(panel || departPanel || 'mtcl');
+    if (prevScroll) {
+      const pan = document.getElementById('dv-pan');
+      if (pan) {
+        pan.scrollLeft = prevScroll.left;
+        pan.scrollTop = prevScroll.top;
+      }
+    }
+  } catch (err) {
+    if (!silent) {
+      document.getElementById('dv-title').textContent = 'Không tải được đơn vị';
+      document.getElementById('dv-body').innerHTML = emptyState('Không lấy được dữ liệu chi tiết. Thử lại sau.');
+    }
+  }
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeDepartDetail();
+});
+window.addEventListener('resize', () => {
+  if ((departPanel === 'to-chuc' || departPanel === 'vai-tro') && window.mtclRedrawOrgCanvas) {
+    window.mtclRedrawOrgCanvas();
+  }
+});
+
+(function openFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const idDepart = Number(params.get('don_vi') || '');
+  if (!idDepart) return;
+  const panel = params.get('panel') || 'mtcl';
+  openDepartDetail(idDepart, ['mtcl', 'to-chuc', 'vai-tro'].includes(panel) ? panel : 'mtcl');
+})();
 </script>
 </body>
 </html>

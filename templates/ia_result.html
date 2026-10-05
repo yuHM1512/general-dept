@@ -64,14 +64,10 @@ tailwind.config = {
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-md mb-lg">
+    <div class="mb-lg">
       <div class="bg-surface-container-low rounded-xl p-md text-center">
         <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">Tổng lỗi</p>
         <p class="text-[32px] font-headline-md font-bold {{ 'text-error' if phieu.tong_loi > 0 else 'text-secondary' }}">{{ phieu.tong_loi }}</p>
-      </div>
-      <div class="bg-surface-container-low rounded-xl p-md text-center">
-        <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">CAP cần xử lý</p>
-        <p class="text-[32px] font-headline-md font-bold text-primary">{{ cap_count }}</p>
       </div>
     </div>
 
@@ -83,7 +79,7 @@ tailwind.config = {
     {% else %}
     <div class="flex items-center gap-md bg-error-container rounded-xl px-lg py-md">
       <span class="material-symbols-outlined text-error text-[28px]" style="font-variation-settings:'FILL' 1">warning</span>
-      <p class="font-semibold text-error">Phát hiện {{ phieu.tong_loi }} lỗi vi phạm — {{ cap_count }} hành động khắc phục cần xử lý</p>
+      <p class="font-semibold text-error">Phát hiện {{ phieu.tong_loi }} lỗi vi phạm</p>
     </div>
     {% endif %}
   </div>
@@ -128,7 +124,7 @@ tailwind.config = {
         </div>
         {% if v.mo_ta %}
         <div class="bg-error-container/30 rounded-lg px-md py-sm mt-sm">
-          <p class="text-[13px] text-on-surface">{{ v.mo_ta }}</p>
+          <p class="text-[13px] text-on-surface whitespace-pre-wrap break-words">{{ v.mo_ta }}</p>
         </div>
         {% endif %}
         {% if v.hinh_anh %}
@@ -148,10 +144,6 @@ tailwind.config = {
 
   <!-- Actions -->
   <div class="flex flex-wrap gap-md no-print">
-    <a href="/internal-audit/ia/cap" class="flex items-center gap-sm bg-primary text-white px-6 py-3 rounded-full font-bold text-[14px] hover:bg-primary-container transition-colors">
-      <span class="material-symbols-outlined text-[18px]">assignment_turned_in</span>
-      Xem / Cập nhật CAP
-    </a>
     <a href="/internal-audit/ia/new" class="flex items-center gap-sm bg-surface-container-lowest border border-outline-variant/20 text-primary px-6 py-3 rounded-full font-bold text-[14px] hover:bg-surface-container-low transition-colors">
       <span class="material-symbols-outlined text-[18px]">add</span>
       Kiểm tra mới
