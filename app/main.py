@@ -498,6 +498,22 @@ def dashboard_hub_page(request: Request) -> HTMLResponse:
     )
 
 
+@app.get("/rcp/dashboard/demo", response_class=HTMLResponse)
+def dashboard_demo_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "dashboard_demo.html",
+        {
+            "request": request,
+            "app_name": settings.app_name,
+            # Mock scenario approved for the customer-sharing dashboard.
+            "target_salary_vnd_fmt": _fmt_vnd(5_678_789),
+            "now_year": datetime.utcnow().year,
+            "active_nav": "rcp_dashboard",
+            "user": _current_user(request),
+        },
+    )
+
+
 @app.get("/rcp/dashboard/rcp", response_class=HTMLResponse)
 def dashboard_rcp_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
