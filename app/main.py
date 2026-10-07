@@ -509,6 +509,7 @@ def dashboard_demo_page(request: Request) -> HTMLResponse:
             "target_salary_vnd_fmt": _fmt_vnd(5_678_789),
             "now_year": datetime.utcnow().year,
             "active_nav": "rcp_dashboard",
+            "demo_mode": True,
             "user": _current_user(request),
         },
     )
