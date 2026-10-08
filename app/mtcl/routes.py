@@ -11,8 +11,51 @@ from sqlmodel import Session
 
 from app.db import create_db_and_tables, get_session
 from app.mtcl.models import MtclCompany, MtclDepart, MtclDepartment
-from app.mtcl.schemas import MtclCompanyIn, MtclDepartIn, MtclDiagramResponse
-from app.mtcl.service import build_diagram, next_id, resolve_year, touch_dates
+from app.mtcl.schemas import (
+    MtclCompanyIn,
+    MtclDepartDetail,
+    MtclDepartIn,
+    MtclDiagramResponse,
+    MtclNodeLinkCreateIn,
+    MtclNodeLinkDeleteIn,
+    MtclNodeLinkUpdateIn,
+    MtclNoteBatchCreateIn,
+    MtclNoteUpdateIn,
+    MtclOrgArrowsUpdateIn,
+    MtclOrgLinkIn,
+    MtclOrgNodeBatchCreateIn,
+    MtclOrgNodeCreateIn,
+    MtclOrgNodeDeleteIn,
+    MtclOrgNodeDetailsDeleteIn,
+    MtclOrgNodeUpdateIn,
+    MtclOrgPositionsIn,
+    MtclShapeCreateIn,
+    MtclZOrderIn,
+)
+from app.mtcl.service import (
+    build_depart_detail,
+    build_diagram,
+    create_org_node,
+    create_org_node_batch,
+    create_org_notes,
+    create_org_shape,
+    delete_org_arrow,
+    delete_org_node,
+    delete_org_node_details,
+    list_org_catalog,
+    next_id,
+    resolve_year,
+    save_org_arrow_coords,
+    save_org_link,
+    save_org_positions,
+    touch_dates,
+    update_org_node,
+    update_org_note,
+    update_org_zorder,
+    create_node_link,
+    update_node_link,
+    delete_node_link,
+)
 from app.settings import settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -115,6 +158,20 @@ def api_mtcl_diagram(
 ) -> MtclDiagramResponse:
     create_db_and_tables()
     return build_diagram(session, resolve_year(session, nam))
+
+
+@router.get("/api/mtcl/don-vi/{id_depart}", response_model=MtclDepartDetail)
+def api_mtcl_depart_detail(
+    id_depart: int,
+    nam: int | None = Query(default=None),
+    session: Session = Depends(get_session),
+) -> MtclDepartDetail:
+    create_db_and_tables()
+    year = resolve_year(session, nam)
+    detail = build_depart_detail(session, year, id_depart)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đơn vị")
+    return detail
 
 
 @router.post("/api/mtcl/company")
@@ -243,3 +300,244 @@ def api_mtcl_depart_delete(
     session.delete(row)
     session.commit()
     return {"ok": True, "deleted_id": item_id}
+
+
+@router.put("/api/mtcl/so-do/positions")
+def api_mtcl_so_do_positions(
+    request: Request,
+    payload: MtclOrgPositionsIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _current_user(request):
+        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
+    create_db_and_tables()
+    return save_org_positions(session, payload)
+
+
+@router.put("/api/mtcl/so-do/arrows")
+def api_mtcl_so_do_arrows(
+    request: Request,
+    payload: MtclOrgArrowsUpdateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể kéo mũi tên sơ đồ")
+    create_db_and_tables()
+    return save_org_arrow_coords(session, payload)
+
+
+@router.put("/api/mtcl/so-do/link")
+def api_mtcl_so_do_link(
+    request: Request,
+    payload: MtclOrgLinkIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể sửa mũi tên sơ đồ")
+    create_db_and_tables()
+    try:
+        return save_org_link(session, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/api/mtcl/so-do/arrows/delete")
+def api_mtcl_so_do_delete_arrow(
+    request: Request,
+    session: Session = Depends(get_session),
+    id_depart: int = Query(...),
+    loai_so_do: int = Query(1, ge=1, le=2),
+    arrow_id: int = Query(...),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể xóa mũi tên")
+    create_db_and_tables()
+    try:
+        return delete_org_arrow(session, id_depart, loai_so_do, arrow_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/api/mtcl/so-do/shapes")
+def api_mtcl_so_do_create_shape(
+    request: Request,
+    payload: MtclShapeCreateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể vẽ hình")
+    create_db_and_tables()
+    return create_org_shape(session, payload)
+
+
+@router.post("/api/mtcl/so-do/notes")
+def api_mtcl_so_do_create_notes(
+    request: Request,
+    payload: MtclNoteBatchCreateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể thêm ghi chú")
+    create_db_and_tables()
+    try:
+        return create_org_notes(session, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/api/mtcl/so-do/notes")
+def api_mtcl_so_do_update_note(
+    request: Request,
+    payload: MtclNoteUpdateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể sửa ghi chú")
+    create_db_and_tables()
+    try:
+        return update_org_note(session, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/api/mtcl/so-do/zorder")
+def api_mtcl_so_do_zorder(
+    request: Request,
+    payload: MtclZOrderIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể sắp xếp lớp")
+    create_db_and_tables()
+    try:
+        return update_org_zorder(session, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/api/mtcl/so-do/catalog")
+def api_mtcl_so_do_catalog(
+    request: Request,
+    session: Session = Depends(get_session),
+    id_depart: int = Query(...),
+) -> dict:
+    if not _current_user(request):
+        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
+    create_db_and_tables()
+    return list_org_catalog(session, id_depart)
+
+
+@router.post("/api/mtcl/so-do/nodes")
+def api_mtcl_so_do_create_node(
+    request: Request,
+    payload: MtclOrgNodeCreateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể thêm ô sơ đồ")
+    create_db_and_tables()
+    try:
+        return create_org_node(session, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/api/mtcl/so-do/nodes/batch")
+def api_mtcl_so_do_create_node_batch(
+    request: Request,
+    payload: MtclOrgNodeBatchCreateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể thêm ô sơ đồ")
+    create_db_and_tables()
+    try:
+        return create_org_node_batch(session, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/api/mtcl/so-do/nodes/update")
+def api_mtcl_so_do_update_node(
+    request: Request,
+    payload: MtclOrgNodeUpdateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể sửa ô sơ đồ")
+    create_db_and_tables()
+    try:
+        return update_org_node(session, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/api/mtcl/so-do/nodes/delete")
+def api_mtcl_so_do_delete_node(
+    request: Request,
+    payload: MtclOrgNodeDeleteIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể xóa ô sơ đồ")
+    create_db_and_tables()
+    try:
+        return delete_org_node(session, payload.id_depart, payload.loai_so_do, payload.node_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/api/mtcl/so-do/nodes/details/delete")
+def api_mtcl_so_do_delete_node_details(
+    request: Request,
+    payload: MtclOrgNodeDetailsDeleteIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể xóa ô sơ đồ")
+    create_db_and_tables()
+    return delete_org_node_details(
+        session, payload.id_depart, payload.loai_so_do, payload.so_do_id, payload.detail_ids
+    )
+
+
+# ── Node links ───────────────────────────────────────────────────
+
+@router.post("/api/mtcl/so-do/nodes/links")
+def api_mtcl_so_do_create_node_link(
+    request: Request,
+    payload: MtclNodeLinkCreateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể thêm link")
+    create_db_and_tables()
+    return create_node_link(
+        session, payload.id_depart, payload.loai_so_do, payload.so_do_id, payload.url, payload.label
+    )
+
+
+@router.put("/api/mtcl/so-do/nodes/links")
+def api_mtcl_so_do_update_node_link(
+    request: Request,
+    payload: MtclNodeLinkUpdateIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể sửa link")
+    create_db_and_tables()
+    return update_node_link(
+        session, payload.id_depart, payload.loai_so_do, payload.link_id, payload.url, payload.label
+    )
+
+
+@router.post("/api/mtcl/so-do/nodes/links/delete")
+def api_mtcl_so_do_delete_node_link(
+    request: Request,
+    payload: MtclNodeLinkDeleteIn,
+    session: Session = Depends(get_session),
+) -> dict:
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ admin mới có thể xóa link")
+    create_db_and_tables()
+    return delete_node_link(session, payload.id_depart, payload.loai_so_do, payload.link_id)

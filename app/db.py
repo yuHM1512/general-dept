@@ -9,6 +9,7 @@ import app.audit_models as _audit_models  # noqa: F401 – registers audit table
 import app.survey_models as _survey_models  # noqa: F401 – registers survey tables in SQLModel.metadata
 import app.mtcl.models as _mtcl_models  # noqa: F401 – registers MTCL tables in SQLModel.metadata
 import app.pccc.models as _pccc_models  # noqa: F401 – registers PCCC tables in SQLModel.metadata
+import app.ia_models as _ia_models  # noqa: F401 – registers IA tables in SQLModel.metadata
 
 engine = create_engine(
     settings.database_url,
@@ -74,8 +75,9 @@ def _apply_light_migrations() -> None:
     small, non-destructive migration helper so new columns can be added without
     requiring a full Alembic setup.
     """
-    insp = inspect(engine)
     with engine.begin() as conn:
+        # Inspect on the migration connection so DDL locks cannot block us.
+        insp = inspect(conn)
         if "rcp_ingestjob" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("rcp_ingestjob")}
             if "processed_rows" not in cols:
@@ -97,14 +99,15 @@ def _apply_light_migrations() -> None:
                     conn.execute(text("UPDATE rcp_payrollrow SET don_vi = ttbp WHERE don_vi = ''"))
             if "co_so" not in cols:
                 conn.execute(text("ALTER TABLE rcp_payrollrow ADD COLUMN co_so TEXT NOT NULL DEFAULT ''"))
-                if "ttbp" in cols:
-                    conn.execute(
-                        text(
-                            "UPDATE rcp_payrollrow "
-                            "SET co_so = CASE WHEN ttbp = 'DT' THEN 'Duy Trung' ELSE 'Mẹ Nhu' END "
-                            "WHERE co_so = ''"
-                        )
-                    )
+
+            # Re-derive co_so from don_vi (DT → Duy Trung, else → Mẹ Nhu)
+            conn.execute(
+                text(
+                    "UPDATE rcp_payrollrow "
+                    "SET co_so = CASE WHEN TRIM(don_vi) = 'DT' THEN 'Duy Trung' ELSE 'Mẹ Nhu' END "
+                    "WHERE co_so != CASE WHEN TRIM(don_vi) = 'DT' THEN 'Duy Trung' ELSE 'Mẹ Nhu' END"
+                )
+            )
 
             conn.execute(
                 text(
@@ -299,6 +302,25 @@ def _apply_light_migrations() -> None:
                 "ALTER TABLE mtcl_depart ALTER COLUMN id SET DEFAULT nextval('mtcl_depart_id_seq')"
             ))
             conn.execute(text("ALTER SEQUENCE mtcl_depart_id_seq OWNED BY mtcl_depart.id"))
+        if "sd_so_do_details" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("sd_so_do_details")}
+            if "pos_x" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_details ADD COLUMN IF NOT EXISTS pos_x DOUBLE PRECISION"))
+            if "pos_y" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_details ADD COLUMN IF NOT EXISTS pos_y DOUBLE PRECISION"))
+            if "id_cap_bac" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_details ADD COLUMN IF NOT EXISTS id_cap_bac INTEGER"))
+            if "id_vai_tro" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_details ADD COLUMN IF NOT EXISTS id_vai_tro INTEGER"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sd_so_do_details_id_vai_tro ON sd_so_do_details(id_vai_tro)"))
+            if "z_index" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_details ADD COLUMN IF NOT EXISTS z_index INTEGER"))
+
+        if "sd_chuc_vu_vai_tro" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("sd_chuc_vu_vai_tro")}
+            if "id_depart" in cols:
+                conn.execute(text("DROP INDEX IF EXISTS ix_sd_chuc_vu_vai_tro_id_depart"))
+                conn.execute(text("ALTER TABLE sd_chuc_vu_vai_tro DROP COLUMN IF EXISTS id_depart"))
 
         if "sd_so_do_details" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("sd_so_do_details")}
@@ -344,6 +366,29 @@ def _apply_light_migrations() -> None:
                 "CREATE UNIQUE INDEX IF NOT EXISTS ux_pccc_phan_cong_department_role "
                 "ON pccc_phan_cong(bo_phan_id, vai_tro) WHERE bo_phan_id IS NOT NULL"
             ))
+
+        if "sd_so_do_arrows" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("sd_so_do_arrows")}
+            if "points_json" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_arrows ADD COLUMN points_json TEXT"))
+            if "shape_type" not in cols:
+                conn.execute(text(
+                    "ALTER TABLE sd_so_do_arrows ADD COLUMN shape_type VARCHAR(10) NOT NULL DEFAULT 'arrow'"
+                ))
+            if "color" not in cols:
+                conn.execute(text(
+                    "ALTER TABLE sd_so_do_arrows ADD COLUMN color VARCHAR(16) NOT NULL DEFAULT '#1A1C1D'"
+                ))
+                # Dữ liệu cũ: giữ đúng màu hiển thị theo loại nối trước đây (cap đen, báo cáo xanh, hỗ trợ cam).
+                conn.execute(text("UPDATE sd_so_do_arrows SET color = '#1a73e8' WHERE kind = 'bao_cao'"))
+                conn.execute(text("UPDATE sd_so_do_arrows SET color = '#e67e22' WHERE kind = 'ho_tro'"))
+            if "dash" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_arrows ADD COLUMN dash VARCHAR(20)"))
+                conn.execute(text("UPDATE sd_so_do_arrows SET dash = '6 5' WHERE kind = 'ho_tro'"))
+            if "z_index" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_arrows ADD COLUMN z_index INTEGER NOT NULL DEFAULT 0"))
+            if "content" not in cols:
+                conn.execute(text("ALTER TABLE sd_so_do_arrows ADD COLUMN content TEXT"))
 
 
 def _migrate_to_bien() -> None:

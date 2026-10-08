@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Demo{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  .demo-card { background:#fff; border-radius:.75rem; box-shadow:0 1px 3px rgba(26,28,29,.05); }
+  .demo-label { color:#414750; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+  .demo-kpi { font-family:Manrope,sans-serif; font-size:38px; font-weight:800; letter-spacing:-.035em; line-height:1; font-variant-numeric:tabular-nums; }
+  .section-chip { display:inline-flex; align-items:center; padding:10px 18px; border-radius:.5rem; color:#fff; font-family:Manrope,sans-serif; font-size:15px; font-weight:700; }
+  .demo-select { width:100%; border:0; border-radius:.75rem; background:#f3f3f4; padding:12px 40px 12px 14px; font-size:14px; }
+  .demo-select:focus { box-shadow:0 0 0 2px rgba(0,66,117,.28); outline:0; }
+  .tab-button[aria-selected="true"] { color:#004275; background:#fff; box-shadow:0 1px 4px rgba(26,28,29,.09); }
+  .mini-pill { display:inline-flex; align-items:center; border-radius:.5rem; padding:4px 9px; font-size:12px; font-weight:700; }
+  .demo-table th { color:#414750; font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; white-space:nowrap; }
+  .demo-table td { border-top:1px solid #edeeef; font-size:13px; }
+  .trend-spark { width:88px; height:24px; }
+  .modal-backdrop { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(26,28,29,.4); backdrop-filter:blur(6px); }
+  .modal-backdrop[hidden] { display:none; }
+  .demo-toast { position:fixed; right:24px; bottom:24px; z-index:120; transform:translateY(16px); opacity:0; pointer-events:none; transition:.25s ease; }
+  .demo-toast.is-visible { transform:translateY(0); opacity:1; }
+  .avg-header-bar { display:inline-flex; align-items:center; min-width:220px; padding:10px 18px; border-radius:.5rem; background:#002c50; color:#fff; font-family:Manrope,sans-serif; font-size:15px; font-weight:700; }
+  .avg-heat-cell { min-width:118px; height:42px; border-radius:.35rem; display:flex; align-items:center; justify-content:center; background:#f8dddd; color:#9f1717; font-size:12px; font-weight:800; cursor:pointer; transition:.15s ease; }
+  .avg-heat-cell:hover { transform:translateY(-1px); box-shadow:0 3px 8px rgba(159,23,23,.14); }
+  .reason-pill { display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; }
+  @media (max-width:640px) { .demo-kpi { font-size:30px; } }
+</style>
+{% endblock %}
+{% block content %}
+<section class="space-y-7" style="max-width:1400px;margin:0 auto;">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-3xl font-extrabold text-primary font-headline">Dashboard Demo</h1>
+        <span class="mini-pill bg-primary-fixed text-on-primary-fixed-variant"><span class="material-symbols-outlined mr-1" style="font-size:15px;">science</span>Dữ liệu minh họa</span>
+      </div>
+    </div>
+    <div class="inline-flex p-1.5 rounded-xl bg-surface-container-low self-start" role="tablist" aria-label="Chọn dashboard demo">
+      <button id="tabRcp" class="tab-button px-5 py-2.5 rounded-lg text-sm font-bold transition-all" type="button" role="tab" aria-selected="true" aria-controls="panelRcp">Lương đủ sống</button>
+      <button id="tabAvg" class="tab-button px-5 py-2.5 rounded-lg text-sm font-bold text-on-surface-variant transition-all" type="button" role="tab" aria-selected="false" aria-controls="panelAvg">Lương bình quân</button>
+    </div>
+  </div>
+
+  <div id="panelRcp" role="tabpanel" aria-labelledby="tabRcp" class="space-y-7">
+    <section class="demo-card p-6 lg:p-8">
+      <div class="flex flex-col xl:flex-row gap-7">
+        <div class="xl:w-[31%]">
+          <h2 class="text-2xl font-bold text-on-surface font-headline">Báo cáo theo nhóm</h2>
+          <p class="mt-2 text-sm leading-relaxed text-on-surface-variant">Đối chiếu “Lương trong giờ + Chế độ (thực tế)” theo tháng và theo 3 nhóm.</p>
+          <div class="mt-5 inline-flex items-center gap-2 text-xs font-semibold text-primary bg-primary-fixed/60 rounded-lg px-3 py-2"><span class="material-symbols-outlined" style="font-size:16px;">calendar_month</span>Phạm vi demo: Tháng 09/2026 · 200 nhân sự</div>
+        </div>
+        <div class="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 items-end">
+          <label class="block"><span class="text-xs font-semibold text-on-surface">Năm</span><select id="fYear" class="demo-select mt-2"><option value="2026">2026</option></select></label>
+          <label class="block"><span class="text-xs font-semibold text-on-surface">Tháng</span><select id="fMonth" class="demo-select mt-2"><option value="9">Tháng 9</option></select></label>
+          <label class="block"><span class="text-xs font-semibold text-on-surface">Nhóm</span><select id="fGroup" class="demo-select mt-2"><option value="">Tất cả</option><option>Cắt/Tổ Cắt</option><option>Khác</option><option>VSCN</option></select></label>
+          <label class="block"><span class="text-xs font-semibold text-on-surface">Cơ sở</span><select id="fSite" class="demo-select mt-2"><option>HCM</option></select></label>
+          <label class="block"><span class="text-xs font-semibold text-on-surface">Đơn vị</span><select id="fUnit" class="demo-select mt-2"><option value="">Tất cả</option><option>NM-1</option><option>NM-2</option></select></label>
+          <label class="block"><span class="text-xs font-semibold text-on-surface">Bộ phận</span><select id="fDept" class="demo-select mt-2"><option value="">Tất cả</option><option>NM-1.1</option><option>NM-1.2</option><option>NM-2.1</option><option>NM-2.2</option></select></label>
+          <div class="col-span-2 md:col-span-3 flex flex-wrap justify-end gap-2 pt-1">
+            <button id="btnExport" class="h-11 px-4 rounded-xl bg-surface-container-low text-secondary text-sm font-bold inline-flex items-center gap-2 hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined" style="font-size:19px;">file_download</span>Xuất dữ liệu demo</button>
+            <button id="btnHanging" class="h-11 px-4 rounded-xl bg-surface-container-low text-primary text-sm font-bold hover:bg-surface-container-high transition-colors" type="button">Xem chuyền demo</button>
+            <button id="btnReset" class="h-11 px-5 rounded-xl editorial-gradient text-on-primary text-sm font-bold hover:opacity-95 transition-opacity" type="button">Làm mới</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <article class="demo-card p-5 lg:p-6"><div class="demo-label">Lương bình quân</div><div id="kpiAvg" class="demo-kpi text-on-primary-fixed-variant mt-3">6.789.789</div><div class="mt-3 text-xs font-semibold text-[#b06000]">Mục tiêu 5.678.789 VND</div></article>
+      <article class="demo-card p-5 lg:p-6"><div class="demo-label">Tỉ lệ đạt vs mục tiêu</div><div id="kpiRatio" class="demo-kpi text-secondary mt-3">119,6%</div><div class="mt-3 text-xs text-on-surface-variant">Đạt / vượt mục tiêu</div></article>
+      <article class="demo-card p-5 lg:p-6"><div class="demo-label">Nhân sự dưới mục tiêu</div><div id="kpiBelow" class="demo-kpi text-error mt-3">10</div><div id="kpiBelowNote" class="mt-3 text-xs text-on-surface-variant"><strong class="text-error">5,0%</strong> trên tổng 200 nhân sự</div></article>
+      <article class="demo-card p-5 lg:p-6"><div class="demo-label">Tỷ lệ bù lương</div><div id="kpiTopup" class="demo-kpi text-secondary mt-3">3,0%</div><div id="kpiTopupNote" class="mt-3 text-xs text-on-surface-variant">6 / 200 nhân sự</div></article>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <article class="demo-card p-6 lg:col-span-7">
+        <div class="flex items-start justify-between gap-4"><div><div class="section-chip bg-secondary">Tỷ lệ công nhân nhận bù lương theo tháng</div><p class="mt-2 text-xs text-on-surface-variant">Số CN có bù đủ lương tối thiểu / tổng CN xuất hiện trong tháng</p></div><span class="material-symbols-outlined text-secondary text-3xl">monitoring</span></div>
+        <div class="mt-5" style="height:250px;"><canvas id="topupChart"></canvas></div>
+      </article>
+      <article class="demo-card p-6 lg:col-span-5">
+        <div class="flex items-center justify-between gap-4"><div><div class="section-chip bg-secondary">Bảng bù lương</div><p class="mt-2 text-xs text-on-surface-variant">Tháng 09/2026 · phân bổ theo 4 tổ</p></div><span class="material-symbols-outlined text-secondary text-3xl">table_chart</span></div>
+        <div class="mt-4 overflow-x-auto"><table class="demo-table w-full"><thead><tr><th class="text-left py-3">Tổ</th><th class="text-right py-3">Tổng CN</th><th class="text-right py-3">CN bù</th><th class="text-right py-3">Tỷ lệ</th></tr></thead><tbody id="topupBody"></tbody></table></div>
+        <div class="mt-4 flex items-center justify-between rounded-lg bg-secondary-fixed/45 px-4 py-3 text-sm"><span class="font-semibold text-on-secondary-fixed-variant">Tổng tháng 9</span><span id="topupSummary" class="font-bold text-secondary">6 / 200 · 3,0%</span></div>
+      </article>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <article class="demo-card p-6 lg:col-span-7">
+        <div class="flex flex-wrap items-start justify-between gap-4"><div><div class="section-chip editorial-gradient">Bình quân Lương trong giờ - Theo nhóm</div><div class="mt-3 flex flex-wrap gap-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant"><span class="inline-flex items-center gap-2"><i class="w-2.5 h-2.5 rounded-full bg-primary"></i>Lương BQ trong giờ</span><span class="inline-flex items-center gap-2"><i class="w-8 h-0.5 bg-[#b06000]"></i>Target 5.678.789</span></div></div><span id="deltaChip" class="mini-pill bg-secondary-fixed text-on-secondary-fixed-variant">Δ +1.111.000 (+19,6%)</span></div>
+        <div class="mt-5" style="height:310px;"><canvas id="groupChart"></canvas></div>
+      </article>
+      <article class="demo-card p-6 lg:col-span-5">
+        <div class="flex items-center justify-between"><div class="section-chip editorial-gradient">Insight theo nhóm</div><span class="material-symbols-outlined text-tertiary text-3xl">table_chart</span></div>
+        <div class="mt-5 overflow-x-auto"><table class="demo-table w-full"><thead><tr><th class="text-left py-3">Nhóm</th><th class="text-right py-3">Min</th><th class="text-right py-3">Max</th><th class="text-right py-3">Trung bình</th></tr></thead><tbody id="insightBody"></tbody></table></div>
+        <p class="mt-4 text-[11px] text-on-surface-variant"><span class="material-symbols-outlined mr-1" style="font-size:14px;">info</span>Min/Max là số minh họa cố định; trung bình đồng bộ với biểu đồ.</p>
+      </article>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <article class="demo-card p-6 lg:col-span-6">
+        <div class="flex items-start justify-between gap-3"><div><div class="section-chip editorial-gradient">Số lượng nhân sự không đạt - theo bộ phận</div><p id="belowSubtitle" class="mt-2 text-xs text-on-surface-variant">Tháng 09/2026 · Cơ sở HCM</p></div><span class="material-symbols-outlined text-primary text-3xl">donut_large</span></div>
+        <div class="mt-4 relative mx-auto" style="height:330px;max-width:480px;"><canvas id="belowChart"></canvas><div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="text-center"><div id="donutTotal" class="font-headline text-4xl font-extrabold text-on-surface">10</div><div class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Nhân sự<br>không đạt</div></div></div></div>
+        <div id="donutLegend" class="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs"></div>
+      </article>
+      <article class="demo-card p-6 lg:col-span-6">
+        <div class="flex items-center justify-between"><div class="section-chip editorial-gradient">Bảng không đạt (Đơn vị / Bộ phận)</div><span class="material-symbols-outlined text-tertiary text-3xl">table_rows</span></div>
+        <div class="mt-5 overflow-x-auto"><table class="demo-table w-full"><thead><tr><th class="text-left py-3">Bộ phận</th><th class="text-right py-3">Không đạt</th><th class="text-right py-3">Tỉ trọng</th><th class="text-center py-3">Xu hướng</th><th class="text-right py-3">Chi tiết</th></tr></thead><tbody id="belowBody"></tbody></table></div>
+      </article>
+    </section>
+  </div>
+
+  <div id="panelAvg" role="tabpanel" aria-labelledby="tabAvg" hidden class="space-y-7">
+    <div class="flex flex-col md:flex-row md:items-center gap-4">
+      <div>
+        <h2 class="text-lg font-bold text-on-surface font-headline">Lương bình quân ngày</h2>
+        <p class="mt-1 text-xs font-medium text-on-surface-variant">Ngưỡng cảnh báo: &lt; <strong>234.567 VND</strong> · NM</p>
+      </div>
+      <div class="flex-1"></div>
+      <span class="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Phòng Tổng hợp</span>
+    </div>
+
+    <section class="flex flex-wrap items-end gap-3">
+      <label class="block"><span class="text-xs font-medium text-on-surface-variant">Năm</span><select id="avgYear" class="demo-select mt-1.5" style="min-width:90px"><option>2026</option></select></label>
+      <label class="block"><span class="text-xs font-medium text-on-surface-variant">Tháng</span><select id="avgMonth" class="demo-select mt-1.5" style="min-width:110px"><option value="9">Tháng 9</option></select></label>
+      <label class="block"><span class="text-xs font-medium text-on-surface-variant">Đơn vị</span><select id="avgUnit" class="demo-select mt-1.5" style="min-width:130px"><option value="">Tất cả</option><option>NM-1</option><option>NM-2</option></select></label>
+      <label class="block"><span class="text-xs font-medium text-on-surface-variant">Tổ</span><select id="avgTeam" class="demo-select mt-1.5" style="min-width:135px"><option value="">Tất cả</option><option>NM-1.1</option><option>NM-1.2</option><option>NM-2.1</option><option>NM-2.2</option></select></label>
+      <button id="avgRefresh" type="button" class="h-11 px-4 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-base">refresh</span>Làm mới</button>
+      <span id="avgLoadStatus" class="ml-auto text-xs text-on-surface-variant">4 dòng dữ liệu minh họa</span>
+    </section>
+
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <article class="demo-card p-5 lg:p-6"><div class="flex items-center justify-between"><div class="demo-label">Số ngày cảnh báo</div><span class="material-symbols-outlined text-primary opacity-60">calendar_month</span></div><div id="avgStatDays" class="demo-kpi text-on-primary-fixed-variant mt-3">4</div><div class="mt-3 text-xs text-on-surface-variant">ngày trong tháng 09/2026</div></article>
+      <article class="demo-card p-5 lg:p-6"><div class="flex items-center justify-between"><div class="demo-label">Tổ cảnh báo</div><span class="material-symbols-outlined text-error opacity-60">warning</span></div><div id="avgStatRows" class="demo-kpi text-error mt-3">4</div><div class="mt-3 text-xs text-on-surface-variant">dưới ngưỡng 234.567 VND</div></article>
+      <article class="demo-card p-5 lg:p-6"><div class="flex items-center justify-between"><div class="demo-label">Đơn vị ảnh hưởng</div><span class="material-symbols-outlined text-tertiary opacity-60">apartment</span></div><div id="avgStatUnits" class="demo-kpi text-on-surface mt-3">2</div><div id="avgStatUnitsSub" class="mt-3 text-xs text-on-surface-variant">NM-1 · NM-2</div></article>
+      <article class="demo-card p-5 lg:p-6"><div class="flex items-center justify-between"><div class="demo-label">Lương BQ thấp nhất</div><span class="material-symbols-outlined text-error opacity-60">trending_down</span></div><div id="avgStatMin" class="demo-kpi text-error mt-3" style="font-size:32px">200.000 đ</div><div class="mt-3 text-xs text-on-surface-variant">thấp nhất trong phạm vi lọc</div></article>
+    </section>
+
+    <section class="demo-card p-6">
+      <div class="avg-header-bar">Số tổ dưới ngưỡng theo ngày</div>
+      <p class="mt-2 text-xs text-on-surface-variant">Số tổ có lương BQ dưới 234.567 VND · Tháng 09/2026</p>
+      <div class="mt-5" style="height:230px"><canvas id="avgTrendChart"></canvas></div>
+    </section>
+
+    <section class="demo-card p-6">
+      <div class="avg-header-bar">Phân bổ lý do cảnh báo</div>
+      <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-14">
+        <div class="relative" style="width:190px;height:190px"><canvas id="avgReasonChart"></canvas><div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"><strong id="avgReasonTotal" class="text-3xl font-extrabold font-headline">4</strong><span class="text-[10px] text-on-surface-variant">dòng</span></div></div>
+        <div id="avgReasonLegend" class="space-y-3 text-sm min-w-[190px]"></div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <article class="demo-card p-6 lg:col-span-2">
+        <div class="avg-header-bar">Heatmap cảnh báo</div>
+        <p class="mt-2 text-xs text-on-surface-variant">Số tổ dưới ngưỡng · Đơn vị × Ngày</p>
+        <div id="avgHeatmap" class="mt-6 overflow-x-auto"></div>
+      </article>
+      <article class="demo-card p-6 flex flex-col">
+        <div class="avg-header-bar">Tỷ lệ ghi lý do</div>
+        <p class="mt-2 text-xs text-on-surface-variant">Theo dõi mức độ hoàn thành</p>
+        <div class="flex-1 flex flex-col justify-center gap-6 mt-6">
+          <div class="text-center"><div id="avgCoveragePct" class="font-headline text-5xl font-extrabold text-error">0%</div><span class="text-xs text-on-surface-variant">đã ghi lý do</span></div>
+          <div class="h-2 bg-surface-container-high rounded-full overflow-hidden"><div id="avgCoverageBar" class="h-full editorial-gradient transition-all duration-500" style="width:0%"></div></div>
+          <div class="space-y-2 text-sm"><div class="flex justify-between"><span>Đã ghi lý do</span><strong id="avgCoverageWith">0/4</strong></div><div class="flex justify-between text-on-surface-variant"><span>Chưa ghi</span><strong id="avgCoverageWithout" class="text-error">4/4</strong></div></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="demo-card overflow-hidden">
+      <div class="p-6 pb-3 flex items-center justify-between"><div class="avg-header-bar">Chi tiết cảnh báo</div><span id="avgTableCount" class="text-xs text-on-surface-variant">4 dòng</span></div>
+      <div class="px-6 pb-4 flex flex-wrap items-end gap-2.5">
+        <label><span class="demo-label">Ngày</span><input id="avgTblDate" type="date" class="block mt-1 h-9 px-3 rounded-lg bg-surface-container-low border-0 text-xs"></label>
+        <label><span class="demo-label">Đơn vị</span><select id="avgTblUnit" class="block mt-1 h-9 px-3 rounded-lg bg-surface-container-low border-0 text-xs"><option value="">Tất cả</option><option>NM-1</option><option>NM-2</option></select></label>
+        <label><span class="demo-label">Tổ</span><select id="avgTblTeam" class="block mt-1 h-9 px-3 rounded-lg bg-surface-container-low border-0 text-xs"><option value="">Tất cả</option><option>NM-1.1</option><option>NM-1.2</option><option>NM-2.1</option><option>NM-2.2</option></select></label>
+        <label class="h-9 px-3 rounded-lg bg-surface-container-low inline-flex items-center gap-2 text-xs"><input id="avgTblNoReason" type="checkbox" class="accent-red-700">Chưa có lý do</label>
+        <button id="avgTblReset" type="button" class="h-9 px-3 rounded-lg text-xs font-semibold hover:bg-surface-container-low inline-flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:15px">restart_alt</span>Xóa lọc</button>
+      </div>
+      <div class="overflow-x-auto"><table class="w-full demo-table"><thead class="bg-surface-container-low"><tr><th class="text-left px-4 py-3">STT</th><th class="text-left px-4 py-3">Ngày</th><th class="text-left px-4 py-3">Đơn vị</th><th class="text-left px-4 py-3">Tổ</th><th class="text-left px-4 py-3">Khách hàng</th><th class="text-left px-4 py-3">Mã hàng</th><th class="text-left px-4 py-3">Ngày RCC</th><th class="text-right px-4 py-3">Lương BQ</th><th class="text-left px-4 py-3">Lý do</th><th class="text-left px-4 py-3">Ghi chú</th><th class="px-3 py-3"></th></tr></thead><tbody id="avgTableBody"></tbody></table></div>
+    </section>
+  </div>
+</section>
+
+<div id="detailModal" class="modal-backdrop" hidden>
+  <div id="modalPanel" class="w-full max-w-5xl bg-surface-container-lowest rounded-2xl shadow-xl overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="flex items-start justify-between gap-4 p-6 border-b border-outline-variant/30">
+      <div>
+        <div class="text-xs font-semibold tracking-widest text-on-surface-variant uppercase">Danh sách nhân sự</div>
+        <h3 id="modalTitle" class="mt-2 text-xl font-extrabold text-on-surface">Nhân sự dưới mục tiêu</h3>
+        <p id="modalSubtitle" class="mt-1 text-sm text-on-surface-variant">Tháng 09/2026</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="modalTotalBadge" class="px-5 py-3 rounded-xl text-on-primary font-extrabold editorial-gradient shadow-sm text-sm whitespace-nowrap">Tổng nhân sự: 10</div>
+        <button id="modalClose" type="button" class="p-2 rounded-xl hover:bg-surface-container-low transition-colors" aria-label="Đóng"><span class="material-symbols-outlined">close</span></button>
+      </div>
+    </div>
+    <div class="p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div class="flex items-center gap-3">
+          <input id="modalSearch" class="w-full sm:w-[360px] rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40" placeholder="Tìm theo tên / mã NV / đơn vị / bộ phận..." />
+          <div id="modalCount" class="text-sm text-on-surface-variant whitespace-nowrap">—</div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="modalFullView" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-extrabold text-sm text-on-primary editorial-gradient shadow-sm hover:opacity-95 transition-all"><span class="material-symbols-outlined text-base">open_in_new</span>Xem đầy đủ</button>
+          <button id="modalPrev" type="button" class="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high font-semibold text-sm transition-colors disabled:opacity-40">Trước</button>
+          <button id="modalNext" type="button" class="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container-high font-semibold text-sm transition-colors disabled:opacity-40">Sau</button>
+        </div>
+      </div>
+      <div class="mt-5 bg-surface rounded-xl overflow-auto max-h-[420px] ring-1 ring-outline-variant/20">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 z-10 text-xs uppercase tracking-widest text-on-surface-variant bg-surface-container-low">
+            <tr><th class="text-left px-4 py-3">Họ tên</th><th class="text-left px-4 py-3">Mã NV</th><th class="text-left px-4 py-3">Đơn vị</th><th class="text-left px-4 py-3">Bộ phận</th><th class="text-left px-4 py-3">Tháng</th><th class="text-right px-4 py-3">Mức lương</th></tr>
+          </thead>
+          <tbody id="modalBody"></tbody>
+        </table>
+      </div>
+      <div class="mt-4 text-xs text-on-surface-variant">Dữ liệu minh họa · Bấm vào từng cột hoặc lát biểu đồ để đổi phạm vi danh sách.</div>
+    </div>
+  </div>
+</div>
+<div id="avgNoteModal" class="modal-backdrop" hidden>
+  <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl p-7" role="dialog" aria-modal="true" aria-labelledby="avgNoteTitle">
+    <div class="flex items-center justify-between"><h3 id="avgNoteTitle" class="text-xl font-bold font-headline">Cập nhật lý do</h3><button id="avgNoteClose" type="button" class="p-2 rounded-lg hover:bg-surface-container-low" aria-label="Đóng"><span class="material-symbols-outlined">close</span></button></div>
+    <p id="avgNoteContext" class="mt-2 text-sm text-on-surface-variant"></p>
+    <label class="block mt-6"><span class="text-xs font-semibold text-on-surface-variant">Lý do</span><select id="avgNoteReason" class="demo-select mt-2"><option value="">-- Chọn lý do --</option><option>Rải chuyền mã mới</option><option>Chuyển đổi nhiều</option><option>Thiếu lao động</option><option>Máy hư / Nguyên liệu</option><option>Mã khó</option><option>Khác</option></select></label>
+    <label class="block mt-4"><span class="text-xs font-semibold text-on-surface-variant">Ghi chú</span><textarea id="avgNoteText" rows="3" class="mt-2 w-full rounded-xl bg-surface-container-low border-0 px-4 py-3 focus:ring-2 focus:ring-primary/40" placeholder="Nhập ghi chú chi tiết..."></textarea></label>
+    <div class="mt-6 flex justify-end gap-2"><button id="avgNoteCancel" type="button" class="h-11 px-5 rounded-xl text-sm font-semibold hover:bg-surface-container-low">Hủy</button><button id="avgNoteSave" type="button" class="h-11 px-5 rounded-xl editorial-gradient text-on-primary text-sm font-bold">Lưu thay đổi</button></div>
+  </div>
+</div>
+<div id="demoToast" class="demo-toast demo-card px-4 py-3 text-sm font-semibold text-on-surface shadow-lg"><span class="material-symbols-outlined text-secondary mr-2">check_circle</span><span id="toastText"></span></div>
+{% endblock %}
+
+{% block body_extra %}
+<script>
+(() => {
+  const TARGET = 5678789;
+  const OVERALL_AVG = 6789789;
+  const departments = [
+    { name:'NM-1.1', unit:'NM-1', headcount:50, topup:2, below:3, color:'#214e9b', spark:[2,3,2,3,2,3] },
+    { name:'NM-1.2', unit:'NM-1', headcount:50, topup:2, below:3, color:'#2770d8', spark:[2,2,3,2,3,3] },
+    { name:'NM-2.1', unit:'NM-2', headcount:50, topup:1, below:2, color:'#63a8eb', spark:[1,2,2,1,2,2] },
+    { name:'NM-2.2', unit:'NM-2', headcount:50, topup:1, below:2, color:'#a9d0f4', spark:[2,1,2,2,1,2] },
+  ];
+  const groups = [
+    { name:'Cắt/Tổ Cắt', avg:7567567, min:6284560, max:8912450 },
+    { name:'Khác', avg:7789789, min:6412780, max:9241680 },
+    { name:'VSCN', avg:5678678, min:5214560, max:6184920 },
+  ];
+  const people = 'ABCDEFGHIJ'.split('').map((name, i) => {
+    const dept = departments[i % departments.length];
+    const income = [5480000,5525000,5590000,5615000,5640000,5505000,5560000,5620000,5655000,5665000][i];
+    const group = ['Cắt/Tổ Cắt','Khác','VSCN'][i % 3];
+    return { name, code:`NV${String(i+1).padStart(3,'0')}`, dept:dept.name, unit:dept.unit, group, month:'2026-09', income, topup:i<6 };
+  });
+  const AVG_THRESHOLD = 234567;
+  const avgRows = [
+    { id:1, date:'2026-09-05', unit:'NM-1', team:'NM-1.1', customer:'ABC', item:'ABC01', rcc:'2026-08-27', wage:200000, reason:'', note:'' },
+    { id:2, date:'2026-09-12', unit:'NM-1', team:'NM-1.2', customer:'ABC', item:'ABC02', rcc:'2026-08-27', wage:232450, reason:'', note:'' },
+    { id:3, date:'2026-09-19', unit:'NM-2', team:'NM-2.1', customer:'ABC', item:'ABC03', rcc:'2026-08-27', wage:233120, reason:'', note:'' },
+    { id:4, date:'2026-09-26', unit:'NM-2', team:'NM-2.2', customer:'ABC', item:'ABC04', rcc:'2026-08-27', wage:234100, reason:'', note:'' },
+  ];
+  const fmt = n => Number(n).toLocaleString('vi-VN');
+  const fmtK = n => fmt(Math.round(Number(n || 0) / 1000));
+  const pct = n => n.toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+  const $ = s => document.querySelector(s);
+  let topupChart, groupChart, belowChart, avgTrendChart, avgReasonChart, avgEditingId=null;
+  let modalRows=[], modalPage=0, modalPageSize=5;
+
+  Chart.defaults.font.family = 'Inter, sans-serif';
+  Chart.defaults.color = '#414750';
+  const groupValuePlugin={id:'mockGroupValues',afterDatasetsDraw(chart){if(chart.canvas.id!=='groupChart')return;const ctx=chart.ctx,barMeta=chart.getDatasetMeta(0),lineMeta=chart.getDatasetMeta(1);ctx.save();ctx.font='700 10px Inter';ctx.textAlign='center';ctx.textBaseline='middle';barMeta.data.forEach((el,i)=>{const v=Number(chart.data.datasets[0].data[i]||0);ctx.fillStyle=v<TARGET/1000?'#b91c1c':'#0040a1';const p=el.getProps(['x','y','base'],true);ctx.fillText(fmt(Math.round(v)),p.x,(p.y+p.base)/2);});if(lineMeta?.data?.length){const point=lineMeta.data[lineMeta.data.length-1],v=chart.data.datasets[1].data.at(-1),pos=point.tooltipPosition();ctx.fillStyle='#FF8C00';ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(`Target ${fmt(Math.round(v))}k`,pos.x+8,pos.y-2);}ctx.restore();}};
+  const percentValuePlugin={id:'mockPercentValue',afterDatasetsDraw(chart){if(chart.canvas.id!=='topupChart')return;const el=chart.getDatasetMeta(0).data[0],v=Number(chart.data.datasets[0].data[0]||0);if(!el)return;const p=el.getProps(['x','y','base'],true),ctx=chart.ctx;ctx.save();ctx.font='700 11px Inter';ctx.fillStyle='#1b6d24';ctx.textAlign='center';ctx.fillText(pct(v),p.x,Math.max(chart.chartArea.top+12,p.y-10));ctx.restore();}};
+  const donutPctPlugin={id:'mockDonutPct',afterDatasetsDraw(chart){if(chart.canvas.id!=='belowChart')return;const data=chart.data.datasets[0].data,total=data.reduce((a,b)=>a+Number(b||0),0),meta=chart.getDatasetMeta(0),ctx=chart.ctx;ctx.save();ctx.font='800 12px Inter';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='rgba(15,23,42,.35)';ctx.shadowBlur=5;meta.data.forEach((arc,i)=>{const v=Number(data[i]||0);if(!v||!total)return;const angle=(arc.startAngle+arc.endAngle)/2,r=(arc.outerRadius+arc.innerRadius)/2;ctx.fillText(pct(v/total*100),arc.x+Math.cos(angle)*r,arc.y+Math.sin(angle)*r);});ctx.restore();}};
+  Chart.register(groupValuePlugin,percentValuePlugin,donutPctPlugin);
+
+  function activeDepartments() { const unit=$('#fUnit').value; const dept=$('#fDept').value; return departments.filter(d=>(!unit||d.unit===unit)&&(!dept||d.name===dept)); }
+  function renderTopup(rows) {
+    const total=rows.reduce((s,d)=>s+d.headcount,0), count=rows.reduce((s,d)=>s+d.topup,0);
+    $('#kpiTopup').textContent=pct(total?count/total*100:0); $('#kpiTopupNote').textContent=`${count} / ${total} nhân sự`; $('#topupSummary').textContent=`${count} / ${total} · ${pct(total?count/total*100:0)}`;
+    $('#topupBody').innerHTML=rows.map(d=>`<tr><td class="py-3 font-semibold">${d.name}</td><td class="py-3 text-right tabular-nums">${d.headcount}</td><td class="py-3 text-right font-bold text-secondary tabular-nums">${d.topup}</td><td class="py-3 text-right font-semibold tabular-nums">${pct(d.topup/d.headcount*100)}</td></tr>`).join('')||'<tr><td colspan="4" class="py-8 text-center text-on-surface-variant">Không có dữ liệu</td></tr>';
+    if(topupChart)topupChart.destroy(); topupChart=new Chart($('#topupChart'),{type:'bar',data:{labels:['Tháng 9'],datasets:[{data:[total?count/total*100:0],backgroundColor:'rgba(27,109,36,.24)',borderColor:'rgba(27,109,36,.55)',borderWidth:1,borderRadius:10,borderSkipped:false,maxBarThickness:18,categoryPercentage:.78,barPercentage:.55}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:450},onClick:(_e,els)=>{if(els.length)openDetails('','','topup');},onHover:(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';},layout:{padding:{top:24}},scales:{x:{grid:{display:false},ticks:{color:'#6b7280',font:{family:'Manrope, Inter',size:11,weight:'700'}}},y:{beginAtZero:true,max:5,grid:{display:false},ticks:{display:false}}},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>[`${pct(c.raw)} công nhân nhận bù lương`,'Bấm vào cột để xem danh sách chi tiết']}}}},plugins:[percentValuePlugin]});
+  }
+  function renderGroups() {
+    const selected=$('#fGroup').value, rows=groups.filter(g=>!selected||g.name===selected); if(groupChart)groupChart.destroy();
+    const labels=rows.map(g=>g.name),barsK=rows.map(g=>g.avg/1000),targetK=TARGET/1000;
+    groupChart=new Chart($('#groupChart'),{type:'bar',data:{labels,datasets:[{type:'bar',label:'Lương BQ trong giờ',data:barsK,backgroundColor:'rgba(0,90,156,.25)',borderColor:'rgba(0,90,156,.55)',borderWidth:1,borderRadius:10,borderSkipped:false,maxBarThickness:18,categoryPercentage:.78,barPercentage:.55},{type:'line',label:'Target',data:labels.map(()=>targetK),borderColor:'#FF8C00',borderWidth:2,pointRadius:0,tension:0}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:450},onClick:(_e,els)=>{if(els.length&&els[0].datasetIndex===0)openDetails('',labels[els[0].index],'below');},onHover:(e,els)=>{e.native.target.style.cursor=els.some(x=>x.datasetIndex===0)?'pointer':'default';},layout:{padding:{top:24}},scales:{x:{grid:{display:false},ticks:{color:'#6b7280',font:{family:'Manrope, Inter',size:11,weight:'700'}}},y:{beginAtZero:true,grace:'16%',grid:{display:false},ticks:{display:false}}},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>c.datasetIndex===1?`Target: ${fmt(Math.round(c.parsed.y))}k`:[`Lương BQ trong giờ: ${fmt(Math.round(c.parsed.y))}k`,'Bấm vào cột để xem danh sách nhân sự']}}}},plugins:[groupValuePlugin]});
+    $('#insightBody').innerHTML=rows.map(g=>{const delta=(g.avg/TARGET-1)*100;return `<tr><td class="py-4 font-semibold">${g.name}</td><td class="py-4 text-right tabular-nums">${fmtK(g.min)}</td><td class="py-4 text-right tabular-nums">${fmtK(g.max)}</td><td class="py-4 text-right"><span class="mini-pill ${delta>=0?'bg-secondary-fixed text-on-secondary-fixed-variant':'bg-error-container text-on-error-container'}">${fmtK(g.avg)}</span><small class="ml-1 font-bold ${delta>=0?'text-secondary':'text-error'}">${delta>=0?'+':''}${delta.toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1})}%</small></td></tr>`;}).join('');
+    const currentAvg=selected?rows[0].avg:OVERALL_AVG; $('#kpiAvg').textContent=fmt(currentAvg); $('#kpiRatio').textContent=pct(currentAvg/TARGET*100); const delta=currentAvg-TARGET; $('#deltaChip').textContent=`Δ SO VỚI TARGET: ${delta>=0?'+':'-'}${fmt(Math.abs(Math.round(delta/1000)))}K (${delta>=0?'+':'-'}${Math.abs(delta/TARGET*100).toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1})}%)`;
+  }
+  function sparkSvg(values,color){const max=Math.max(...values),min=Math.min(...values),range=max-min||1,pts=values.map((v,i)=>`${i*17.5},${22-(v-min)/range*18}`).join(' ');return `<svg class="trend-spark" viewBox="0 0 88 24" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
+  function renderBelow(rows) {
+    const allowed=new Set(rows.map(d=>d.name)),filteredPeople=people.filter(p=>allowed.has(p.dept)),total=filteredPeople.length,headcount=rows.reduce((s,d)=>s+d.headcount,0);
+    $('#kpiBelow').textContent=total; $('#kpiBelowNote').innerHTML=`<strong class="text-error">${pct(headcount?total/headcount*100:0)}</strong> trên tổng ${headcount} nhân sự`; $('#donutTotal').textContent=total;
+    $('#belowBody').innerHTML=rows.map(d=>`<tr><td class="py-4 font-semibold"><span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background:${d.color}"></span>${d.name}<small class="block ml-5 text-on-surface-variant font-normal">${d.unit}</small></td><td class="py-4 text-right font-bold text-error tabular-nums">${d.below}</td><td class="py-4 text-right tabular-nums">${total?pct(d.below/total*100):'0%'}</td><td class="py-4"><div class="flex justify-center">${sparkSvg(d.spark,d.color)}</div></td><td class="py-4 text-right"><button class="detail-btn px-3 py-2 rounded-lg bg-surface-container-low text-xs font-bold hover:bg-surface-container-high" data-dept="${d.name}">Chi tiết</button></td></tr>`).join('')||'<tr><td colspan="5" class="py-8 text-center text-on-surface-variant">Không có dữ liệu</td></tr>';
+    $('#donutLegend').innerHTML=rows.map(d=>`<span class="inline-flex items-center gap-2"><i class="w-2.5 h-2.5 rounded-full" style="background:${d.color}"></i><strong>${d.name}</strong> ${d.below}</span>`).join('');
+    const labels=rows.map(d=>d.name); if(belowChart)belowChart.destroy(); belowChart=new Chart($('#belowChart'),{type:'doughnut',data:{labels,datasets:[{data:rows.map(d=>d.below),backgroundColor:rows.map(d=>d.color),borderColor:'#fff',borderWidth:3,hoverOffset:6,spacing:2}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:450},cutout:'68%',onClick:(_e,els)=>{if(els.length)openDetails(labels[els[0].index],'','below');},onHover:(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`${c.label}: ${c.raw} người (${pct(c.raw/total*100)})`,'Bấm vào lát để xem danh sách chi tiết']}}}},plugins:[donutPctPlugin]}); document.querySelectorAll('.detail-btn').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openDetails(btn.dataset.dept,'','below');}));
+  }
+  function applyFilters(){const unit=$('#fUnit').value;if(unit&&$('#fDept').value&&!$('#fDept').value.startsWith(unit))$('#fDept').value='';const rows=activeDepartments();renderTopup(rows);renderGroups();renderBelow(rows);$('#belowSubtitle').textContent=`Tháng 09/2026 · Cơ sở HCM${unit?' · '+unit:''}`;}
+  function renderModalRows(){
+    const q=$('#modalSearch').value.trim().toLowerCase();
+    const filtered=modalRows.filter(p=>`${p.name} ${p.code} ${p.unit} ${p.dept} ${p.group}`.toLowerCase().includes(q));
+    const start=modalPage*modalPageSize,end=Math.min(start+modalPageSize,filtered.length),pageRows=filtered.slice(start,end);
+    $('#modalBody').innerHTML=pageRows.map(p=>`<tr class="border-t border-outline-variant/30 hover:bg-surface-container-low transition-colors"><td class="px-4 py-3 font-semibold">${p.name}</td><td class="px-4 py-3 text-on-surface-variant tabular-nums">${p.code}</td><td class="px-4 py-3 text-on-surface-variant">${p.unit}</td><td class="px-4 py-3 text-on-surface-variant">${p.dept}</td><td class="px-4 py-3 text-on-surface-variant tabular-nums">${p.month}</td><td class="px-4 py-3 text-right"><span class="px-3 py-1 rounded-full text-xs font-bold bg-error-container text-on-error-container">${fmt(p.income)}</span></td></tr>`).join('')||'<tr><td colspan="6" class="px-4 py-8 text-center text-on-surface-variant">Không có dữ liệu.</td></tr>';
+    $('#modalCount').textContent=filtered.length?`${start+1}–${end} / ${filtered.length}`:'0';
+    $('#modalPrev').disabled=modalPage===0; $('#modalNext').disabled=end>=filtered.length;
+  }
+  function openDetails(dept='',group='',mode='below'){
+    const active=new Set(activeDepartments().map(d=>d.name));
+    modalRows=people.filter(p=>active.has(p.dept)).filter(p=>!dept||p.dept===dept).filter(p=>!group||p.group===group).filter(p=>mode!=='topup'||p.topup);
+    const scope=dept||group||'Tất cả';
+    $('#modalTitle').textContent=mode==='topup'?`Nhân sự nhận bù lương • ${scope}`:`Nhân sự dưới mục tiêu • ${scope}`;
+    $('#modalSubtitle').textContent='Tháng 09/2026 · Cơ sở HCM';
+    $('#modalTotalBadge').textContent=`Tổng nhân sự ${mode==='topup'?'nhận bù lương':'dưới mục tiêu'}: ${modalRows.length}`;
+    $('#modalSearch').value=''; modalPage=0; modalPageSize=5; renderModalRows(); $('#detailModal').hidden=false;
+  }
+  const shortDate = d => { const p=d.split('-'); return `${p[2]}/${p[1]}`; };
+  const fullDate = d => { const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+  const esc = value => String(value ?? '').replace(/[&<>'"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  function avgScopedRows(){
+    const unit=$('#avgUnit').value,team=$('#avgTeam').value;
+    return avgRows.filter(r=>(!unit||r.unit===unit)&&(!team||r.team===team));
+  }
+  function rebuildAvgTeams(){
+    const unit=$('#avgUnit').value,current=$('#avgTeam').value;
+    const teams=[...new Set(avgRows.filter(r=>!unit||r.unit===unit).map(r=>r.team))];
+    $('#avgTeam').innerHTML='<option value="">Tất cả</option>'+teams.map(t=>`<option>${t}</option>`).join('');
+    if(teams.includes(current))$('#avgTeam').value=current;
+  }
+  function renderAvgTrend(rows){
+    const byDate={}; rows.forEach(r=>byDate[r.date]=(byDate[r.date]||0)+1);
+    const dates=Object.keys(byDate).sort();
+    if(avgTrendChart)avgTrendChart.destroy();
+    avgTrendChart=new Chart($('#avgTrendChart'),{type:'bar',data:{labels:dates.map(shortDate),datasets:[{data:dates.map(d=>byDate[d]),backgroundColor:'rgba(186,26,26,.17)',borderColor:'rgba(186,26,26,.26)',borderWidth:1,borderRadius:10,borderSkipped:false,maxBarThickness:18,categoryPercentage:.72,barPercentage:.5}]},options:{responsive:true,maintainAspectRatio:false,onClick:(_e,els)=>{if(!els.length)return;$('#avgTblDate').value=dates[els[0].index];renderAvgTable();document.querySelector('#avgTableBody')?.scrollIntoView({behavior:'smooth',block:'center'});},onHover:(e,els)=>e.native.target.style.cursor=els.length?'pointer':'default',layout:{padding:{top:22}},scales:{x:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}},y:{beginAtZero:true,suggestedMax:1.25,grid:{display:false},ticks:{display:false}}},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>[`${c.raw} tổ cảnh báo`,'Bấm để xem dòng chi tiết']}}}},plugins:[{id:'avgBarValues',afterDatasetsDraw(chart){const ctx=chart.ctx;ctx.save();ctx.font='700 11px Inter';ctx.fillStyle='#6b7280';ctx.textAlign='center';chart.getDatasetMeta(0).data.forEach((el,i)=>ctx.fillText(chart.data.datasets[0].data[i],el.x,el.y-9));ctx.restore();}}]});
+  }
+  function renderAvgReasons(rows){
+    const counts={}; rows.forEach(r=>{const label=r.reason||'Chưa ghi';counts[label]=(counts[label]||0)+1;});
+    const labels=Object.keys(counts),colors=labels.map((l,i)=>l==='Chưa ghi'?'#e2e2e3':['#005a9c','#1b6d24','#b06000','#6750a4','#ba1a1a'][i%5]);
+    if(avgReasonChart)avgReasonChart.destroy();
+    avgReasonChart=new Chart($('#avgReasonChart'),{type:'doughnut',data:{labels:labels.length?labels:['Không có dữ liệu'],datasets:[{data:labels.length?labels.map(l=>counts[l]):[1],backgroundColor:labels.length?colors:['#eef0f2'],borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'64%',plugins:{legend:{display:false},tooltip:{displayColors:false}}}});
+    $('#avgReasonTotal').textContent=rows.length;
+    $('#avgReasonLegend').innerHTML=labels.length?labels.map((l,i)=>`<div class="flex items-center justify-between gap-5"><span class="inline-flex items-center gap-2"><i class="w-2.5 h-2.5 rounded-full" style="background:${colors[i]}"></i>${esc(l)}</span><span class="text-on-surface-variant">${counts[l]} (${Math.round(counts[l]/rows.length*100)}%)</span></div>`).join(''):'<span class="text-on-surface-variant">Không có dữ liệu</span>';
+  }
+  function renderAvgHeatmap(rows){
+    const dates=[...new Set(rows.map(r=>r.date))].sort(),units=[...new Set(rows.map(r=>r.unit))].sort();
+    if(!dates.length){$('#avgHeatmap').innerHTML='<p class="py-10 text-center text-sm text-on-surface-variant">Không có dữ liệu.</p>';return;}
+    $('#avgHeatmap').innerHTML=`<div class="grid gap-2 items-center" style="grid-template-columns:76px repeat(${dates.length},minmax(118px,1fr))"><div></div>${dates.map(d=>`<div class="text-center text-xs text-on-surface-variant">${shortDate(d)}</div>`).join('')}${units.map(u=>`<div class="font-bold text-sm">${u}</div>${dates.map(d=>{const n=rows.filter(r=>r.unit===u&&r.date===d).length;return `<button type="button" class="avg-heat-cell ${n?'':'opacity-25'}" data-date="${d}" data-unit="${u}">${n}</button>`;}).join('')}`).join('')}</div><div class="mt-4 flex items-center gap-3 text-[11px] text-on-surface-variant"><span>0 tổ</span><i class="w-4 h-4 rounded bg-[#f7eeee]"></i><span>1 tổ</span><i class="w-4 h-4 rounded bg-[#f8dddd]"></i><span>2+ tổ</span><i class="w-4 h-4 rounded bg-[#e8a8a8]"></i></div>`;
+    document.querySelectorAll('.avg-heat-cell').forEach(btn=>btn.addEventListener('click',()=>{$('#avgTblDate').value=btn.dataset.date;$('#avgTblUnit').value=btn.dataset.unit;renderAvgTable();document.querySelector('#avgTableBody')?.scrollIntoView({behavior:'smooth',block:'center'});}));
+  }
+  function renderAvgCoverage(rows){
+    const withReason=rows.filter(r=>r.reason).length,total=rows.length,p=total?Math.round(withReason/total*100):0;
+    $('#avgCoveragePct').textContent=`${p}%`;$('#avgCoveragePct').className=`font-headline text-5xl font-extrabold ${p===100?'text-secondary':'text-error'}`;$('#avgCoverageBar').style.width=`${p}%`;$('#avgCoverageWith').textContent=`${withReason}/${total}`;$('#avgCoverageWithout').textContent=`${total-withReason}/${total}`;
+  }
+  function avgTableRows(){
+    const scope=new Set(avgScopedRows().map(r=>r.id)),date=$('#avgTblDate').value,unit=$('#avgTblUnit').value,team=$('#avgTblTeam').value,noReason=$('#avgTblNoReason').checked;
+    return avgRows.filter(r=>scope.has(r.id)&&(!date||r.date===date)&&(!unit||r.unit===unit)&&(!team||r.team===team)&&(!noReason||!r.reason));
+  }
+  function renderAvgTable(){
+    const rows=avgTableRows();$('#avgTableCount').textContent=`${rows.length} dòng`;
+    $('#avgTableBody').innerHTML=rows.map((r,i)=>`<tr class="hover:bg-surface-container-low transition-colors"><td class="px-4 py-3 tabular-nums">${String(i+1).padStart(2,'0')}</td><td class="px-4 py-3 tabular-nums">${fullDate(r.date)}</td><td class="px-4 py-3 font-semibold">${r.unit}</td><td class="px-4 py-3">${r.team}</td><td class="px-4 py-3">${r.customer}</td><td class="px-4 py-3 font-mono text-xs">${r.item}</td><td class="px-4 py-3 tabular-nums">${fullDate(r.rcc)}</td><td class="px-4 py-3 text-right font-bold text-error tabular-nums">${fmt(r.wage)} đ</td><td class="px-4 py-3">${r.reason?`<span class="reason-pill bg-primary-fixed text-on-primary-fixed-variant">${esc(r.reason)}</span>`:'<span class="text-on-surface-variant opacity-40">—</span>'}</td><td class="px-4 py-3 max-w-[180px] truncate">${r.note?esc(r.note):'<span class="text-on-surface-variant opacity-40">—</span>'}</td><td class="px-3 py-3 text-center"><button type="button" class="avg-edit p-2 rounded-lg hover:bg-surface-container-high" data-id="${r.id}" aria-label="Cập nhật lý do"><span class="material-symbols-outlined" style="font-size:18px">edit</span></button></td></tr>`).join('')||'<tr><td colspan="11" class="px-4 py-10 text-center text-on-surface-variant">Không có dữ liệu phù hợp.</td></tr>';
+    document.querySelectorAll('.avg-edit').forEach(btn=>btn.addEventListener('click',()=>openAvgNote(Number(btn.dataset.id))));
+  }
+  function renderAvg(){
+    const rows=avgScopedRows(),dates=new Set(rows.map(r=>r.date)),units=[...new Set(rows.map(r=>r.unit))],min=rows.length?Math.min(...rows.map(r=>r.wage)):0;
+    $('#avgStatDays').textContent=dates.size;$('#avgStatRows').textContent=rows.length;$('#avgStatUnits').textContent=units.length;$('#avgStatUnitsSub').textContent=units.join(' · ')||'Không có dữ liệu';$('#avgStatMin').textContent=rows.length?`${fmt(min)} đ`:'—';$('#avgLoadStatus').textContent=`${rows.length} dòng dữ liệu minh họa`;
+    renderAvgTrend(rows);renderAvgReasons(rows);renderAvgHeatmap(rows);renderAvgCoverage(rows);renderAvgTable();
+  }
+  function openAvgNote(id){
+    const row=avgRows.find(r=>r.id===id);if(!row)return;avgEditingId=id;$('#avgNoteContext').textContent=`${row.team} · ${fullDate(row.date)} · ${fmt(row.wage)} đ`;$('#avgNoteReason').value=row.reason;$('#avgNoteText').value=row.note;$('#avgNoteModal').hidden=false;
+  }
+  function closeAvgNote(){$('#avgNoteModal').hidden=true;avgEditingId=null;}
+  function toast(message){$('#toastText').textContent=message;$('#demoToast').classList.add('is-visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#demoToast').classList.remove('is-visible'),2600);}
+  function activateTab(kind){const rcp=kind==='rcp';$('#panelRcp').hidden=!rcp;$('#panelAvg').hidden=rcp;$('#tabRcp').setAttribute('aria-selected',String(rcp));$('#tabAvg').setAttribute('aria-selected',String(!rcp));setTimeout(()=>{if(rcp){topupChart?.resize();groupChart?.resize();belowChart?.resize();}else{renderAvg();avgTrendChart?.resize();avgReasonChart?.resize();}},0);}
+  $('#tabRcp').addEventListener('click',()=>activateTab('rcp')); $('#tabAvg').addEventListener('click',()=>activateTab('avg')); ['#fGroup','#fUnit','#fDept'].forEach(id=>$(id).addEventListener('change',applyFilters));
+  $('#btnReset').addEventListener('click',()=>{$('#fGroup').value='';$('#fUnit').value='';$('#fDept').value='';applyFilters();toast('Đã khôi phục dữ liệu demo tháng 9/2026');});
+  $('#btnHanging').addEventListener('click',()=>{$('#fUnit').value='NM-2';$('#fDept').value='NM-2.1';applyFilters();toast('Đang hiển thị chuyền demo NM-2.1');});
+  $('#btnExport').addEventListener('click',()=>{const rows=people.map(p=>[p.name,p.code,p.unit,p.dept,p.group,p.month,p.income]),csv='\uFEFFHọ tên,Mã NV,Đơn vị,Bộ phận,Nhóm,Tháng,Mức lương\r\n'+rows.map(r=>r.join(',')).join('\r\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='demo-thang-09-2026.csv';a.click();URL.revokeObjectURL(a.href);toast('Đã xuất 10 dòng dữ liệu demo');});
+  $('#avgUnit').addEventListener('change',()=>{rebuildAvgTeams();renderAvg();}); $('#avgTeam').addEventListener('change',renderAvg);
+  $('#avgRefresh').addEventListener('click',()=>{$('#avgUnit').value='';rebuildAvgTeams();$('#avgTeam').value='';$('#avgTblDate').value='';$('#avgTblUnit').value='';$('#avgTblTeam').value='';$('#avgTblNoReason').checked=false;renderAvg();toast('Đã khôi phục phạm vi demo tháng 09/2026');});
+  ['#avgTblDate','#avgTblUnit','#avgTblTeam','#avgTblNoReason'].forEach(id=>$(id).addEventListener('change',renderAvgTable));
+  $('#avgTblReset').addEventListener('click',()=>{$('#avgTblDate').value='';$('#avgTblUnit').value='';$('#avgTblTeam').value='';$('#avgTblNoReason').checked=false;renderAvgTable();});
+  $('#avgNoteClose').addEventListener('click',closeAvgNote);$('#avgNoteCancel').addEventListener('click',closeAvgNote);$('#avgNoteModal').addEventListener('mousedown',e=>{if(e.target===$('#avgNoteModal'))closeAvgNote();});
+  $('#avgNoteSave').addEventListener('click',()=>{const row=avgRows.find(r=>r.id===avgEditingId);if(!row)return;row.reason=$('#avgNoteReason').value;row.note=$('#avgNoteText').value.trim();closeAvgNote();renderAvg();toast(row.reason?'Đã lưu lý do cảnh báo':'Đã chuyển về trạng thái chưa ghi lý do');});
+  $('#modalSearch').addEventListener('input',()=>{modalPage=0;renderModalRows();}); $('#modalPrev').addEventListener('click',()=>{if(modalPage>0){modalPage--;renderModalRows();}}); $('#modalNext').addEventListener('click',()=>{modalPage++;renderModalRows();}); $('#modalFullView').addEventListener('click',()=>{modalPage=0;modalPageSize=50;renderModalRows();});
+  $('#modalClose').addEventListener('click',()=>$('#detailModal').hidden=true); $('#detailModal').addEventListener('mousedown',e=>{if(e.target===$('#detailModal'))$('#detailModal').hidden=true;}); document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#detailModal').hidden=true;closeAvgNote();}}); applyFilters();
+  window.addEventListener('load',()=>setTimeout(()=>{topupChart?.resize();groupChart?.resize();belowChart?.resize();topupChart?.update('none');groupChart?.update('none');belowChart?.update('none');},250));
+})();
+</script>
+{% endblock %}

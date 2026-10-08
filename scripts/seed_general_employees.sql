@@ -1,16 +1,60 @@
--- Seed initial user(s) for RCP module login
--- Safe to run multiple times (uses ON CONFLICT DO NOTHING).
+-- Seed bảng general_employees – xoá và import lại toàn bộ
+-- Cập nhật: 2026-09-19 (49 nhân viên)
 
-CREATE TABLE IF NOT EXISTS public.general_employees (
-  ma_nv character varying(16) PRIMARY KEY,
-  ho_ten text NOT NULL DEFAULT '',
-  chuc_vu text NOT NULL DEFAULT '',
-  don_vi text NOT NULL DEFAULT '',
-  bo_phan text NOT NULL DEFAULT '',
-  station jsonb NOT NULL DEFAULT '[]'::jsonb
-);
+BEGIN;
 
-INSERT INTO public.general_employees (ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station)
-VALUES ('P0872', 'Hồ Anh Phát', 'Phó phòng', 'P.TH', 'KSHT', '[]'::jsonb)
-ON CONFLICT (ma_nv) DO NOTHING;
+DELETE FROM general_employees;
 
+INSERT INTO general_employees (ma_nv, ho_ten, chuc_vu, don_vi, bo_phan, station, role, email) VALUES
+('C0008', 'Lê Trọng Châu', 'Thủ kho - KPL', 'P.KDXNK', 'KHO PHỤ LIỆU', '[]', 'user', 'ltchau@hachiba.com.vn'),
+('C0077', 'Nguyễn Thị Hồng Châu', 'PGĐXN', 'XNV2', '', '[]', 'user', 'chaukhv2@hachiba.com.vn'),
+('C0728', 'Nguyễn Thị Cúc', 'QAQT', 'XNDT', '', '[]', 'user', ''),
+('C0740', 'Nguyễn Thị Cúc', 'GĐXN', 'XNV2', '', '[]', 'user', 'cuckt@hachiba.com.vn'),
+('C0741', 'Lê Thị Hải Châu', 'Trưởng phòng', 'P.TH', '', '[]', 'admin', 'haichau@hachiba.com.vn'),
+('Đ0238', 'Trương Hùng Đức', 'Thủ kho - KTP', 'P.KDXNK', 'KHO THÀNH PHẨM', '[]', 'user', 'ductruong@hachiba.com.vn'),
+('G0026', 'Nguyễn Thị Thanh Giang', '', 'TYT', '', '[]', 'user', ''),
+('H0710', 'Trương Thị Hà', 'SA', 'XN2', '', '[]', 'user', 'haxn2@hachiba.com.vn'),
+('H2338', 'Lê Thị Hà', 'PGĐXN', 'XN1-V1', '', '[]', 'user', 'hamauv1@hachiba.com.vn'),
+('H3613', 'Lê Trần Thanh Huy', '', 'P.KTCN', 'BCT', '[]', 'user', ''),
+('H3644', 'Dương Công Hiền', '', 'P.TH', '', '[]', 'user', 'duonghien@hachiba.com.vn'),
+('H3839', 'Nguyễn Thị Ngọc Hoa', 'KSHT - Tuân thủ', 'P.TH', '', '[]', 'admin', 'ngochoa@hachiba.com.vn'),
+('H3856', 'Nguyễn Thị Hiếu', '', 'P.KTCN', 'BCT', '[]', 'user', ''),
+('H3858', 'Trần Xuân Hoè', '', '', '', '[]', 'admin', ''),
+('L0768', 'Nguyễn Thị Kim Liên', '', 'P.KT', '', '[]', 'user', ''),
+('L1847', 'Đặng Thị Kim Lý', 'SA', 'XN1-V1', '', '[]', 'user', 'kimlyv1@hachiba.com.vn'),
+('L1910', 'Nguyễn Thị Ly', '', 'P.KTCN', 'BCT', '[]', 'user', ''),
+('L9001', 'Trương Văn Lâm', 'PGĐXN', 'XNDT', '', '[]', 'user', 'vanlam@hachiba.com.vn'),
+('L9066', 'Phạm Thị Yến Linh', 'KTT', 'XNDT', '', '[]', 'user', ''),
+('L9109', 'Đoàn Thị Minh Lý', 'KTT', 'XNDT', '', '[]', 'user', 'kythuatduytrung@hachiba.com.vn'),
+('N0140', 'Dương Thị Thuý Nga', 'Trưởng ban', 'P.KTCN', 'BCT', '[]', 'admin', 'thuynga@hachiba.com.vn'),
+('N1785', 'Lê Thị Kim Ngân', 'KSHT - Tuân thủ', 'P.TH', 'KSHT', '[]', 'user', 'lengan@hachiba.com.vn'),
+('N1820', 'Nguyễn Thị Nhạn', 'GĐXN', 'XN3', '', '[]', 'user', 'nhan@hachiba.com.vn'),
+('P0042', 'Nguyễn Đình Phúc', 'GĐXN', 'XN1-V1', '', '[]', 'user', 'dinhphuc@hachiba.com.vn'),
+('P0872', 'Hồ Anh Phát', 'Phó phòng', 'P.TH', 'KSHT', '[]', 'admin', 'hophat@hachiba.com.vn'),
+('Q0205', 'Dương Minh Quốc', 'Thủ kho - KNL', 'P.KDXNK', 'KHO NGUYÊN LIỆU, XÉN VIỀN & KIỂM VẢI', '[]', 'user', 'minhquoc@hachiba.com.vn'),
+('Q0273', 'Ngô Vương Quốc', 'QAQT', 'XNDT', '', '[]', 'user', ''),
+('Q0386', 'Huỳnh Thúy Quyên', '', 'P.QLCL', '', '[]', 'user', ''),
+('S0106', 'Huỳnh Thị Kim Sinh', '', 'P.KDXNK', 'KHỐI VP KDXNK', '[]', 'user', ''),
+('S0493', 'Nguyễn Thị Thu Sơn', '', 'P.KTCN', '', '[]', 'user', ''),
+('T0134', 'Huỳnh Trọng', '', 'P.KDXNK', 'KHO CARTON & VẬT TƯ', '[]', 'user', ''),
+('T0135', 'Hồ Thị Trang', 'Phó phòng', 'P.KDXNK', '', '[]', 'user', 'trang@hachiba.com.vn'),
+('T0184', 'Tôn Thất Thiệu', '', 'P.KTCN', 'BCT', '[]', 'user', ''),
+('T0980', 'Nguyễn Thị Đông Thuỷ', 'GĐXN', 'XN2', '', '[]', 'user', 'dongthuy@hachiba.com.vn'),
+('T1119', 'Hoàng Ngọc Anh Tú', '', 'P.KTCN', 'BCT', '[]', 'user', ''),
+('T1506', 'Phan Vũ Thành', 'PGĐXN', 'XN3', '', '[]', 'user', 'vuthanh@hachiba.com.vn'),
+('T1729', 'Huỳnh Thị Hoài Thu', 'SA', 'XN3', '', '[]', 'user', 'loanxn3@hachiba.com.vn'),
+('T2548', 'Huỳnh Văn Toàn', '', 'BTBM', '', '[]', 'user', ''),
+('T3656', 'Phạm Ngọc Minh Trí', 'KSHT - Tuân thủ', 'P.TH', 'KSHT', '[]', 'admin', 'minhtri@hachiba.com.vn'),
+('T3770', 'Lê Thị Bích Thủy', 'SA', 'XNV2', '', '[]', 'user', 'thuysav2@hachiba.com.vn'),
+('T3787', 'Thái Thùy Trang', '', 'XNV2', '', '[]', 'user', ''),
+('T3996', 'Phan Thị Ngọc Trâm', '', 'P.KTCD', '', '[]', 'user', ''),
+('T4932', 'Lê Thị Minh Trâm', 'PGĐXN', 'XN2', '', '[]', 'user', ''),
+('T9001', 'Huỳnh Tấn Tuấn', 'GĐXN', 'XNDT', '', '[]', 'user', 'tantuan@hachiba.com.vn'),
+('V0019', 'Trần Ngọc Vinh', 'Trưởng phòng', 'P.KDXNK', '', '[]', 'user', 'ngocvinh@hachiba.com.vn'),
+('V0044', 'Nguyễn Thị Thuý Vân', 'Phó phòng', 'Lab', '', '[]', 'user', 'thuyvan@hachiba.com.vn'),
+('V0250', 'Tăng Thị Thu Vân', 'Phó phòng', 'P.KDXNK', '', '[]', 'user', 'thuvan@hachiba.com.vn'),
+('V0532', 'Nguyễn Quốc Vũ', '', 'P.KDXNK', 'BỐC VÁC', '[]', 'user', ''),
+('V9027', 'Lê Vy', 'SA', 'XNDT', '', '[]', 'user', 'levy@hachiba.com.vn'),
+('X0023', 'Trần Thị Xuân', '', 'P.QTDS', '', '[]', 'user', '');
+
+COMMIT;

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kết quả kiểm tra nội bộ – {{ bo_phan.don_vi_ten }} {{ bo_phan.ten }}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{extend:{
+    colors:{
+      "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+      "surface":"#F9F9FA","surface-container-lowest":"#FFFFFF",
+      "surface-container-low":"#f3f3f8","surface-container":"#ededf2",
+      "surface-container-high":"#EBEBEB","outline-variant":"#C1C7D2","outline":"#727780",
+      "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+      "secondary":"#1b6d24","error":"#ba1a1a","error-container":"#ffdad6",
+      "tertiary":"#00312a","background":"#f9f9fe",
+    },
+    spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+    borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
+    fontSize:{
+      "body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],
+      "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+      "label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+    },
+  }},
+}
+</script>
+<style>
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+  @media print{.no-print{display:none!important} body{background:#fff}}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+
+<header class="w-full sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm flex items-center gap-md no-print">
+  <a href="/internal-audit/ia" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</a>
+  <div class="flex-1">
+    <span class="font-label-md text-label-md text-on-surface-variant">{{ bo_phan.don_vi_ten }} • {{ bo_phan.ten }}</span>
+    <h1 class="text-[20px] font-headline-md font-bold text-primary tracking-tight">Kết quả kiểm tra</h1>
+  </div>
+  <button onclick="window.print()" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors" title="In">print</button>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 md:px-margin pt-lg pb-28">
+
+  <!-- Summary card -->
+  <div class="bg-surface-container-lowest rounded-xl p-lg border border-outline-variant/10 shadow-sm mb-xl">
+    <div class="flex items-center justify-between mb-lg">
+      <div>
+        <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">Tổng hợp</p>
+        <h2 class="text-[24px] font-headline-md font-bold text-primary">{{ bo_phan.don_vi_ten }} – {{ bo_phan.ten }}</h2>
+      </div>
+      <div class="text-right">
+        <p class="text-[13px] text-on-surface-variant">{{ phieu.ngay }}</p>
+        <p class="text-[13px] text-on-surface-variant">{{ phieu.nguoi_kiem_tra }}</p>
+      </div>
+    </div>
+
+    <div class="mb-lg">
+      <div class="bg-surface-container-low rounded-xl p-md text-center">
+        <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-xs">Tổng lỗi</p>
+        <p class="text-[32px] font-headline-md font-bold {{ 'text-error' if phieu.tong_loi > 0 else 'text-secondary' }}">{{ phieu.tong_loi }}</p>
+      </div>
+    </div>
+
+    {% if phieu.tong_loi == 0 %}
+    <div class="flex items-center gap-md bg-secondary/10 rounded-xl px-lg py-md">
+      <span class="material-symbols-outlined text-secondary text-[28px]" style="font-variation-settings:'FILL' 1">check_circle</span>
+      <p class="font-semibold text-secondary">Không phát hiện lỗi vi phạm</p>
+    </div>
+    {% else %}
+    <div class="flex items-center gap-md bg-error-container rounded-xl px-lg py-md">
+      <span class="material-symbols-outlined text-error text-[28px]" style="font-variation-settings:'FILL' 1">warning</span>
+      <p class="font-semibold text-error">Phát hiện {{ phieu.tong_loi }} lỗi vi phạm</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Section breakdown -->
+  <div class="mb-xl">
+    <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-md">Phân tích theo lĩnh vực</h3>
+    <div class="space-y-sm">
+      {% for s in sections %}
+      <div class="flex items-center justify-between bg-surface-container-lowest rounded-xl px-lg py-md border border-outline-variant/10">
+        <span class="font-semibold text-[14px]">{{ s.ten }}</span>
+        <div class="flex items-center gap-md">
+          <span class="text-[13px] text-on-surface-variant">{{ s.so_tieu_chi }} tiêu chí</span>
+          {% if s.tong_loi > 0 %}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold bg-error/10 text-error">{{ s.tong_loi }} lỗi</span>
+          {% else %}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold bg-secondary/10 text-secondary">0 lỗi</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Violation details -->
+  {% if violation_items %}
+  <div class="mb-xl">
+    <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-md">Chi tiết lỗi vi phạm</h3>
+    <div class="space-y-md">
+      {% for v in violation_items %}
+      <div class="bg-surface-container-lowest rounded-xl p-lg border border-error/10 shadow-sm">
+        <div class="flex items-start justify-between mb-sm">
+          <div class="flex-1">
+            {% if v.bien_ten %}
+            <p class="font-label-md text-[11px] text-on-surface-variant mb-xs">{{ v.linh_vuc }} • {{ v.bien_ten }}</p>
+            {% else %}
+            <p class="font-label-md text-[11px] text-on-surface-variant mb-xs">{{ v.linh_vuc }}</p>
+            {% endif %}
+            <p class="text-[14px] text-on-surface leading-relaxed">{{ v.noi_dung }}</p>
+          </div>
+          <span class="shrink-0 ml-md inline-flex items-center px-3 py-1 rounded-full text-[13px] font-bold bg-error/10 text-error">{{ v.so_loi }} lỗi</span>
+        </div>
+        {% if v.mo_ta %}
+        <div class="bg-error-container/30 rounded-lg px-md py-sm mt-sm">
+          <p class="text-[13px] text-on-surface whitespace-pre-wrap break-words">{{ v.mo_ta }}</p>
+        </div>
+        {% endif %}
+        {% if v.hinh_anh %}
+        <div class="flex flex-wrap gap-sm mt-sm">
+          {% for img in v.hinh_anh %}
+          <a href="{{ img }}" target="_blank">
+            <img src="{{ img }}" class="h-16 w-16 rounded object-cover border border-outline-variant/20 hover:ring-2 hover:ring-primary/30 transition-all" alt="Ảnh minh hoạ">
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Actions -->
+  <div class="flex flex-wrap gap-md no-print">
+    <a href="/internal-audit/ia/new" class="flex items-center gap-sm bg-surface-container-lowest border border-outline-variant/20 text-primary px-6 py-3 rounded-full font-bold text-[14px] hover:bg-surface-container-low transition-colors">
+      <span class="material-symbols-outlined text-[18px]">add</span>
+      Kiểm tra mới
+    </a>
+  </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kiểm tra nội bộ {{ loai_label }} – {{ bo_phan.don_vi_ten }} {{ bo_phan.ten }}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{extend:{
+    colors:{
+      "primary":"#002c50","primary-container":"#005A9C","on-primary":"#ffffff",
+      "on-primary-container":"#82afe9","surface":"#F9F9FA",
+      "surface-container-lowest":"#FFFFFF","surface-container-low":"#f3f3f8",
+      "surface-container":"#ededf2","surface-container-high":"#EBEBEB",
+      "surface-dim":"#d9dadf","outline-variant":"#C1C7D2","outline":"#727780",
+      "on-surface":"#1A1C1D","on-surface-variant":"#42474f",
+      "secondary":"#1b6d24","on-secondary":"#ffffff",
+      "tertiary":"#00312a","tertiary-fixed-dim":"#7AD7C6",
+      "error":"#ba1a1a","on-error":"#ffffff","error-container":"#ffdad6",
+      "background":"#f9f9fe",
+    },
+    spacing:{"xs":"0.25rem","sm":"0.5rem","md":"1rem","lg":"1.5rem","xl":"2rem","xxl":"3rem","margin":"2rem"},
+    borderRadius:{DEFAULT:"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    fontFamily:{"body-md":["Inter"],"headline-md":["Manrope"],"label-md":["Inter"]},
+    fontSize:{
+      "body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],
+      "headline-md":["28px",{"lineHeight":"36px","fontWeight":"600"}],
+      "label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.5px","fontWeight":"500"}],
+    },
+  }},
+}
+</script>
+<style>
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+  .accordion-content{max-height:0;overflow:hidden;transition:max-height .3s ease-out}
+  .accordion-active .chevron{transform:rotate(180deg)}
+  .chevron{transition:transform .3s}
+  .progress-bar{transition:width .5s cubic-bezier(.4,0,.2,1)}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:#C1C7D2;border-radius:10px}
+  .accordion-active > button{background:#00312a !important}
+  .accordion-active > button .section-title{color:#fff !important}
+  .accordion-active > button .section-icon{color:rgba(255,255,255,.85) !important}
+  .accordion-active > button .section-badge{background:rgba(255,255,255,.18) !important;color:#fff !important}
+  .accordion-active > button .chevron{color:#fff !important}
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  input[type="number"]{-moz-appearance:textfield}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md" style="min-height:max(884px,100dvh)">
+
+<!-- Global progress bar -->
+<div class="fixed top-0 left-0 w-full h-1 bg-tertiary-fixed-dim z-[60]">
+  <div id="global-progress-bar" class="h-full bg-tertiary progress-bar" style="width:0%"></div>
+</div>
+
+<!-- Sticky header -->
+<header class="w-full sticky top-1 z-40 bg-background/95 backdrop-blur-md px-4 md:px-margin py-md shadow-sm">
+  <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center gap-sm">
+      <a href="/internal-audit/ia" class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95 duration-150">arrow_back</a>
+      <div>
+        <span class="font-label-md text-label-md text-on-surface-variant">{{ bo_phan.don_vi_ten }} • {{ bo_phan.ten }}</span>
+        <h1 class="text-[18px] md:text-[22px] font-headline-md font-bold text-primary tracking-tight">Kiểm tra nội bộ – {{ loai_label }}</h1>
+      </div>
+    </div>
+    <div class="hidden md:flex flex-col items-end">
+      <span class="font-label-md text-label-md text-on-surface-variant">Tiến độ</span>
+      <span id="hdr-progress" class="font-body-md font-semibold text-primary">0 / {{ total_criteria }} tiêu chí</span>
+    </div>
+  </div>
+  <div class="md:hidden flex justify-between items-center px-xs">
+    <span id="mob-progress" class="font-label-md text-label-md text-on-surface-variant">0 / {{ total_criteria }} hoàn thành</span>
+    <span id="mob-pct" class="font-label-md text-label-md text-primary font-bold">0%</span>
+  </div>
+</header>
+
+<form id="audit-form" method="POST" action="/internal-audit/ia/submit" enctype="multipart/form-data">
+  <input type="hidden" name="bo_phan_id" value="{{ bo_phan.id }}">
+  <input type="hidden" name="loai" value="{{ loai }}">
+
+  <main class="max-w-4xl mx-auto px-4 md:px-margin py-lg pb-40">
+
+    <!-- 5S sections -->
+    {% set ns5 = namespace(has=false) %}
+    {% for section in sections %}{% if section.loai == '5S' %}{% set ns5.has = true %}{% endif %}{% endfor %}
+
+    {% if ns5.has %}
+    <div class="mb-lg">
+      <div class="flex items-center gap-sm bg-primary text-on-primary px-lg py-sm rounded-xl mb-md shadow-sm">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">filter_5</span>
+        <h2 class="font-label-md text-[13px] uppercase tracking-widest font-bold">Khu vực 5S</h2>
+      </div>
+      <div class="space-y-md">
+        {% for section in sections %}{% if section.loai == '5S' %}
+        <div class="accordion-item bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm" id="acc-{{ section.id }}">
+          <button type="button" class="w-full flex items-center justify-between px-lg py-md text-left transition-colors" style="background:rgba(0,44,80,0.07)" onclick="toggleAcc('acc-{{ section.id }}')">
+            <div class="flex items-center gap-md">
+              <span class="material-symbols-outlined section-icon text-primary-container">{{ section.icon }}</span>
+              <span class="section-title font-headline-md font-bold text-primary text-[16px]">{{ section.ten }}</span>
+            </div>
+            <div class="flex items-center gap-md">
+              <span id="sp-{{ section.id }}" class="section-badge font-label-md text-on-surface-variant bg-surface-container px-2 py-1 rounded-full text-[11px] font-bold">0/{{ section.criteria|length }}</span>
+              <span class="material-symbols-outlined chevron text-outline">expand_more</span>
+            </div>
+          </button>
+          <div class="accordion-content" id="cnt-{{ section.id }}">
+            <div class="px-lg pb-lg space-y-lg divide-y divide-outline-variant/10">
+              {% for tc in section.criteria %}
+              <div class="pt-lg" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
+                <p class="font-body-md text-on-surface leading-relaxed mb-sm">{{ tc.noi_dung }}</p>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-sm">
+                  <div class="flex items-center gap-sm">
+                    <label class="font-label-md text-[12px] text-on-surface-variant whitespace-nowrap">Số lỗi:</label>
+                    <div class="flex items-center border border-outline-variant/30 rounded-full overflow-hidden bg-surface-container-low">
+                      <button type="button" onclick="changeViolation({{ tc.id }}, -1)" class="px-2 py-1 text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">remove</span>
+                      </button>
+                      <input type="number" name="violations_{{ tc.id }}" id="v_{{ tc.id }}"
+                             value="0" min="0"
+                             class="w-12 text-center text-[14px] font-bold bg-transparent border-0 focus:outline-none focus:ring-0 py-1"
+                             onchange="onViolationChange({{ tc.id }})">
+                      <button type="button" onclick="changeViolation({{ tc.id }}, 1)" class="px-2 py-1 text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">add</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-sm">
+                    <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">upload</span>
+                      Tải ảnh
+                      <input type="file" name="image_{{ tc.id }}" accept="image/*" multiple
+                             data-image-tc="{{ tc.id }}" class="hidden" onchange="updateImageSelection({{ tc.id }})">
+                    </label>
+                    <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-tertiary/5 text-tertiary border border-tertiary/20 text-[12px] font-semibold cursor-pointer hover:bg-tertiary/10 transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">photo_camera</span>
+                      Chụp ảnh
+                      <input type="file" name="image_{{ tc.id }}" accept="image/*" capture="environment"
+                             data-image-tc="{{ tc.id }}" class="hidden" onchange="updateImageSelection({{ tc.id }})">
+                    </label>
+                    <p id="image-count-{{ tc.id }}" class="text-[11px] text-on-surface-variant"></p>
+                  </div>
+                </div>
+                <div id="image-preview-{{ tc.id }}" class="hidden flex flex-wrap gap-sm mt-sm"></div>
+                <div id="desc-wrap-{{ tc.id }}" class="hidden mt-sm">
+                  <textarea name="desc_{{ tc.id }}" id="desc_{{ tc.id }}"
+                            placeholder="Mô tả lỗi vi phạm..."
+                            class="w-full min-h-[72px] overflow-hidden text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50"
+                            rows="2" oninput="autoResizeTextarea(this)"></textarea>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Trực quan sections -->
+    {% set nstv = namespace(has=false) %}
+    {% for section in sections %}{% if section.loai == 'TRUC_QUAN' %}{% set nstv.has = true %}{% endif %}{% endfor %}
+
+    {% if nstv.has %}
+    <div class="mb-lg">
+      <div class="flex items-center gap-sm bg-tertiary text-white px-lg py-sm rounded-xl mb-md shadow-sm">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">visibility</span>
+        <h2 class="font-label-md text-[13px] uppercase tracking-widest font-bold">Quản trị Trực quan</h2>
+      </div>
+      <div class="space-y-md">
+        {% for section in sections %}{% if section.loai == 'TRUC_QUAN' %}
+        <div class="accordion-item bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm" id="acc-{{ section.id }}">
+          <button type="button" class="w-full flex items-center justify-between px-lg py-md text-left transition-colors" style="background:rgba(0,49,42,0.07)" onclick="toggleAcc('acc-{{ section.id }}')">
+            <div class="flex items-center gap-md">
+              <span class="material-symbols-outlined section-icon text-tertiary">{{ section.icon }}</span>
+              <span class="section-title font-headline-md font-bold text-tertiary text-[16px]">{{ section.ten }}</span>
+            </div>
+            <div class="flex items-center gap-md">
+              <span id="sp-{{ section.id }}" class="section-badge font-label-md text-on-surface-variant bg-surface-container px-2 py-1 rounded-full text-[11px] font-bold">0/{{ section.criteria|length }}</span>
+              <span class="material-symbols-outlined chevron text-outline">expand_more</span>
+            </div>
+          </button>
+          <div class="accordion-content" id="cnt-{{ section.id }}">
+            <div class="pb-lg pt-sm space-y-xs">
+              {% for bien in section.biens %}
+              <div class="bien-item border border-outline-variant/20 rounded-xl overflow-hidden" id="bien-acc-{{ bien.id }}">
+                <button type="button"
+                  class="bien-hdr w-full flex items-center justify-between px-lg py-[11px] text-left transition-colors bg-surface-container-lowest hover:bg-tertiary/5"
+                  onclick="toggleBien('bien-acc-{{ bien.id }}')">
+                  <div class="flex items-center gap-sm min-w-0">
+                    <span id="bien-sp-{{ bien.id }}" class="shrink-0 min-w-[36px] text-center px-sm py-[2px] rounded-full bg-surface-container font-label-md text-[11px] font-bold text-on-surface-variant">0/5</span>
+                    <span class="font-semibold text-[13px] text-on-surface leading-snug">{{ bien.ten_goi }}</span>
+                  </div>
+                  <span class="material-symbols-outlined bien-chevron shrink-0 text-outline text-[20px] transition-transform duration-200">expand_more</span>
+                </button>
+
+                <div class="bien-body hidden">
+                  <div class="flex gap-md items-start px-lg pt-md pb-md border-t border-outline-variant/10 bg-tertiary/[0.04]">
+                    <img src="{{ bien.img_url }}"
+                         alt="{{ bien.ten_goi }}"
+                         class="flex-shrink-0 rounded object-contain bg-white"
+                         style="height:80px;width:auto;max-width:180px;border:1px solid #E5E7EB;"
+                         onerror="this.style.display='none'">
+                    <div class="flex-1 min-w-0">
+                      <p class="text-[12px] text-on-surface-variant leading-relaxed">{{ bien.mo_ta }}</p>
+                      {% if bien.kich_thuoc %}
+                      <span class="inline-flex items-center gap-xs mt-xs text-[11px] font-semibold text-on-surface-variant bg-surface-container px-sm py-[2px] rounded-full">
+                        <span class="material-symbols-outlined text-[13px]">straighten</span>
+                        {{ bien.kich_thuoc }}
+                      </span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="divide-y divide-outline-variant/10">
+                    {% for tc in bien.criteria %}
+                    <div class="px-lg py-md" data-tc="{{ tc.id }}" data-sect="{{ section.id }}">
+                      <p class="text-on-surface leading-relaxed text-[14px] mb-sm">{{ tc.noi_dung }}</p>
+
+                      <div class="flex flex-col sm:flex-row sm:items-center gap-sm">
+                        <!-- Violations input -->
+                        <div class="flex items-center gap-sm">
+                          <label class="font-label-md text-[12px] text-on-surface-variant whitespace-nowrap">Số lỗi:</label>
+                          <div class="flex items-center border border-outline-variant/30 rounded-full overflow-hidden bg-surface-container-low">
+                            <button type="button" onclick="changeViolation({{ tc.id }}, -1)" class="px-2 py-1 text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                              <span class="material-symbols-outlined text-[18px]">remove</span>
+                            </button>
+                            <input type="number" name="violations_{{ tc.id }}" id="v_{{ tc.id }}"
+                                   value="0" min="0"
+                                   class="w-12 text-center text-[14px] font-bold bg-transparent border-0 focus:outline-none focus:ring-0 py-1"
+                                   onchange="onViolationChange({{ tc.id }})">
+                            <button type="button" onclick="changeViolation({{ tc.id }}, 1)" class="px-2 py-1 text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                              <span class="material-symbols-outlined text-[18px]">add</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Image upload button -->
+                        <div class="flex flex-wrap items-center gap-sm">
+                          <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-primary/5 text-primary border border-primary/20 text-[12px] font-semibold cursor-pointer hover:bg-primary/10 transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">upload</span>
+                            Tải ảnh
+                            <input type="file" name="image_{{ tc.id }}" accept="image/*" multiple
+                                   data-image-tc="{{ tc.id }}" class="hidden" onchange="updateImageSelection({{ tc.id }})">
+                          </label>
+                          <label class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-tertiary/5 text-tertiary border border-tertiary/20 text-[12px] font-semibold cursor-pointer hover:bg-tertiary/10 transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">photo_camera</span>
+                            Chụp ảnh
+                            <input type="file" name="image_{{ tc.id }}" accept="image/*" capture="environment"
+                                   data-image-tc="{{ tc.id }}" class="hidden" onchange="updateImageSelection({{ tc.id }})">
+                          </label>
+                          <p id="image-count-{{ tc.id }}" class="text-[11px] text-on-surface-variant"></p>
+                        </div>
+                      </div>
+
+                      <div id="image-preview-{{ tc.id }}" class="hidden flex flex-wrap gap-sm mt-sm"></div>
+
+                      <!-- Description field — shown when violations > 0 -->
+                      <div id="desc-wrap-{{ tc.id }}" class="hidden mt-sm">
+                        <textarea name="desc_{{ tc.id }}" id="desc_{{ tc.id }}"
+                                  placeholder="Mô tả lỗi vi phạm..."
+                                  class="w-full min-h-[72px] overflow-hidden text-[13px] bg-surface-container-low border border-outline-variant/30 rounded-lg px-md py-sm focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none text-on-surface placeholder:text-on-surface-variant/50"
+                                  rows="2" oninput="autoResizeTextarea(this)"></textarea>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <!-- Floating bottom bar -->
+  <div class="fixed bottom-0 left-0 w-full bg-surface-container/90 backdrop-blur-xl border-t border-outline-variant/10 px-4 md:px-margin py-md z-50 flex items-center justify-between shadow-[0px_-8px_24px_rgba(0,0,0,.04)]">
+    <div class="flex flex-col">
+      <span class="font-label-md text-label-md text-on-surface-variant">Tổng số lỗi</span>
+      <div class="flex items-baseline gap-xs">
+        <span id="live-violations" class="text-[24px] font-headline-md font-bold text-error leading-none">0</span>
+        <span class="text-on-surface-variant font-body-md text-[13px]">vi phạm</span>
+      </div>
+    </div>
+    <button type="submit" id="submit-btn"
+            class="flex items-center gap-sm bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 md:px-8 py-3 md:py-4 rounded-full font-bold font-headline-md text-[15px] shadow-lg shadow-primary-container/20 active:scale-95 transition-all">
+      Hoàn tất
+      <span class="material-symbols-outlined">arrow_forward</span>
+    </button>
+  </div>
+</form>
+
+<script>
+const TOTAL = {{ total_criteria }};
+
+function toggleBien(id) {
+  const item = document.getElementById(id);
+  const body = item.querySelector('.bien-body');
+  const chevron = item.querySelector('.bien-chevron');
+  if (!body.classList.contains('hidden')) {
+    body.classList.add('hidden');
+    chevron.style.transform = '';
+  } else {
+    body.classList.remove('hidden');
+    chevron.style.transform = 'rotate(180deg)';
+  }
+  const accContent = item.closest('.accordion-content');
+  if (accContent) accContent.style.maxHeight = accContent.scrollHeight + 'px';
+}
+
+function toggleAcc(id) {
+  const item = document.getElementById(id);
+  const content = document.getElementById('cnt-' + id.replace('acc-',''));
+  if (!content) return;
+  const isActive = item.classList.contains('accordion-active');
+  if (isActive) {
+    item.classList.remove('accordion-active');
+    content.style.maxHeight = '0';
+  } else {
+    item.classList.add('accordion-active');
+    content.style.maxHeight = content.scrollHeight + 'px';
+  }
+}
+
+function changeViolation(tcId, delta) {
+  const inp = document.getElementById('v_' + tcId);
+  const newVal = Math.max(0, parseInt(inp.value || '0') + delta);
+  inp.value = newVal;
+  onViolationChange(tcId);
+}
+
+function onViolationChange(tcId) {
+  const inp = document.getElementById('v_' + tcId);
+  const val = Math.max(0, parseInt(inp.value || '0'));
+  inp.value = val;
+  const descWrap = document.getElementById('desc-wrap-' + tcId);
+  if (val > 0) {
+    descWrap.classList.remove('hidden');
+    autoResizeTextarea(document.getElementById('desc_' + tcId));
+    inp.closest('.flex').classList.add('ring-1', 'ring-error/30');
+  } else {
+    descWrap.classList.add('hidden');
+    inp.closest('.flex').classList.remove('ring-1', 'ring-error/30');
+  }
+  updateTotals();
+}
+
+function updateTotals() {
+  let totalViolations = 0;
+  let filled = 0;
+  const sectionCounts = {};
+
+  document.querySelectorAll('[data-tc]').forEach(el => {
+    const tcId = el.dataset.tc;
+    const sectId = el.dataset.sect;
+    const inp = document.getElementById('v_' + tcId);
+    if (!inp) return;
+    const val = parseInt(inp.value || '0');
+    totalViolations += val;
+    filled++;
+    if (!sectionCounts[sectId]) sectionCounts[sectId] = {done: 0, total: 0};
+    sectionCounts[sectId].total++;
+    sectionCounts[sectId].done++;
+  });
+
+  document.getElementById('live-violations').textContent = totalViolations;
+  if (totalViolations > 0) {
+    document.getElementById('live-violations').classList.add('text-error');
+    document.getElementById('live-violations').classList.remove('text-secondary');
+  } else {
+    document.getElementById('live-violations').classList.remove('text-error');
+    document.getElementById('live-violations').classList.add('text-secondary');
+  }
+
+  const pct = TOTAL ? Math.round((filled / TOTAL) * 100) : 0;
+  const bar = document.getElementById('global-progress-bar');
+  if (bar) bar.style.width = pct + '%';
+  const hp = document.getElementById('hdr-progress');
+  if (hp) hp.textContent = filled + ' / ' + TOTAL + ' tiêu chí';
+  const mp = document.getElementById('mob-progress');
+  if (mp) mp.textContent = filled + ' / ' + TOTAL + ' hoàn thành';
+  const mpct = document.getElementById('mob-pct');
+  if (mpct) mpct.textContent = pct + '%';
+
+  for (const [sectId, c] of Object.entries(sectionCounts)) {
+    const badge = document.getElementById('sp-' + sectId);
+    if (badge) badge.textContent = c.done + '/' + c.total;
+  }
+
+  // Update bien badges
+  document.querySelectorAll('.bien-item').forEach(bienEl => {
+    const bienId = bienEl.id.replace('bien-acc-', '');
+    const tcs = bienEl.querySelectorAll('[data-tc]');
+    const total = tcs.length;
+    let done = 0;
+    tcs.forEach(tc => { done++; });
+    const badge = document.getElementById('bien-sp-' + bienId);
+    if (badge) badge.textContent = done + '/' + total;
+  });
+}
+
+const imagePreviewUrls = {};
+
+function getSelectedImages(tcId) {
+  const entries = [];
+  document.querySelectorAll('[data-image-tc="' + tcId + '"]').forEach((input, inputIndex) => {
+    Array.from(input.files || []).forEach((file, fileIndex) => {
+      entries.push({file, inputIndex, fileIndex});
+    });
+  });
+  return entries;
+}
+
+function removeSelectedImage(tcId, inputIndex, fileIndex) {
+  const inputs = document.querySelectorAll('[data-image-tc="' + tcId + '"]');
+  const input = inputs[inputIndex];
+  if (!input) return;
+
+  const transfer = new DataTransfer();
+  Array.from(input.files || []).forEach((file, index) => {
+    if (index !== fileIndex) transfer.items.add(file);
+  });
+  input.files = transfer.files;
+  updateImageSelection(tcId);
+}
+
+function updateImageSelection(tcId) {
+  const entries = getSelectedImages(tcId);
+
+  const count = document.getElementById('image-count-' + tcId);
+  const preview = document.getElementById('image-preview-' + tcId);
+  (imagePreviewUrls[tcId] || []).forEach(url => URL.revokeObjectURL(url));
+  imagePreviewUrls[tcId] = [];
+  preview.innerHTML = '';
+
+  count.textContent = entries.length ? entries.length + ' ảnh đã chọn' : '';
+  count.classList.remove('text-error');
+
+  entries.forEach(({file, inputIndex, fileIndex}) => {
+    const url = URL.createObjectURL(file);
+    imagePreviewUrls[tcId].push(url);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative';
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Ảnh minh chứng đã chọn';
+    img.className = 'h-16 w-16 rounded object-cover border border-outline-variant/30';
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-error text-white shadow-md hover:scale-105 transition-transform';
+    removeButton.setAttribute('aria-label', 'Xóa ảnh đã chọn');
+    removeButton.innerHTML = '<span class="material-symbols-outlined text-[15px]">close</span>';
+    removeButton.addEventListener('click', () => removeSelectedImage(tcId, inputIndex, fileIndex));
+    wrapper.appendChild(img);
+    wrapper.appendChild(removeButton);
+    preview.appendChild(wrapper);
+  });
+  preview.classList.toggle('hidden', entries.length === 0);
+
+  const accContent = preview.closest('.accordion-content');
+  if (accContent) accContent.style.maxHeight = accContent.scrollHeight + 'px';
+}
+
+function autoResizeTextarea(textarea) {
+  if (!textarea) return;
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.max(72, textarea.scrollHeight) + 'px';
+  const accContent = textarea.closest('.accordion-content');
+  if (accContent) accContent.style.maxHeight = accContent.scrollHeight + 'px';
+}
+
+document.getElementById('audit-form').addEventListener('submit', function(e) {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Đang lưu...';
+});
+
+updateTotals();
+</script>
+</body>
+</html>

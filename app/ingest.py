@@ -30,25 +30,34 @@ class IngestCounters:
 # Legacy: single sheet with trailing space
 TARGET_SHEET_NAME = "Luong ky nhan thang tong "
 
-# New: one sheet per cơ sở, sheet name → co_so display value
+# Multi-sheet format: sheet name → display label (co_so derived from don_vi, not sheet)
 MULTI_SHEET_MAP: dict[str, str] = {
     "Me Nhu": "Mẹ Nhu",
     "DT": "Duy Trung",
 }
 
+# ── Cơ sở derivation ────────────────────────────────────────────────────────
+# don_vi values that map to "Duy Trung"; everything else → "Mẹ Nhu"
+CO_SO_DUY_TRUNG_DON_VI: set[str] = {"DT"}
+CO_SO_DEFAULT = "Mẹ Nhu"
+CO_SO_DUY_TRUNG = "Duy Trung"
 
-def _detect_sheets(wb) -> list[tuple[str, str | None]]:
-    """Return list of (sheet_name, co_so_override) to ingest.
 
-    - Legacy format: [("Luong ky nhan thang tong ", None)]
-      → co_so derived from TTBP column at row level.
-    - Multi-sheet format: [("Me Nhu", "Mẹ Nhu"), ("DT", "Duy Trung")]
-      → co_so fixed per sheet.
+def derive_co_so(don_vi: str) -> str:
+    """Derive cơ sở from đơn vị: DT → Duy Trung, else → Mẹ Nhu."""
+    return CO_SO_DUY_TRUNG if don_vi.strip() in CO_SO_DUY_TRUNG_DON_VI else CO_SO_DEFAULT
+
+
+def _detect_sheets(wb) -> list[str]:
+    """Return list of sheet names to ingest.
+
+    - Legacy format: ["Luong ky nhan thang tong "]
+    - Multi-sheet format: ["Me Nhu", "DT"]
     """
     if TARGET_SHEET_NAME in wb.sheetnames:
-        return [(TARGET_SHEET_NAME, None)]
+        return [TARGET_SHEET_NAME]
 
-    found = [(sn, MULTI_SHEET_MAP[sn]) for sn in wb.sheetnames if sn in MULTI_SHEET_MAP]
+    found = [sn for sn in wb.sheetnames if sn in MULTI_SHEET_MAP]
     if found:
         return found
 
@@ -160,11 +169,10 @@ def ingest_workbook_with_progress(
     sheets = _detect_sheets(wb)
 
     totals = IngestCounters(total_rows=0, inserted=0, skipped=0, invalid=0)
-    for sheet_name, co_so_override in sheets:
+    for sheet_name in sheets:
         result = _ingest_sheet(
             wb[sheet_name],
             session,
-            co_so_override=co_so_override,
             progress=progress,
             row_offset=totals.total_rows,
         )
@@ -179,7 +187,6 @@ def _ingest_sheet(
     ws,
     session: Session,
     *,
-    co_so_override: str | None,
     progress: Callable[[int, int, int], None] | None,
     row_offset: int,
 ) -> IngestCounters:
@@ -235,16 +242,12 @@ def _ingest_sheet(
         job_title = _get(c["JOB_TITLE"]) if has_job_title else ""
         job_title = job_title or ""
 
-        # co_so: nếu có override từ sheet name thì dùng, không thì suy từ TTBP
-        if co_so_override is not None:
-            co_so = co_so_override
-        else:
-            co_so = "Duy Trung" if str(ttbp).strip() == "DT" else "Mẹ Nhu"
-
         don_vi_idx = c.get("DON_VI")
         don_vi = _get(don_vi_idx) if don_vi_idx is not None else None
         if don_vi is None:
             don_vi = str(ttbp).strip()
+
+        co_so = derive_co_so(str(don_vi))
 
         lgtrgio = to_int_money(_get(c["LGTRGIO"]))
         bu = to_int_money(_get(c["Bu du luong toi thieu"]))
